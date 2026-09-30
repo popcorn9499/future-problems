@@ -45,8 +45,6 @@ Integration Tests
 - goes in `./client-side/integration_test`
 
 
-
-
 Server Side Source code
 - goes in `./server-side`
 
