@@ -1,3 +1,5 @@
+# Pull Request Strategy
+
 Do not create merge requests on broken Code
 
 **IMPORTANT**
