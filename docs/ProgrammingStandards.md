@@ -71,18 +71,18 @@ This could be in list form.
 
 When making future branches please follow one of the standards that matches
 for example
-`it$(num)/branch`
-would be for iteration 1/sprint1
-`it1/branch`
+`spr$(num)/branch`
+would be for sprint 1
+`spr1/branch`
 
 ### For Features
-- `it$(num)-feature/some-descriptive-title`
+- `spr$(num)-feature/some-descriptive-title`
 
 ### For Bugfix
-- `it$(num)-bugfix/some-descriptive-title`
+- `spr$(num)-bugfix/some-descriptive-title`
 
 ### For Refactor
-- `it$(num)-refactor/some-descriptive-title`
+- `spr$(num)-refactor/some-descriptive-title`
 
 ## Programming naming conventions
 
