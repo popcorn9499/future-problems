@@ -15,7 +15,7 @@
 | Carina Rook | CS | |
 | Leon Bauer | CS | |
 | Ruitian Fan | CS | |
-| Logan Smith | CS | |
+| Logan Smith | CS | She/Her |
 
 **1. Shared Team Goals (can add more than 3)**
 
@@ -39,7 +39,7 @@ Each team member lists their personal goals for this project.
 | --- | --- |
 | Sasha Coles | Get a good project grade, being a valuable team member |
 | Rebekah Soneye | Practice CI/CD implementation |
-| Kamryn Janke | Low stress and create a product I’m proud of |
+| Kamryn Janke | Low stress and create a product I'm proud of |
 | Carina Rook | Low stress/good grade |
 | Leon Bauer | Survive, good grade |
 | Ruitian Fan | Learn something/good grade/have fun |
@@ -67,8 +67,7 @@ gravitate towards.
 
 **4. Communication Plan**
 
-**Primary communication channel(s):** Telegram\
-(e.g., Discord, Slack, WhatsApp, email)
+**Primary communication channel(s):** Telegram
 
 **Expected response time:**
 
@@ -105,19 +104,19 @@ gravitate towards.
 
 **6. Work Expectations**
 
--   How tasks will be assigned (e.g., issues, task board):
+- How tasks will be assigned:
 
-    -   Assign tasks during meetings and then document on Jira space
+    - Assign tasks during meetings and then document on Jira space
 
--   Definition of "done" for a task:
+- Definition of "done" for a task:
 
-    -   Push is reviewed and merged -- close issue on Jira then
+    - Push is reviewed and merged -- close issue on Jira then
 
--   Expectations around code quality / documentation:
+- Expectations around code quality / documentation:
 
-    -   Ahere to code standards created by group
+    - Ahere to code standards created by group
 
-    -   Rotating documentation responsibility with responsibility on
+    - Rotating documentation responsibility with responsibility on
         individuals to document their own changes
 
 **7. Conflict Resolution & Unmet Expectations**
@@ -125,15 +124,13 @@ gravitate towards.
 If conflict arises or expectations are not met, we agree to follow this
 process **in order**:
 
-1.  For personal conflicts, handle issue privately if possible.
+1. For personal conflicts, handle issue privately if possible.
 
-2.  If issue continues or concerns the whole group should be discussed
+2. If issue continues or concerns the whole group should be discussed
     together in person or online.
 
-3.  Talk to Lauren.
+3. Talk to Lauren.
 
-*(Examples: direct conversation → team discussion → instructor
-escalation)*
 
 How will concerns be raised respectfully? -- Don't involve whole group
 if not necessarily and give them the benefit of a doubt.
@@ -153,8 +150,7 @@ code standards)\
 Disallowed uses of GenAI in this project include:\
 • Blindly generating 1000-line code without reviewing it
 
-Key risks we have identified related to GenAI use (e.g., correctness,
-over-reliance, fairness, integrity):\
+Key risks we have identified related to GenAI use:\
 • Over-reliance\
 • Correctness
 
