@@ -16,3 +16,5 @@ We imagine the University of Manitoba Student Union (UMSU) as a potential stakeh
 
 For example, a student living in Transcona may drive to campus several days a week while another student living nearby needs a ride to the university. A student without a car could search for available rides that match their schedule and location. The two students could then coordinate the trip through the app. This creates an opportunity for students to reduce transportation costs, make commuting more convenient, and connect with other members of the University of Manitoba community.
 
+### Architecture
+![Architecture diagram](https://github.com/popcorn9499/future-problems/blob/master/docs/process-docs/architecture_sprint0.png)
