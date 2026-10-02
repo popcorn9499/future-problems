@@ -2,7 +2,9 @@
 
 # Standards/Strategys
 [Programming Standards](docs/process-docs/ProgrammingStandards.md)
+
 [Pull Request Strategy](docs/process-docs/PullRequestStrategy.md)
+
 [Git Workflow](docs/process-docs/git-workflow.md)
 
 # Sprints
