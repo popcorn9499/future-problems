@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
-import 'register_page.dart';
+
+import 'features/auth/register_page.dart';
 
 void main() {
   runApp(const GoBisonApp());
@@ -15,9 +15,7 @@ class GoBisonApp extends StatelessWidget {
       title: 'GoBison',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF654321),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF654321)),
         useMaterial3: true,
       ),
       home: const RegisterPage(),
