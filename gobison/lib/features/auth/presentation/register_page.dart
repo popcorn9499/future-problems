@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/navigation/no_animation_page_route.dart';
 import '../validators/auth_validators.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -154,7 +156,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    // const SizedBox(height: 4),
                     const Text(
                       'Join GoBison',
                       textAlign: TextAlign.center,
@@ -291,7 +292,12 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // TODO: Navigate to the login page.
+                            Navigator.pushReplacement(
+                              context,
+                              NoAnimationPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.primary,
