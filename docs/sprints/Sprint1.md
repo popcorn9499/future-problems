@@ -22,6 +22,16 @@ The frontend uses Flutter's flutter_test package to perform widget tests.
 [Coverage report]()
 
 ## CI Status
+For this sprint, we have implemented a basic CI pipeline. The workflow will run upon pushes, creation/reopening of pull requests, and updates to pull requests. 
+
+The pipeline will do the following:
+- install dependencies
+- analyze code
+- run tests and collect coverage
+- generate coverage report
+
+
+[CI documentation](docs/ci.md)
 
 ## API Documentation
 [Postman API documentation](https://www.postman.com/moreaboutrebekah-4859954/gobison/http-request/mmrfr8n/register-account?sideView=agentMode)
