@@ -46,7 +46,7 @@ The pipelines will do the following:
 [Postman API documentation](https://www.postman.com/moreaboutrebekah-4859954/gobison/http-request/mmrfr8n/register-account?sideView=agentMode)
 
 ## Architecture
-[Sprint 1 architecture diagram]()
+![Sprint 1 architecture diagram](architecture_sprint1.jpg)
 
 ## Deployment
 [Deployment URL]()
