@@ -1,5 +1,11 @@
 # Future Problem
 
+# Test Status
+[![Backend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/)
+[![Frontend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/)
+[![Backend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/)
+[![Frontend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/)
+
 # Standards/Strategies
 [Programming Standards](docs/process-docs/ProgrammingStandards.md)
 

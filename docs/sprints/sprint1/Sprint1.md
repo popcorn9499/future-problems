@@ -11,8 +11,12 @@ For this sprint, our team focused on implementing the core account management fe
 - Basic CI/CD pipeline
 
 ## Testing Status
-The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application.
+[![Backend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/)
+[![Frontend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/)
+[![Backend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/)
+[![Frontend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/)
 
+The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application.
 
 **Frontend Testing:** Flutter widget tests verify login and registration form validation, including required fields, UMNetID formatting, password length, and acceptance of valid input.
 
