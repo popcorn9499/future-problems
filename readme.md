@@ -16,7 +16,7 @@
 # Sprints
 [Sprint 0](docs/sprints/Sprint0.md)
 
-[Sprint 1](docs/sprints/Sprint1.md)
+[Sprint 1](docs/sprints/sprint1/Sprint1.md)
 
 
 
