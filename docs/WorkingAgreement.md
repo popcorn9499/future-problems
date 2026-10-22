@@ -178,12 +178,12 @@ together and agree to follow it.
 
 | Name | Signature | Date |
 | --- | --- | --- |
-| Kamryn Janke | | September 25th, 2026 |
-| Sasha Coles | | |
-| Rebekah Soneye | | |
-| Carina Rook | | |
-| Leon Bauer | | |
-| Ruitian Fan | | |
+| Kamryn Janke | KJ | September 25th, 2026 |
+| Sasha Coles | SC | September 25th, 2026 |
+| Rebekah Soneye | RS | September 25th, 2026 |
+| Carina Rook | CR | September 25th, 2026 |
+| Leon Bauer | LB | September 25th, 2026 |
+| Ruitian Fan | RF | September 25th, 2026 |
 | Logan Smith | 42 | September 25th, 2026 |
 
 **Submission Instructions:**\
