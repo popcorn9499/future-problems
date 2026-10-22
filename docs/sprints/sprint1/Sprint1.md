@@ -26,19 +26,14 @@ The team currently uses a combination of unit, integration, and frontend widget 
 
 **Coverage and Evidence:** Our CI pipeline generates coverage reports, allowing us to identify under-tested areas without targeting a specific coverage percentage.
 
+![frontend coverage report](frontend_coverage.png)
 
-The backend uses JUnit and Spring Boot's testing framework.
-
-The frontend uses Flutter's flutter_test package to perform widget tests. 
-
-[Testing documentation]()
-
-[Coverage report]()
+![backend coverage report]()
 
 ## CI Status
-For this sprint, we have implemented a basic CI pipeline. The workflow will run upon pushes, creation/reopening of pull requests, and updates to pull requests. 
+For this sprint, we have implemented basic CI pipelines for the frontend and backend applications. These will run upon pushes, creation/reopening of pull requests, and updates to pull requests. 
 
-The pipeline will do the following:
+The pipelines will do the following:
 - install dependencies
 - analyze code
 - run tests and collect coverage
@@ -60,4 +55,12 @@ The pipeline will do the following:
 
 ## Reflection
 
+Our team is particularly proud of the frontend design of our application. We feel that we have created an interface that looks and feels like a real application that students could use in their day-to-day lives. Throughout the design process, our frontend team focused on making the application visually appealing, intuitive, and easy to navigate. Additionally, by choosing to use Flutter it allowed us to develop an application that can run on both mobile devices and web browsers. This flexibility is especially valuable because students may access the application in different situations, whether they are using their phones while walking around campus or accessing it through a web browser on their laptops. We are proud of the effort our team has put into creating an interface that resembles a real-world application rather than a basic academic assignment
+
+One area which our team feels could have been improved was initial database setup. Schema changes had to be made during the sprint, and it would have been much easier if we had better established everything needed from our database tables at the beginning of the iteration. These changes then required team members to change multiple classes and tests, which slowed our progress throughout this sprint.
+
+Our team focused on testing during and after implementation. Unit tests were created when classes for a particular feature were completed, and integration tests were created after all layers of a feature were complete. Our team doesn’t think a more test-driven approach would have made the sprint easier or harder, as our current testing approach worked well this iteration.
+
 ## Known Issues
+One issue that the team knows of is that we have a profile page implemented, including the ability to edit details such as age and gender, however we do not currently have a table in the database to store this information. This issue will be resolved in sprint 2.
+
