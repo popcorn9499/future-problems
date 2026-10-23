@@ -8,6 +8,7 @@ We have also deployed our application [here](https://gobison.popicraft.net/)
 ## Completed Work
 - Account creation
 - Account verification
+- Login
 - Database integration
 - Basic CI/CD pipeline
 - Live deployment
@@ -65,10 +66,10 @@ The pipelines will do the following:
 
 Our team is particularly proud of the frontend design of our application. We feel that we have created an interface that looks and feels like a real application that students could use in their day-to-day lives. Throughout the design process, our frontend team focused on making the application visually appealing, intuitive, and easy to navigate. Additionally, by choosing to use Flutter it allowed us to develop an application that can run on both mobile devices and web browsers. This flexibility is especially valuable because students may access the application in different situations, whether they are using their phones while walking around campus or accessing it through a web browser on their laptops. We are proud of the effort our team has put into creating an interface that resembles a real-world application rather than a basic academic assignment
 
-One area which our team feels could have been improved was initial database setup. Schema changes had to be made during the sprint, and it would have been much easier if we had better established everything needed from our database tables at the beginning of the iteration. These changes then required team members to change multiple classes and tests, which slowed our progress throughout this sprint.
+One area which our team feels could have been improved was initial database setup. Schema changes had to be made during the sprint, and it would have been much easier if we had better established everything needed from our database tables at the beginning of the iteration. These changes then required team members to change multiple classes and tests, which slowed our progress throughout this sprint. We also believe that we could improve our communication and time management skills in the next sprint, as this held us back in the days leading up to the deadline.
 
 Our team focused on testing during and after implementation. Unit tests were created when classes for a particular feature were completed, and integration tests were created after all layers of a feature were complete. Our team doesn’t think a more test-driven approach would have made the sprint easier or harder, as our current testing approach worked well this iteration.
 
 ## Known Issues
-One issue that the team knows of is that we dont have login logic implented, despite having a login page. This will be addressed in sprint 2.
+One issue that the team knows of is that users are not able to log out once they've logged in. So after account registration, if you want to test logging in, you need to restart this app. This will be fixed in sprint 2. 
 
