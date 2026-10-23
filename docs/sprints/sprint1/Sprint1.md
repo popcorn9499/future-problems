@@ -1,7 +1,7 @@
 # Sprint 1
 
 ## Sprint Summary
-For this sprint, our team focused on implementing the core account management features. Account creation, and user verification features have been implemented end to end and backend infrastructure to support the application has been established.
+For this sprint, our team focused on implementing the core account management features. Account creation, login, and user verification features have been implemented end to end and backend infrastructure to support the application has been established.
 
 
 ## Completed Work
@@ -23,7 +23,7 @@ The team currently uses a combination of unit, integration, and frontend widget 
 
 **Unit Testing:** We use JUnit 5 to test the User domain model and EmailService. These tests cover object initialization, getters and setters, email message contents, and SMTP failure handling. We also test UserRepositoryImpl to verify repository behaviour and mapping between domain objects and persistence entities.
 
-**Integration Testing:** EmailVerificationServiceIntegrationTest tests interactions between the verification service, repository, and PostgreSQL database.
+**Integration Testing:** Our integration tests ensure that different layers and components interact properly. We focused on verifying that components worked together correctly, such as the email verification process, where we tested both successful and unsuccessful scenarios and checked the resulting error messages, navigation, and session state. We also tested interactions between backend services, repositories, and the database to ensure that data was handled correctly across the system.
 
 **API and Security Testing:** Using Spring Boot's @WebMvcTest and MockMvc, we test the email-verification REST endpoint, including successful responses, authentication requirements, malformed requests, expected error responses, and handling of persistence failures without exposing internal details.
 
