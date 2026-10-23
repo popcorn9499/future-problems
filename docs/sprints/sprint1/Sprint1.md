@@ -53,8 +53,12 @@ The pipelines will do the following:
 ## Architecture
 ![Sprint 1 architecture diagram](architecture_sprint1.jpg)
 
-## Deployment
+## Deployment and Local Setup
 [Deployment URL](https://gobison.popicraft.net)
+
+[Backend setup](docs/Backend.md)
+
+[Frontend setup](docs/frontend.md)
 
 ## Reflection
 
