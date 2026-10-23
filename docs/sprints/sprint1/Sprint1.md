@@ -11,10 +11,10 @@ For this sprint, our team focused on implementing the core account management fe
 - Basic CI/CD pipeline
 
 ## Testing Status
+
 [![Backend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/)
 [![Frontend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/)
 [![Backend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/)
-[![Frontend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/)
 
 The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application.
 
@@ -28,7 +28,7 @@ The team currently uses a combination of unit, integration, and frontend widget 
 
 **Mocking/Test Utilities:** We use Mockito to mock the email service and verify interactions without sending real emails.
 
-**Coverage and Evidence:** Our CI pipeline generates coverage reports, allowing us to identify under-tested areas without targeting a specific coverage percentage.
+**Coverage and Evidence:** Our CI pipeline generates coverage reports, allowing us to identify under-tested areas.
 
 ![frontend coverage report](frontend_coverage.png)
 
@@ -53,9 +53,7 @@ The pipelines will do the following:
 ![Sprint 1 architecture diagram](architecture_sprint1.jpg)
 
 ## Deployment
-[Deployment URL]()
-
-[Setup/run documentation]()
+[Deployment URL](https://gobison.popicraft.net)
 
 ## Reflection
 
