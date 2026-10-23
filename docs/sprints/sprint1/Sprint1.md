@@ -71,5 +71,5 @@ One area which our team feels could have been improved was initial database setu
 Our team focused on testing during and after implementation. Unit tests were created when classes for a particular feature were completed, and integration tests were created after all layers of a feature were complete. Our team doesn’t think a more test-driven approach would have made the sprint easier or harder, as our current testing approach worked well this iteration.
 
 ## Known Issues
-One issue that the team knows of is that we have a profile page implemented, including the ability to edit details such as age and gender, however we do not currently have a table in the database to store this information. This issue will be resolved in sprint 2.
+One issue that the team knows of is that we dont have login logic implented, despite having a login page. This will be address in sprint 2.
 
