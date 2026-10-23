@@ -15,9 +15,11 @@
 
 # Documentation
 
-[Backend.md](docs/Backend.md)
+[Backend Documentation](docs/Backend.md)
 
-[Frontend Documentation](docs/frontend.md)
+[Frontend Documentation](docs/Frontend.md)
+
+[Ci Documentation](docs/Ci.md)
 
 # Sprints
 [Sprint 0](docs/sprints/Sprint0.md)

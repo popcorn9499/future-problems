@@ -18,6 +18,8 @@ We have also deployed our application [here](https://gobison.popicraft.net/)
 [![Backend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/)
 [![Frontend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/)
 [![Backend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/)
+[![Frontend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/)
+
 
 The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application.
 
@@ -46,8 +48,7 @@ The pipelines will do the following:
 - run tests and collect coverage
 - generate coverage report
 
-
-[CI documentation](docs/ci.md)
+[CI documentation](../../Ci.md)
 
 ## API Documentation
 [Postman API documentation](https://www.postman.com/moreaboutrebekah-4859954/gobison/http-request/mmrfr8n/register-account?sideView=agentMode)
@@ -58,9 +59,8 @@ The pipelines will do the following:
 ## Deployment and Local Setup
 [Deployment URL](https://gobison.popicraft.net)
 
-[Backend setup](docs/Backend.md)
-
-[Frontend setup](docs/frontend.md)
+[Backend setup](../../Backend.md)
+[Frontend setup](../../Frontend.md)
 
 ## Reflection
 
