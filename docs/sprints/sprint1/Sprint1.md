@@ -7,7 +7,6 @@ We have also deployed our application [here](https://gobison.popicraft.net/)
 
 ## Completed Work
 - Account creation
-- Login
 - Account verification
 - Database integration
 - Basic CI/CD pipeline
