@@ -1,7 +1,7 @@
 # Sprint 1
 
 ## Sprint Summary
-For this sprint, our team focused on implementing the core account management features. Log in, account creation, and user verification features have been implemented end to end and backend infrastructure to support the application has been established.
+For this sprint, our team focused on implementing the core account management features. Account creation, and user verification features have been implemented end to end and backend infrastructure to support the application has been established.
 
 We have also deployed our application [here](https://gobison.popicraft.net/)
 
@@ -22,7 +22,7 @@ We have also deployed our application [here](https://gobison.popicraft.net/)
 
 The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application.
 
-**Frontend Testing:** Flutter widget tests verify login and registration form validation, including required fields, UMNetID formatting, password length, and acceptance of valid input.
+**Frontend Testing:** Flutter widget tests verify registration form validation, including required fields, UMNetID formatting, password length, and acceptance of valid input.
 
 **Unit Testing:** We use JUnit 5 to test the User domain model and EmailService. These tests cover object initialization, getters and setters, email message contents, and SMTP failure handling. We also test UserRepositoryImpl to verify repository behaviour and mapping between domain objects and persistence entities.
 
