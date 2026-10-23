@@ -9,6 +9,7 @@ For this sprint, our team focused on implementing the core account management fe
 - Account verification
 - Database integration
 - Basic CI/CD pipeline
+- Live deployment
 
 ## Testing Status
 
