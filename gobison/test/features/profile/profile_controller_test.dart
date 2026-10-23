@@ -207,7 +207,7 @@ void main() {
 
       expect(
         controller.errorMessage,
-        'Your session has expired. Please sign in again.',
+        'Unable to save your profile. Please try again.',
       );
       expect(controller.isLoading, isFalse);
     });
