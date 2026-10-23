@@ -32,6 +32,11 @@
    flutter run -d chrome --web-port=3000 --dart-define=API_BASE_URL=http://localhost:8080
    ```
 
+   alternatively, something like the following, where the port is defined as an allowed origin in application.properties:
+   ```bash
+   flutter run -d edge --web-port=64636
+   ```
+
   Note: Currently, the frontend has been tested to run properly on web only
 
 For local development, run the backend on port 8080 and keep Flutter on port

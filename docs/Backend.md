@@ -30,7 +30,7 @@ This includes
 - Email address
 - First and Last name
 - Verified status
-- and a hashed password
+- Password Hashing
 
 ## Auth
 Handles email verification as well as registering the user

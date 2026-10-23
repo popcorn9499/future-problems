@@ -3,7 +3,6 @@
 ## Sprint Summary
 For this sprint, our team focused on implementing the core account management features. Account creation, and user verification features have been implemented end to end and backend infrastructure to support the application has been established.
 
-We have also deployed our application [here](https://gobison.popicraft.net/)
 
 ## Completed Work
 - Account creation
@@ -11,14 +10,11 @@ We have also deployed our application [here](https://gobison.popicraft.net/)
 - Login
 - Database integration
 - Basic CI/CD pipeline
-- Live deployment
 
 ## Testing Status
 
 [![Backend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-ci.yml/)
 [![Frontend Test Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-ci.yml/)
-[![Backend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/backend-deploy.yml/)
-[![Frontend Deployment Status](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/badge.svg)](https://github.com/popcorn9499/future-problems/actions/workflows/flutter-deploy.yml/)
 
 
 The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application.
@@ -56,8 +52,7 @@ The pipelines will do the following:
 ## Architecture
 ![Sprint 1 architecture diagram](architecture_sprint1.jpg)
 
-## Deployment and Local Setup
-[Deployment URL](https://gobison.popicraft.net)
+## Local Setup
 
 [Backend setup](../../Backend.md)
 [Frontend setup](../../Frontend.md)
@@ -72,4 +67,7 @@ Our team focused on testing during and after implementation. Unit tests were cre
 
 ## Known Issues
 One issue that the team knows of is that users are not able to log out once they've logged in. So after account registration, if you want to test logging in, you need to restart this app. This will be fixed in sprint 2. 
+
+
+Another known issue is our deployment. We did actually successfully deploy our app, but then ran into some issues with the email service being used, preventing users from registering.
 
