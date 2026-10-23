@@ -3,6 +3,8 @@
 ## Sprint Summary
 For this sprint, our team focused on implementing the core account management features. Log in, account creation, and user verification features have been implemented end to end and backend infrastructure to support the application has been established.
 
+We have also deployed our application [here](https://gobison.popicraft.net/)
+
 ## Completed Work
 - Account creation
 - Login
@@ -33,7 +35,7 @@ The team currently uses a combination of unit, integration, and frontend widget 
 
 ![frontend coverage report](frontend_coverage.png)
 
-![backend coverage report]()
+![backend coverage report](backend_coverage.png)
 
 ## CI Status
 For this sprint, we have implemented basic CI pipelines for the frontend and backend applications. These will run upon pushes, creation/reopening of pull requests, and updates to pull requests. 
