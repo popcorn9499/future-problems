@@ -11,7 +11,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final String senderAddress;
 
-    public EmailService(JavaMailSender mailSender, @Value("${gobison.mail.from}") String senderAddress) {
+    public EmailService(JavaMailSender mailSender, @Value("${frontend.mail.from}") String senderAddress) {
         this.mailSender = mailSender;
         this.senderAddress = senderAddress;
     }
