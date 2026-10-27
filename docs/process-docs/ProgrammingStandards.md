@@ -36,19 +36,20 @@ And when in danger remember this!
 ## Folder Expectations
 
 ### Client Side Source code 
-- goes in `./client-side`
+- goes in `./frontend`
 
 Tests
-- goes in `./client-side/test`
+- goes in `./frontend/test`
 
 Integration Tests
-- goes in `./client-side/integration_test`
+- goes in `./frontend/integration_test`
 
 
 Server Side Source code
-- goes in `./server-side`
+- goes in `./backend/src/main`
 
-**decide testing based on java frameworks**
+Service side test code goes to
+- './backend/src/test'
 
 
 

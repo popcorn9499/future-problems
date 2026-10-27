@@ -19,7 +19,7 @@
 
 3. Navigate to the frontend project directory:
    ```bash
-   cd gobison
+   cd frontend
    ```
 4. Install the project dependencies:
    ```bash
