@@ -14,13 +14,13 @@ class EmailServiceTest {
     @Test
     void sendsPlainTextCodeWithConfiguredSenderAndRecipient() {
         JavaMailSender sender = mock(JavaMailSender.class);
-        EmailService service = new EmailService(sender, "frontend@example.com");
+        EmailService service = new EmailService(sender, "gobison@example.com");
         ArgumentCaptor<SimpleMailMessage> message = ArgumentCaptor.forClass(SimpleMailMessage.class);
 
         service.sendVerificationCode("jsmith@myumanitoba.ca", "000042");
 
         verify(sender).send(message.capture());
-        assertEquals("frontend@example.com", message.getValue().getFrom());
+        assertEquals("gobison@example.com", message.getValue().getFrom());
         assertArrayEquals(new String[]{"jsmith@myumanitoba.ca"}, message.getValue().getTo());
         assertEquals("GoBison Verification Code", message.getValue().getSubject());
         assertEquals("Your GoBison verification code is: 000042", message.getValue().getText());
@@ -29,7 +29,7 @@ class EmailServiceTest {
     @Test
     void propagatesSmtpFailureToCaller() {
         JavaMailSender sender = mock(JavaMailSender.class);
-        EmailService service = new EmailService(sender, "frontend@example.com");
+        EmailService service = new EmailService(sender, "gobison@example.com");
         doThrow(new MailSendException("SMTP unavailable")).when(sender).send(any(SimpleMailMessage.class));
 
         assertThrows(MailSendException.class,

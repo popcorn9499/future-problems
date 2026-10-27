@@ -84,7 +84,7 @@ public class SecurityConfiguration {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(
-            @Value("${frontend.auth.allowed-origins}") List<String> allowedOrigins) {
+            @Value("${gobison.auth.allowed-origins}") List<String> allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "OPTIONS"));

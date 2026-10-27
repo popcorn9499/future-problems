@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-//import 'package:frontend/features/auth/api_service_mock.dart';
+//import 'package:gobison/features/auth/api_service_mock.dart';
 
 import 'package:http/http.dart' as http;
 
