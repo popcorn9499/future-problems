@@ -32,7 +32,7 @@ void main() {
       final session = await SessionService().loadCurrentSession();
       expect(session!.profile.firstName, 'Ada');
       expect(session.profile.age, isNull);
-      expect(session.profile.gender, isNull);
+      expect(session.profile.pronouns, isNull);
       expect(session.profile.description, isNull);
       await tester.pumpWidget(const MaterialApp(home: SessionGate()));
       await tester.pumpAndSettle();

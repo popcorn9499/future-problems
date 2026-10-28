@@ -37,8 +37,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _emailController;
   late final TextEditingController _ageController;
   late final TextEditingController _bioController;
+  late final TextEditingController _pronounsController;
 
-  String? _gender;
   final bool _isSaving = false;
 
   @override
@@ -59,7 +59,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       text: widget.profile.description ?? '',
     );
 
-    _gender = widget.profile.gender;
+    _pronounsController = TextEditingController(
+      text: widget.profile.pronouns ?? '',
+    );
   }
 
   void _onControllerChanged() {
@@ -78,6 +80,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _emailController.dispose();
     _ageController.dispose();
     _bioController.dispose();
+    _pronounsController.dispose();
+    
     super.dispose();
   }
 
@@ -93,7 +97,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
       age: _ageController.text,
-      gender: _gender,
+      pronouns: _pronounsController.text.trim().isEmpty
+        ? null
+        : _pronounsController.text.trim(),
       description: _bioController.text,
     );
 
@@ -115,7 +121,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         _firstNameController.text != (widget.profile.firstName) ||
         _lastNameController.text != (widget.profile.lastName ?? '') ||
         _ageController.text != (widget.profile.age?.toString() ?? '') ||
-        _gender != widget.profile.gender ||
+        _pronounsController.text != (widget.profile.pronouns ?? '') ||
         _bioController.text != (widget.profile.description ?? '');
 
     if (hasChanges) {
@@ -207,7 +213,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   ],
                                   validator: ProfileValidators.validateAge,
                                 ),
-                                _genderField(),
+                                  _editableField(
+                                    label: 'Pronouns',
+                                    controller: _pronounsController,
+                                    hint: 'Optional',
+                                    maxLength: 30,
+                                    textCapitalization: TextCapitalization.none,
+                                  ),
                               ),
                               const SizedBox(height: 48),
 
@@ -346,6 +358,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     int maxLines = 1,
     int? maxLength,
     ValueChanged<String>? onChanged,
+    TextCapitalization? textCapitalization, // Add this
   }) {
     return TextFormField(
       controller: controller,
@@ -355,34 +368,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
       maxLines: maxLines,
       maxLength: maxLength,
       onChanged: onChanged,
-      textCapitalization: maxLines > 1
-          ? TextCapitalization.sentences
-          : TextCapitalization.words,
-      decoration: _decoration(label: label, hint: hint, helperText: helperText),
-    );
-  }
-
-  Widget _genderField() {
-    const genders = [
-      'Female',
-      'Male',
-      'Non-binary',
-      'Other',
-      'Prefer not to say',
-    ];
-
-    return DropdownButtonFormField<String>(
-      initialValue: _gender,
-      isExpanded: true,
-      decoration: _decoration(label: 'Gender', borderRadius: 12),
-      hint: const Text('Select gender'),
-      items: genders.map((gender) {
-        return DropdownMenuItem(
-          value: gender,
-          child: Text(gender, overflow: TextOverflow.ellipsis),
-        );
-      }).toList(),
-      onChanged: (value) => setState(() => _gender = value),
+      textCapitalization: textCapitalization ??
+          (maxLines > 1
+              ? TextCapitalization.sentences
+              : TextCapitalization.words),
+      decoration: _decoration(
+        label: label,
+        hint: hint,
+        helperText: helperText,
+      ),
     );
   }
 

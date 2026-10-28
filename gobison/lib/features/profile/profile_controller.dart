@@ -17,7 +17,7 @@ class ProfileController extends ChangeNotifier {
     required String firstName,
     required String lastName,
     required String age,
-    required String? gender,
+    required String pronouns,
     required String description,
   }) async {
     if (isLoading) return;
@@ -32,13 +32,14 @@ class ProfileController extends ChangeNotifier {
       final trimmedFirstName = firstName.trim();
       final trimmedLastName = lastName.trim();
       final trimmedDescription = description.trim();
+      final trimmedPronouns = pronouns.trim();
 
       final editedProfile = UserProfile(
         userId: currentProfile.userId,
         firstName: trimmedFirstName,
         lastName: trimmedLastName.isEmpty ? null : trimmedLastName,
         age: ageText.isEmpty ? null : int.parse(ageText),
-        gender: gender,
+        pronouns: trimmedPronouns,
         description: trimmedDescription.isEmpty ? null : trimmedDescription,
       );
 
@@ -56,8 +57,8 @@ class ProfileController extends ChangeNotifier {
         changes['age'] = editedProfile.age;
       }
 
-      if (editedProfile.gender != currentProfile.gender) {
-        changes['gender'] = editedProfile.gender;
+      if (editedProfile.pronouns != currentProfile.pronouns) {
+        changes['pronouns'] = editedProfile.pronouns;
       }
 
       if (editedProfile.description != currentProfile.description) {

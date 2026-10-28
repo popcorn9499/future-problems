@@ -125,7 +125,7 @@ Handles displaying and editing the authenticated user's profile information.
 
 #### Edit Profile
 
-- Allows users to update their first name, last name, age, gender, and description.
+- Allows users to update their first name, last name, age, pronouns, and description.
 - Validates profile input before submitting changes.
 - Sends updates to the backend using the profile API.
 - Submits only fields that have changed.

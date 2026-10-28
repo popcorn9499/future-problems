@@ -67,8 +67,8 @@ class DisplayProfilePage extends StatelessWidget {
           if (profile.age != null)
             _section(context, 'Age', profile.age.toString()),
 
-          if (_hasText(profile.gender))
-            _section(context, 'Gender', profile.gender!),
+          if (_hasText(profile.pronouns))
+            _section(context, 'Pronouns', profile.pronouns!),
         ],
       ),
     );

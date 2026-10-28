@@ -18,7 +18,7 @@ void main() {
     firstName: 'Rebekah',
     lastName: 'Soneye',
     age: 22,
-    gender: 'Female',
+    pronouns: 'She/her',
     description: 'I enjoy building software.',
   );
 
@@ -50,8 +50,8 @@ void main() {
       expect(find.text('I enjoy building software.'), findsOneWidget);
       expect(find.text('Age'), findsOneWidget);
       expect(find.text('22'), findsOneWidget);
-      expect(find.text('Gender'), findsOneWidget);
-      expect(find.text('Female'), findsOneWidget);
+      expect(find.text('Pronouns'), findsOneWidget);
+      expect(find.text('She/her'), findsOneWidget);
     });
 
     testWidgets('shows Edit Profile for the current user', (
@@ -97,7 +97,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: null,
         age: null,
-        gender: null,
+        pronouns: null,
         description: null,
       );
 
@@ -108,11 +108,11 @@ void main() {
       expect(find.text('Rebekah'), findsOneWidget);
       expect(find.text('About Me'), findsNothing);
       expect(find.text('Age'), findsNothing);
-      expect(find.text('Gender'), findsNothing);
+      expect(find.text('Pronouns'), findsNothing);
       expect(find.text('Edit Profile'), findsOneWidget);
     });
 
-    testWidgets('hides blank description and gender', (
+    testWidgets('hides blank description and pronouns', (
       WidgetTester tester,
     ) async {
       final profileWithBlankDetails = UserProfile(
@@ -120,7 +120,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: 'Soneye',
         age: null,
-        gender: '   ',
+        pronouns: '   ',
         description: '   ',
       );
 
@@ -129,7 +129,7 @@ void main() {
       );
 
       expect(find.text('About Me'), findsNothing);
-      expect(find.text('Gender'), findsNothing);
+      expect(find.text('Pronouns'), findsNothing);
       expect(find.text('Age'), findsNothing);
     });
 
@@ -141,7 +141,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: null,
         age: 22,
-        gender: 'Female',
+        pronouns: 'She/her',
         description: null,
       );
 

@@ -22,7 +22,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: 'Soneye',
         age: 22,
-        gender: "Female",
+        pronouns: "She/her",
         description: "I love driving.",
       );
     });

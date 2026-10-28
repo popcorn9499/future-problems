@@ -21,7 +21,7 @@ void main() {
       firstName: 'Rebekah',
       lastName: 'Soneye',
       age: 22,
-      gender: 'Female',
+      pronouns: 'She/her',
       description: 'I enjoy meeting new people.',
     );
   });
@@ -51,7 +51,7 @@ void main() {
     expect(find.text('First Name'), findsOneWidget);
     expect(find.text('Last Name'), findsOneWidget);
     expect(find.text('Age'), findsOneWidget);
-    expect(find.text('Gender'), findsOneWidget);
+    expect(find.text('She/her'), findsOneWidget);
     expect(find.text('About Me'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Save Changes'), findsOneWidget);
@@ -65,12 +65,11 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'Rebekah'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Soneye'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, '22'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'She/her'), findsOneWidget);
     expect(
       find.widgetWithText(TextFormField, 'I enjoy meeting new people.'),
       findsOneWidget,
     );
-
-    expect(find.text('Female'), findsOneWidget);
   });
 
   testWidgets('shows optional fields as empty when profile values are null', (
@@ -81,14 +80,18 @@ void main() {
       firstName: 'Rebekah',
       lastName: null,
       age: null,
-      gender: null,
+      pronouns: null,
       description: null,
     );
 
     await tester.pumpWidget(createTestWidget(profile: profile));
 
     expect(find.text('Rebekah'), findsOneWidget);
-    expect(find.text('Select gender'), findsOneWidget);
+
+    final pronounsField = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Pronouns'),
+    );
+    expect(pronounsField.controller!.text, isEmpty);
 
     final ageField = tester.widget<TextFormField>(
       find.widgetWithText(TextFormField, 'Age'),
@@ -170,21 +173,6 @@ void main() {
 
     expect(find.text('Enter an age between 18 and 100'), findsNothing);
     expect(find.text('Please enter your first name'), findsNothing);
-  });
-
-  testWidgets('allows selecting a different gender', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(createTestWidget());
-
-    await tester.ensureVisible(find.text('Female'));
-    await tester.tap(find.text('Female'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Male').last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Male'), findsOneWidget);
   });
 
   testWidgets('cancel returns to previous page when there are no changes', (

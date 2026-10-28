@@ -25,7 +25,7 @@ void main() {
                 'firstName': 'Rebekah',
                 'lastName': 'Soneye',
                 'age': 22,
-                'gender': 'Female',
+                'pronouns': 'She/her',
                 'description': 'Updated description',
               }),
               200,
@@ -59,7 +59,7 @@ void main() {
           expect(result.firstName, 'Rebekah');
           expect(result.lastName, 'Soneye');
           expect(result.age, 22);
-          expect(result.gender, 'Female');
+          expect(result.pronouns, 'She/her');
           expect(result.description, 'Updated description');
         },
       );

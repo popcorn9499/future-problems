@@ -35,7 +35,7 @@ void main() {
       firstName: 'Rebekah',
       lastName: 'Soneye',
       age: 22,
-      gender: 'Female',
+      pronouns: 'She/her',
       description: 'Hello world',
     );
 
@@ -60,7 +60,7 @@ void main() {
         firstName: 'Rebecca',
         lastName: 'Soneye',
         age: 22,
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -76,7 +76,7 @@ void main() {
         firstName: 'Rebecca',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -99,7 +99,7 @@ void main() {
           firstName: 'Rebekah',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Updated description',
         );
       };
@@ -109,7 +109,7 @@ void main() {
         firstName: ' Rebekah ',
         lastName: ' Soneye ',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: ' Updated description ',
       );
 
@@ -129,7 +129,7 @@ void main() {
           firstName: 'Rebekah',
           lastName: null,
           age: null,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: null,
         );
       };
@@ -139,7 +139,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: ' ',
         age: ' ',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: ' ',
       );
 
@@ -160,7 +160,7 @@ void main() {
         firstName: ' Rebekah ',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -180,7 +180,7 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -201,7 +201,7 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -222,7 +222,7 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -243,7 +243,7 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -266,7 +266,7 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -278,7 +278,7 @@ void main() {
           firstName: 'Updated',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Hello world',
         ),
       );
@@ -302,7 +302,7 @@ void main() {
           firstName: 'Updated',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Hello world',
         );
       };
@@ -312,7 +312,7 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -333,7 +333,7 @@ void main() {
         firstName: 'First',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -342,7 +342,7 @@ void main() {
         firstName: 'Second',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
       );
 
@@ -354,7 +354,7 @@ void main() {
           firstName: 'First',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Hello world',
         ),
       );

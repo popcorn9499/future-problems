@@ -3,7 +3,7 @@ class UserProfile {
   final String firstName;
   final String? lastName;
   final int? age;
-  final String? gender;
+  final String? pronouns;
   final String? description;
 
   const UserProfile({
@@ -11,7 +11,7 @@ class UserProfile {
     required this.firstName,
     this.lastName,
     this.age,
-    this.gender,
+    this.pronouns,
     this.description,
   });
 
@@ -21,7 +21,7 @@ class UserProfile {
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
       age: json['age'] as int?,
-      gender: json['gender'] as String?,
+      pronouns: json['pronouns'] as String?,
       description: json['description'] as String?,
     );
   }
