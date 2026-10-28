@@ -5,6 +5,7 @@ import '../../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/avatar_color_option.dart';
 import '../profile_validators.dart';
 import '../profile_controller.dart';
 import '../profile_service.dart';
@@ -31,6 +32,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
 
   late final ProfileController _profileController;
+
+  late Color _selectedAvatarColor;
+  late Color _selectedAvatarTextColor;
 
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
@@ -62,6 +66,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _pronounsController = TextEditingController(
       text: widget.profile.pronouns ?? '',
     );
+
+    _selectedAvatarColor = hexToColor(widget.profile.avatarColor);
+
+    final matchingOption = AvatarColorOption.options.where(
+      (option) => option.background == _selectedAvatarColor,
+    );
+
+    _selectedAvatarTextColor = matchingOption.isNotEmpty
+        ? matchingOption.first.text
+        : const Color(0xFF5D4037);
+
+  }
+
+  Color hexToColor(String hex) {
+    final value = hex.replaceFirst('#', '');
+    return Color(int.parse('FF$value', radix: 16));
+  }
+
+  String colorToHex(Color color) {
+    return '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
   }
 
   void _onControllerChanged() {
@@ -99,6 +123,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       age: _ageController.text,
       pronouns: _pronounsController.text,
       description: _bioController.text,
+      avatarColor: colorToHex(_selectedAvatarColor),
     );
 
     if (!mounted) return;
@@ -120,7 +145,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         _lastNameController.text != (widget.profile.lastName ?? '') ||
         _ageController.text != (widget.profile.age?.toString() ?? '') ||
         _pronounsController.text != (widget.profile.pronouns ?? '') ||
+        colorToHex(_selectedAvatarColor) != widget.profile.avatarColor ||
         _bioController.text != (widget.profile.description ?? '');
+        
 
     if (hasChanges) {
       final discard = await showDialog<bool>(
@@ -228,6 +255,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 maxLines: 2,
                                 maxLength: 100,
                               ),
+                              const SizedBox(height: 32),
+                              _buildAvatarColorPicker(),
+
                               const SizedBox(height: 48),
                               _buildBottomActions(),
                             ],
@@ -252,6 +282,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           firstName: widget.user.firstName,
           lastName: widget.user.lastName,
           radius: 32,
+          backgroundColor: _selectedAvatarColor,
+          textColor: _selectedAvatarTextColor,
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -404,6 +436,78 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
   }
+
+ 
+  
+  Widget _buildAvatarColorPicker() {
+    final colors = AvatarColorOption.options;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Avatar Color',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Choose a colour for your profile avatar.',
+          style: TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Wrap (
+          alignment: WrapAlignment.start,
+          spacing: 12,
+          runSpacing: 12,
+          children: colors.map((option) {
+              final isSelected =
+                  _selectedAvatarColor == option.background;
+
+              return Tooltip(
+                message: option.name,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedAvatarColor = option.background;
+                      _selectedAvatarTextColor = option.text;
+                    });
+                  },
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 41,
+                    height: 41,
+                    decoration: BoxDecoration(
+                      color: option.background,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : Colors.transparent,
+                        width: 3,
+                      ),
+                    ),
+                    child: isSelected
+                        ? Icon(
+                            Icons.check,
+                            color: option.text,
+                          )
+                        : null,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+
 
   Widget _buildBottomActions() {
     return Center(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/widgets/user_avatar.dart';
+import '../../../core/theme/avatar_color_option.dart';
 
 class DisplayProfilePage extends StatelessWidget {
   const DisplayProfilePage({
@@ -34,6 +35,8 @@ class DisplayProfilePage extends StatelessWidget {
               firstName: user.firstName,
               lastName: user.lastName,
               radius: 50,
+              backgroundColor: AvatarColorOption.getBackgroundColor(profile.avatarColor,),
+              textColor: AvatarColorOption.getTextColor(profile.avatarColor,),
             ),
           ),
 

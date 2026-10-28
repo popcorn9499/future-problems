@@ -27,6 +27,7 @@ void main() {
                 'age': 22,
                 'pronouns': 'She/her',
                 'description': 'Updated description',
+                'avatarColor': '#E9DFD2',
               }),
               200,
             );
@@ -61,6 +62,7 @@ void main() {
           expect(result.age, 22);
           expect(result.pronouns, 'She/her');
           expect(result.description, 'Updated description');
+          expect(result.avatarColor, '#E9DFD2');
         },
       );
 

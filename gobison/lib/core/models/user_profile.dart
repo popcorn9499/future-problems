@@ -5,6 +5,7 @@ class UserProfile {
   final int? age;
   final String? pronouns;
   final String? description;
+  final String avatarColor;
 
   const UserProfile({
     required this.userId,
@@ -13,6 +14,7 @@ class UserProfile {
     this.age,
     this.pronouns,
     this.description,
+    this.avatarColor = '#E9DFD2',
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class UserProfile {
       age: json['age'] as int?,
       pronouns: json['pronouns'] as String?,
       description: json['description'] as String?,
+      avatarColor: json['avatarColor'] as String? ?? '#E9DFD2',
     );
   }
 }

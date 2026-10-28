@@ -37,6 +37,7 @@ void main() {
       age: 22,
       pronouns: 'She/her',
       description: 'Hello world',
+      avatarColor: '#E9DFD2',
     );
 
     setUp(() {
@@ -62,6 +63,7 @@ void main() {
         age: 22,
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       Map<String, dynamic>? receivedChanges;
@@ -78,6 +80,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(controller.updatedProfile, same(updatedProfile));
@@ -101,6 +104,7 @@ void main() {
           age: 22,
           pronouns: 'She/her',
           description: 'Updated description',
+          avatarColor: '#E9DFD2',
         );
       };
 
@@ -111,6 +115,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: ' Updated description ',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -141,6 +146,7 @@ void main() {
         age: ' ',
         pronouns: 'She/her',
         description: ' ',
+        avatarColor: '#E9DFD2',
       );
 
       expect(controller.errorMessage, isNull);
@@ -162,6 +168,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(serviceCalled, isFalse);
@@ -182,6 +189,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -203,6 +211,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -224,6 +233,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -245,6 +255,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -268,6 +279,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(controller.isLoading, isTrue);
@@ -280,6 +292,7 @@ void main() {
           age: 22,
           pronouns: 'She/her',
           description: 'Hello world',
+          avatarColor: '#E9DFD2',
         ),
       );
 
@@ -314,6 +327,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(notificationCount, 2);
@@ -335,6 +349,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       await controller.saveProfile(
@@ -344,6 +359,7 @@ void main() {
         age: '22',
         pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(serviceCallCount, 1);
@@ -356,6 +372,7 @@ void main() {
           age: 22,
           pronouns: 'She/her',
           description: 'Hello world',
+          avatarColor: '#E9DFD2',
         ),
       );
 

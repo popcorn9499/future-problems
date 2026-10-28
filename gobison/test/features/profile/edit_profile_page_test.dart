@@ -40,6 +40,14 @@ void main() {
     );
   }
 
+  void setUpTestViewport(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1000, 1200);
+    tester.view.devicePixelRatio = 1.0;
+
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
   testWidgets('displays the edit profile page and form fields', (
     WidgetTester tester,
   ) async {
@@ -107,6 +115,7 @@ void main() {
   testWidgets('shows validation error when first name is empty', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
@@ -178,6 +187,7 @@ void main() {
   testWidgets('cancel returns to previous page when there are no changes', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -211,9 +221,12 @@ void main() {
     expect(find.text('Edit Profile'), findsNothing);
   });
 
-  testWidgets('cancel prompts before discarding unsaved changes', (
+ 
+ testWidgets('cancel prompts before discarding unsaved changes', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
+
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
@@ -236,20 +249,18 @@ void main() {
     expect(find.text('Discard'), findsOneWidget);
   });
 
+
   testWidgets('keep editing closes the discard dialog without leaving page', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
+
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'First Name'),
-      'Changed Name',
-    );
+      find.widgetWithText(TextFormField, 'First Name'), 'Changed Name',);
 
-    final cancelButton = find.text('Cancel');
-    await tester.ensureVisible(cancelButton);
-    await tester.pumpAndSettle();
-    await tester.tap(cancelButton);
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Keep Editing'));
@@ -263,6 +274,7 @@ void main() {
   testWidgets('discard closes the page after confirmation', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -302,5 +314,31 @@ void main() {
 
     expect(find.text('Open Edit Profile'), findsOneWidget);
     expect(find.text('Edit Profile'), findsNothing);
+  });
+
+ testWidgets('displays avatar colour options and allows selection', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createTestWidget());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Avatar Color'), findsOneWidget);
+    expect(find.byTooltip('Pastel Pink'), findsOneWidget);
+    expect(find.byTooltip('Default'), findsOneWidget);
+
+    final pastelPinkFinder = find.byTooltip('Pastel Pink');
+
+    await tester.ensureVisible(pastelPinkFinder);
+    await tester.pumpAndSettle();
+
+    await tester.tap(pastelPinkFinder);
+    await tester.pumpAndSettle();
+
+    final selectedSwatch = find.descendant(
+      of: pastelPinkFinder,
+      matching: find.byIcon(Icons.check),
+    );
+
+    expect(selectedSwatch, findsOneWidget);
   });
 }

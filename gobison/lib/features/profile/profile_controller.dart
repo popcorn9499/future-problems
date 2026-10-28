@@ -19,6 +19,7 @@ class ProfileController extends ChangeNotifier {
     required String age,
     required String pronouns,
     required String description,
+    required String avatarColor,
   }) async {
     if (isLoading) return;
 
@@ -39,8 +40,9 @@ class ProfileController extends ChangeNotifier {
         firstName: trimmedFirstName,
         lastName: trimmedLastName.isEmpty ? null : trimmedLastName,
         age: ageText.isEmpty ? null : int.parse(ageText),
-        pronouns: trimmedPronouns,
+        pronouns: trimmedPronouns.isEmpty ? null : trimmedPronouns,
         description: trimmedDescription.isEmpty ? null : trimmedDescription,
+        avatarColor: avatarColor
       );
 
       final changes = <String, dynamic>{};
@@ -63,6 +65,10 @@ class ProfileController extends ChangeNotifier {
 
       if (editedProfile.description != currentProfile.description) {
         changes['description'] = editedProfile.description;
+      }
+
+      if (editedProfile.avatarColor != currentProfile.avatarColor) {
+        changes['avatarColor'] = editedProfile.avatarColor;
       }
 
       if (changes.isEmpty) {
