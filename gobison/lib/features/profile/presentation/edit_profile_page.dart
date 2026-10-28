@@ -97,9 +97,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
       age: _ageController.text,
-      pronouns: _pronounsController.text.trim().isEmpty
-        ? null
-        : _pronounsController.text.trim(),
+      pronouns: _pronounsController.text,
       description: _bioController.text,
     );
 
