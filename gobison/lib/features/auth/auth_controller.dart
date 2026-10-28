@@ -90,9 +90,7 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print("test1");
       final responseData = await _authService.verifyEmail(code: code);
-      print(responseData);
       final isVerified = responseData['universityVerified'];
       await SessionService.setVerification(isVerified: isVerified);
     } catch (e) {

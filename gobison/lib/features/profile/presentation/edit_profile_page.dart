@@ -382,7 +382,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required String label,
     String? hint,
     String? helperText,
-    double borderRadius = 12,
   }) {
     return InputDecoration(
       labelText: label,
