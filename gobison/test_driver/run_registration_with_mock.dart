@@ -15,8 +15,14 @@ Future<void> main(List<String> args) async {
 
   server.listen((request) async {
     final response = request.response;
+    final origin = request.headers.value('Origin');
 
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    if (origin != null) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+      response.headers.set('Access-Control-Allow-Credentials', 'true');
+      response.headers.set('Vary', 'Origin');
+    }
+
     response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     response.headers.set(
       'Access-Control-Allow-Headers',
@@ -30,7 +36,40 @@ Future<void> main(List<String> args) async {
       return;
     }
 
-    if (request.method == 'POST' &&
+    if (request.method == 'POST' && request.uri.path == '/api/v1/auth/login') {
+      try {
+        final body = await utf8.decoder.bind(request).join();
+        final data = jsonDecode(body) as Map<String, dynamic>;
+
+        if (data['email'] == 'integrationtest@myumanitoba.ca' &&
+            data['password'] == 'TestPass123') {
+          response.cookies.add(
+            Cookie('JSESSIONID', 'integration-test-session')
+              ..httpOnly = true
+              ..path = '/',
+          );
+
+          response.statusCode = HttpStatus.ok;
+          response.write(
+            jsonEncode({
+              'user': {
+                'userId': 'integration-user',
+                'firstName': 'Test',
+                'lastName': 'User',
+                'email': 'integrationtest@myumanitoba.ca',
+                'verified': false,
+              },
+            }),
+          );
+        } else {
+          response.statusCode = HttpStatus.unauthorized;
+          response.write(jsonEncode({'message': 'Invalid credentials'}));
+        }
+      } catch (_) {
+        response.statusCode = HttpStatus.badRequest;
+        response.write(jsonEncode({'message': 'Invalid request'}));
+      }
+    } else if (request.method == 'POST' &&
         request.uri.path == '/api/v1/auth/register') {
       try {
         final body = await utf8.decoder.bind(request).join();
@@ -50,8 +89,13 @@ Future<void> main(List<String> args) async {
         final data = jsonDecode(body) as Map<String, dynamic>;
         final code = data['code'];
 
-        if (request.headers.value('Authorization') !=
-            'Bearer integration-test-token') {
+        final hasSessionCookie = request.cookies.any(
+          (cookie) =>
+              cookie.name == 'JSESSIONID' &&
+              cookie.value == 'integration-test-session',
+        );
+
+        if (!hasSessionCookie) {
           response.statusCode = HttpStatus.unauthorized;
           response.write(jsonEncode({'message': 'Invalid authentication'}));
         } else if (code is! String || !RegExp(r'^[0-9]{6}$').hasMatch(code)) {

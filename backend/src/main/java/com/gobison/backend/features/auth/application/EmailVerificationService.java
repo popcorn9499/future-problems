@@ -44,7 +44,11 @@ public class EmailVerificationService {
         String storedEmail = user.getEmail();
         if (storedEmail == null || storedEmail.length() > 254
                 || !EMAIL.matcher(storedEmail).matches()) {
-            throw new IllegalArgumentException("The stored email is malformed.");
+            if (storedEmail != null) {
+                throw new IllegalArgumentException("The stored email is malformed. " + storedEmail + "email matches " + EMAIL.matcher(storedEmail).matches());
+            } else {
+                throw new IllegalArgumentException("The stored email is malformed. null");
+            }
         }
 
         String code = String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000));

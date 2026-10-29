@@ -4,13 +4,22 @@ import 'package:integration_test/integration_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/models/user_profile.dart';
 import 'package:gobison/core/services/session_service.dart';
+import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/features/home/presentation/home_page.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(SessionService.clearSession);
+  setUp(() async {
+    await SessionService.clearSession();
+
+    await AuthService().login(
+      email: 'integrationtest@myumanitoba.ca',
+      password: 'TestPass123',
+    );
+  });
+
   tearDown(SessionService.clearSession);
 
   testWidgets('Incorrect verification code shows an error', (tester) async {
@@ -28,11 +37,7 @@ void main() {
       lastName: 'User',
     );
 
-    await SessionService.saveSession(
-      accessToken: 'integration-test-token',
-      user: user,
-      profile: profile,
-    );
+    await SessionService.saveSession(user: user, profile: profile);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -103,11 +108,7 @@ void main() {
       lastName: 'User',
     );
 
-    await SessionService.saveSession(
-      accessToken: 'integration-test-token',
-      user: user,
-      profile: profile,
-    );
+    await SessionService.saveSession(user: user, profile: profile);
 
     await tester.pumpWidget(
       const MaterialApp(
