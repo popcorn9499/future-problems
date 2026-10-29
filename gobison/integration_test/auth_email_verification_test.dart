@@ -18,6 +18,8 @@ void main() {
       email: 'integrationtest@myumanitoba.ca',
       password: 'TestPass123',
     );
+    final user = await AuthService().currentUser();
+    expect(user!['verified'], isFalse);
   });
 
   tearDown(SessionService.clearSession);
@@ -89,6 +91,7 @@ void main() {
     expect(find.byType(VerificationPage), findsOneWidget);
     expect(find.byType(HomePage), findsNothing);
 
+    expect(SessionService.cachedSession!.user.verified, isFalse);
     final session = await SessionService().loadCurrentSession();
     expect(session?.user.verified, isFalse);
   });
@@ -147,6 +150,7 @@ void main() {
     expect(find.byType(VerificationPage), findsNothing);
     expect(find.text('Your next ride starts here.'), findsOneWidget);
 
+    expect(SessionService.cachedSession!.user.verified, isTrue);
     final session = await SessionService().loadCurrentSession();
     expect(session?.user.id, user.id);
     expect(session?.user.verified, isTrue);
