@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/network/api_config.dart';
+import '../../core/network/auth_client.dart';
 import '../../core/models/user_profile.dart';
 
 class ProfileService {
-  ProfileService({http.Client? client}) : _client = client ?? http.Client();
+  ProfileService({http.Client? client}) : _client = client ?? createAuthClient();
 
   final http.Client _client;
 

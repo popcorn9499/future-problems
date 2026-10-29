@@ -69,6 +69,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorize -> authorize
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/verify-email").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me/profile").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/profile").authenticated()

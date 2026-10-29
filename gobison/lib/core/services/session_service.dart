@@ -1,3 +1,4 @@
+import '../../features/auth/auth_service.dart';
 import '../models/user.dart';
 import '../models/user_profile.dart';
 
@@ -14,6 +15,9 @@ class SessionData {
 }
 
 class SessionService {
+  SessionService({AuthService? authService}) : _authService = authService ?? AuthService();
+
+  final AuthService _authService;
   static String? _accessToken;
   static User? _currentUser;
   static UserProfile? _currentProfile;
@@ -25,7 +29,7 @@ class SessionService {
   static User? _mockUser;
   static UserProfile? _mockProfile;
 
-  /// Loads the current session dynamically (from mock state or local storage)
+  /// Loads the current session from mock state or the authenticated backend.
   Future<SessionData?> loadCurrentSession() async {
     if (useMock) {
       // Simulate slight network lag
@@ -55,8 +59,20 @@ class SessionService {
         profile: _mockProfile!,
       );
     } else {
-      final user = _currentUser;
-      if (user == null) return null;
+      final data = await _authService.currentUser();
+      if (data == null) {
+        await clearSession();
+        return null;
+      }
+      final user = User(
+        id: data['userId'] as String,
+        firstName: data['firstName'] as String,
+        lastName: data['lastName'] as String?,
+        email: data['email'] as String,
+        verified: data['verified'] as bool,
+      );
+      if (_currentUser?.id != user.id) _currentProfile = null;
+      _currentUser = user;
       _currentProfile ??= UserProfile(
         userId: user.id,
         firstName: user.firstName,
@@ -67,6 +83,21 @@ class SessionService {
   }
 
   static String? get accessToken => _accessToken;
+
+  /// The cached session, without refreshing it from the backend.
+  static SessionData? get cachedSession {
+    final user = _currentUser;
+    if (user == null) return null;
+    return SessionData(
+      accessToken: _accessToken,
+      user: user,
+      profile: _currentProfile ?? UserProfile(
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      ),
+    );
+  }
 
   static Future<void> saveSession({
     String? accessToken,
@@ -104,3 +135,5 @@ class SessionService {
     SessionService.saveUser(user: tempUser);
   }
 }
+
+

@@ -69,6 +69,17 @@ class AuthService {
     );
   }
 
+  Future<Map<String, dynamic>?> currentUser() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me');
+    final response = await _client.get(uri, headers: {'Accept': 'application/json'});
+    if (response.statusCode == 401) {
+      return null;
+    }
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('Session lookup failed (${response.statusCode}): ${response.body}');
+  }
   Future<Map<String, dynamic>> verifyEmail({required String code}) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/verify-email');
 
