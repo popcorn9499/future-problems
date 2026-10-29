@@ -31,8 +31,8 @@ public class LoginController {
     }
 
     public record LoginRequest(@NotBlank String email, @NotBlank String password) {}
-    public record LoginUser(String userId, String firstName, String lastName, String email, boolean verified) {}
-    public record LoginResponse(LoginUser user) {}
+
+    public record LoginResponse(AuthUserResponse user) {}
 
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest credentials,
@@ -44,7 +44,6 @@ public class LoginController {
             verification.sendVerificationCode(user.getEmail());
         }
         sessions.establishSession(user.getEmail(), request, response);
-        return new LoginResponse(new LoginUser(user.getEmail(), user.getFirstName(),
-                user.getLastName(), user.getEmail(), user.isVerified()));
+        return new LoginResponse(AuthUserResponse.from(user));
     }
 }

@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:gobison/main.dart' as app;
+
+import 'support/registration_setup.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('App opens the registration page', (tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+  testWidgets('Signed-out app opens login and can navigate to registration', (
+    tester,
+  ) async {
+    await openRegistration(tester);
 
     expect(find.text('Join GoBison'), findsOneWidget);
     expect(find.text('Create Account'), findsOneWidget);
   });
 
   testWidgets('Empty registration form shows required errors', (tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+    await openRegistration(tester);
 
     final createAccountButton = find.widgetWithText(
       ElevatedButton,
@@ -45,8 +46,7 @@ void main() {
   });
 
   testWidgets('Registration rejects a full email address', (tester) async {
-    app.main();
-    await tester.pumpAndSettle();
+    await openRegistration(tester);
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Enter your first name'),
@@ -88,8 +88,7 @@ void main() {
 
   for (final entry in invalidPasswords.entries) {
     testWidgets('Registration rejects password: ${entry.key}', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await openRegistration(tester);
 
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Enter your first name'),
