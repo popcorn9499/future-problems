@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'features/auth/presentation/register_page.dart';
 import 'features/auth/presentation/login_page.dart';
+import 'features/auth/presentation/session_gate.dart';
 
 void main() {
   runApp(const GoBisonApp());
@@ -20,7 +21,7 @@ class GoBisonApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      home: const RegisterPage(),
+      home: const SessionGate(),
       routes: {
         '/register': (_) => const RegisterPage(),
         '/login': (_) => const LoginPage(),

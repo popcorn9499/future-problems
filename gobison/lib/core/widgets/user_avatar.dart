@@ -20,21 +20,22 @@ class UserAvatar extends StatelessWidget {
 
   String get _initials {
     final first = firstName.trim();
-    final last = lastName != null ? lastName?.trim() : '';
+    final last = lastName?.trim() ?? '';
 
     return [
       if (first.isNotEmpty) first[0],
-      if (last!.isNotEmpty) last[0],
+      if (last.isNotEmpty) last[0],
     ].join().toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
     final initials = _initials;
+    final last = lastName?.trim() ?? '';
 
     return Semantics(
       button: onTap != null,
-      label: '${lastName!.isNotEmpty ? lastName : firstName} profile',
+      label: '${last.isNotEmpty ? last : firstName} profile',
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
