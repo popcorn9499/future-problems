@@ -22,4 +22,18 @@ class ProfileValidators {
 
     return null;
   }
+
+  static String? validatePronouns(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    final pronouns = value.trim();
+
+    if (!RegExp(r'^[a-zA-Z\s/\\]+$').hasMatch(pronouns)) {
+      return 'Pronouns can only contain letters, spaces, / or \\';
+    }
+
+    return null;
+  }
 }

@@ -244,6 +244,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     hint: 'Optional',
                                     maxLength: 30,
                                     textCapitalization: TextCapitalization.none,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'[a-zA-Z\s/\\]'),
+                                      ),
+                                    ],
+                                    validator: ProfileValidators.validatePronouns,
                                   ),
                               ),
                               const SizedBox(height: 48),
@@ -437,8 +443,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
- 
-  
   Widget _buildAvatarColorPicker() {
     final colors = AvatarColorOption.options;
 
@@ -506,8 +510,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ],
     );
   }
-
-
 
   Widget _buildBottomActions() {
     return Center(
