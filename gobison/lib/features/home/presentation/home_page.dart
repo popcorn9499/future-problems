@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -5,6 +6,10 @@ import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/widgets/go_bison_logo.dart';
+
+// Add your ride page imports here.
+import '../../ride_request/presentation/ride_request_page.dart';
+import '../../ride_offer/presentation/ride_offer_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({
@@ -18,6 +23,58 @@ class HomePage extends StatelessWidget {
   final UserProfile profile;
   final VoidCallback onProfileTap;
 
+  Widget _buildRideOption({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            vertical: 28,
+            horizontal: 12,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 76,
+                width: 76,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  icon,
+                  size: 38,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,8 +87,9 @@ class HomePage extends StatelessWidget {
         surfaceTintColor: Colors.transparent,
         title: Row(
           mainAxisSize: MainAxisSize.min,
-
-          children: [const GoBisonLogo(height: 100)],
+          children: [
+            const GoBisonLogo(height: 100),
+          ],
         ),
         actions: [
           Padding(
@@ -56,22 +114,6 @@ class HomePage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border, width: 1),
-                    ),
-                    child: const Icon(
-                      Icons.directions_car_filled_outlined,
-                      size: 58,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
                   const Text(
                     'Your next ride starts here.',
                     textAlign: TextAlign.center,
@@ -82,11 +124,12 @@ class HomePage extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
+
                   const SizedBox(height: 14),
 
                   const Text(
-                    'We’re working on something exciting '
-                    'to make getting to campus easier.',
+                    'Whether you need a ride or have room to offer one, '
+                    'GoBison makes getting to campus easier.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -94,37 +137,45 @@ class HomePage extends StatelessWidget {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 28),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.construction_outlined,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Feature coming soon',
-                          style: TextStyle(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 36),
+
+                  Row(
+                    children: [
+                      _buildRideOption(
+                        context: context,
+                        title: 'Request a Ride',
+                        icon: Icons.person_outline,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const RideRequestPage(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(width: 16),
+
+                      _buildRideOption(
+                        context: context,
+                        title: 'Offer a Ride',
+                        icon: Icons.directions_car_outlined,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const RideOfferPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
+
                   const SizedBox(height: 36),
 
                   OutlinedButton.icon(
@@ -133,7 +184,9 @@ class HomePage extends StatelessWidget {
                     label: const Text('View My Profile'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
+                      side: const BorderSide(
+                        color: AppColors.primary,
+                      ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 22,
                         vertical: 14,

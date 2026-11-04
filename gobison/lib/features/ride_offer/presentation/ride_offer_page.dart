@@ -475,7 +475,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
                             ),
                             _buildTextField(
                               label: 'Street Address',
-                              hint: 'Enter your pickup address',
+                              hint: 'Enter your starting address',
                               controller: _streetAddressController,
                               icon: Icons.location_on_outlined,
                             ),
