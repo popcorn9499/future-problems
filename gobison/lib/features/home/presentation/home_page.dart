@@ -151,7 +151,7 @@ class HomePage extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const RideRequestPage(),
+                                  RideRequestPage(userId: user.id,),
                             ),
                           );
                         },
@@ -168,7 +168,7 @@ class HomePage extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const RideOfferPage(),
+                                  RideOfferPage(userId: user.id),
                             ),
                           );
                         },

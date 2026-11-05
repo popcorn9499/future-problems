@@ -7,7 +7,10 @@ class RideRequestPage extends StatefulWidget {
 
   const RideRequestPage({
     super.key,
+    required this.userId,
   });
+
+  final String userId;
 
   @override
   State<RideRequestPage> createState() =>
@@ -79,7 +82,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
         '${_arrivalTime!.minute.toString().padLeft(2, '0')}';
 
     await _rideRequestController.createRideRequest(
-      userId: "1",
+      userId: widget.userId,
       city: _cityController.text.trim(),
       streetAddress: _streetAddressController.text.trim(),
       arrivalTime: arrivalString,
