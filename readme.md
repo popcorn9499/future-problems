@@ -34,6 +34,6 @@ View the application live at:
 
 [Sprint 1](docs/sprints/sprint1/Sprint1.md)
 
-# Other
+## Other
 
 [Working Agreement](docs/WorkingAgreement.md)
