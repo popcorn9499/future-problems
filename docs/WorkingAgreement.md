@@ -21,11 +21,11 @@
 
 As a team, we agree that our shared goals for this project are:
 
--   Meeting deadlines early (code freezes day of -- barring emergencies)
+- Meeting deadlines early (code freezes day of -- barring emergencies)
 
--   Maintaining low stress
+- Maintaining low stress
 
--   Good communication throughout project
+- Good communication throughout project
 
 *(Examples: learning specific technical skills, producing a high-quality
 final product, maintaining low stress, equal workload, meeting deadlines
@@ -71,18 +71,18 @@ gravitate towards.
 
 **Expected response time:**
 
--   Weekdays: 1 day at most
+- Weekdays: 1 day at most
 
--   Weekends: Within weekend (only for emergencies)
+- Weekends: Within weekend (only for emergencies)
 
--   During critical deadlines: 2 hours
+- During critical deadlines: 2 hours
 
 **When is escalation required?**\
 (e.g., no response after 24--48 hours, missed meeting, blocked progress)
 
--   No response within 48 hours
+- No response within 48 hours
 
--   Missed meeting without notice
+- Missed meeting without notice
 
 **5. Meetings**
 
@@ -99,7 +99,7 @@ gravitate towards.
 
 **What happens if someone cannot attend?**
 
--   They should give notice and then group will send them notes after
+- They should give notice and then group will send them notes after
     meeting
 
 **6. Work Expectations**
@@ -163,10 +163,10 @@ understanding of AI-assisted work:\
 If a team member repeatedly misses deadlines or responsibilities, the
 team will:
 
--   Have a discussion with them and ask if they need some grace for this
+- Have a discussion with them and ask if they need some grace for this
     sprint and pick up the slack next sprint
 
--   Have a more serious discussion and consider bringing the issue to
+- Have a more serious discussion and consider bringing the issue to
     Lauren.
 
 *(Be explicit --- vague answers are not acceptable.)*
