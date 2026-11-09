@@ -35,8 +35,9 @@ void main() {
       firstName: 'Rebekah',
       lastName: 'Soneye',
       age: 22,
-      gender: 'Female',
+      pronouns: 'She/her',
       description: 'Hello world',
+      avatarColor: '#E9DFD2',
     );
 
     setUp(() {
@@ -60,8 +61,9 @@ void main() {
         firstName: 'Rebecca',
         lastName: 'Soneye',
         age: 22,
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       Map<String, dynamic>? receivedChanges;
@@ -76,8 +78,9 @@ void main() {
         firstName: 'Rebecca',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(controller.updatedProfile, same(updatedProfile));
@@ -99,8 +102,9 @@ void main() {
           firstName: 'Rebekah',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Updated description',
+          avatarColor: '#E9DFD2',
         );
       };
 
@@ -109,8 +113,9 @@ void main() {
         firstName: ' Rebekah ',
         lastName: ' Soneye ',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: ' Updated description ',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -129,7 +134,7 @@ void main() {
           firstName: 'Rebekah',
           lastName: null,
           age: null,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: null,
         );
       };
@@ -139,8 +144,9 @@ void main() {
         firstName: 'Rebekah',
         lastName: ' ',
         age: ' ',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: ' ',
+        avatarColor: '#E9DFD2',
       );
 
       expect(controller.errorMessage, isNull);
@@ -160,8 +166,9 @@ void main() {
         firstName: ' Rebekah ',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(serviceCalled, isFalse);
@@ -180,8 +187,9 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -201,8 +209,9 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -222,8 +231,9 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -243,8 +253,9 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(
@@ -266,8 +277,9 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(controller.isLoading, isTrue);
@@ -278,8 +290,9 @@ void main() {
           firstName: 'Updated',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Hello world',
+          avatarColor: '#E9DFD2',
         ),
       );
 
@@ -302,7 +315,7 @@ void main() {
           firstName: 'Updated',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Hello world',
         );
       };
@@ -312,8 +325,9 @@ void main() {
         firstName: 'Updated',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(notificationCount, 2);
@@ -333,8 +347,9 @@ void main() {
         firstName: 'First',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       await controller.saveProfile(
@@ -342,8 +357,9 @@ void main() {
         firstName: 'Second',
         lastName: 'Soneye',
         age: '22',
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'Hello world',
+        avatarColor: '#E9DFD2',
       );
 
       expect(serviceCallCount, 1);
@@ -354,8 +370,9 @@ void main() {
           firstName: 'First',
           lastName: 'Soneye',
           age: 22,
-          gender: 'Female',
+          pronouns: 'She/her',
           description: 'Hello world',
+          avatarColor: '#E9DFD2',
         ),
       );
 

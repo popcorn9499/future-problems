@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/models/user_profile.dart';
 import 'package:gobison/features/profile/presentation/display_profile_page.dart';
+import 'package:gobison/core/widgets/user_avatar.dart';
 
 void main() {
   final user = User(
@@ -18,7 +19,7 @@ void main() {
     firstName: 'Rebekah',
     lastName: 'Soneye',
     age: 22,
-    gender: 'Female',
+    pronouns: 'She/her',
     description: 'I enjoy building software.',
   );
 
@@ -50,8 +51,8 @@ void main() {
       expect(find.text('I enjoy building software.'), findsOneWidget);
       expect(find.text('Age'), findsOneWidget);
       expect(find.text('22'), findsOneWidget);
-      expect(find.text('Gender'), findsOneWidget);
-      expect(find.text('Female'), findsOneWidget);
+      expect(find.text('Pronouns'), findsOneWidget);
+      expect(find.text('She/her'), findsOneWidget);
     });
 
     testWidgets('shows Edit Profile for the current user', (
@@ -97,7 +98,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: null,
         age: null,
-        gender: null,
+        pronouns: null,
         description: null,
       );
 
@@ -108,11 +109,11 @@ void main() {
       expect(find.text('Rebekah'), findsOneWidget);
       expect(find.text('About Me'), findsNothing);
       expect(find.text('Age'), findsNothing);
-      expect(find.text('Gender'), findsNothing);
+      expect(find.text('Pronouns'), findsNothing);
       expect(find.text('Edit Profile'), findsOneWidget);
     });
 
-    testWidgets('hides blank description and gender', (
+    testWidgets('hides blank description and pronouns', (
       WidgetTester tester,
     ) async {
       final profileWithBlankDetails = UserProfile(
@@ -120,7 +121,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: 'Soneye',
         age: null,
-        gender: '   ',
+        pronouns: '   ',
         description: '   ',
       );
 
@@ -129,7 +130,7 @@ void main() {
       );
 
       expect(find.text('About Me'), findsNothing);
-      expect(find.text('Gender'), findsNothing);
+      expect(find.text('Pronouns'), findsNothing);
       expect(find.text('Age'), findsNothing);
     });
 
@@ -141,7 +142,7 @@ void main() {
         firstName: 'Rebekah',
         lastName: null,
         age: 22,
-        gender: 'Female',
+        pronouns: 'She/her',
         description: null,
       );
 
@@ -152,5 +153,51 @@ void main() {
       expect(find.text('Rebekah'), findsOneWidget);
       expect(find.text('Rebekah Soneye'), findsNothing);
     });
+  });
+
+  testWidgets('displays avatar colors based on saved profile color', (
+    WidgetTester tester,
+  ) async {
+    final pinkProfile = UserProfile(
+      userId: '123',
+      firstName: 'Kamryn',
+      lastName: 'Janke',
+      age: 24,
+      pronouns: 'She/her',
+      description: 'I love pink!',
+      avatarColor: '#F8BBD0',
+    );
+
+    await tester.pumpWidget(
+      createTestWidget(testProfile: pinkProfile),
+    );
+
+    final avatarFinder = find.byType(UserAvatar);
+    expect(avatarFinder, findsOneWidget);
+
+    var avatar = tester.widget<UserAvatar>(avatarFinder);
+
+    expect(avatar.backgroundColor, const Color(0xFFF8BBD0));
+    expect(avatar.textColor, const Color(0xFF880E4F));
+
+    // Rebuild with a dark color saved to the profile.
+    final darkPinkProfile = UserProfile(
+      userId: '123',
+      firstName: 'Kamryn',
+      lastName: 'Janke',
+      age: 24,
+      pronouns: 'She/her',
+      description: 'I love pink!',
+      avatarColor: '#C2185B',
+    );
+
+    await tester.pumpWidget(
+      createTestWidget(testProfile: darkPinkProfile),
+    );
+
+    avatar = tester.widget<UserAvatar>(avatarFinder);
+
+    expect(avatar.backgroundColor, const Color(0xFFC2185B));
+    expect(avatar.textColor, Colors.white);
   });
 }
