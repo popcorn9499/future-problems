@@ -20,6 +20,8 @@ class RideRequestController extends ChangeNotifier {
     required List<String> daysOfWeek,
     String? description,
   }) async {
+    if (isLoading) return;
+    
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -27,82 +29,23 @@ class RideRequestController extends ChangeNotifier {
     try {
       createdRideRequest = null;
 
-      final data = await _rideRequestService.createRideRequest(
-        userId: userId,
-        city: city,
-        streetAddress: streetAddress,
-        arrivalTime: arrivalTime,
-        daysOfWeek: daysOfWeek,
-        description: description,
-      );
-
-      createdRideRequest = RideRequest.fromJson(data);
-
-    } catch (e) {
-      errorMessage = e.toString();
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> updateRideRequest({
-    required RideRequest currentRideRequest,
-    required String city,
-    required String streetAddress,
-    required String arrivalTime,
-    required List<String> daysOfWeek,
-    required String description,
-  }) async {
-    if (isLoading) return;
-
-    isLoading = true;
-    errorMessage = null;
-    updatedRideRequest = null;
-    notifyListeners();
-
-    try {
       final trimmedCity = city.trim();
       final trimmedStreetAddress = streetAddress.trim();
-      final trimmedDescription = description.trim();
+      final trimmedDescription = description?.trim();
 
-      final editedRideRequest = RideRequest(
-        userId: currentRideRequest.userId,
+      final data = await _rideRequestService.createRideRequest(
+        userId: userId,
         city: trimmedCity,
         streetAddress: trimmedStreetAddress,
         arrivalTime: arrivalTime,
         daysOfWeek: daysOfWeek,
-        description: trimmedDescription.isEmpty ? null : trimmedDescription,
+        description: trimmedDescription?.isEmpty == true
+          ? null
+          : trimmedDescription,
       );
 
-      final changes = <String, dynamic>{};
+      createdRideRequest = RideRequest.fromJson(data);
 
-      if (editedRideRequest.city != currentRideRequest.city) {
-        changes['city'] = editedRideRequest.city;
-      }
-
-      if (editedRideRequest.streetAddress != currentRideRequest.streetAddress) {
-        changes['streetAddress'] = editedRideRequest.streetAddress;
-      }
-
-      if (editedRideRequest.arrivalTime != currentRideRequest.arrivalTime) {
-        changes['arrivalTime'] = editedRideRequest.arrivalTime;
-      }
-
-      if (editedRideRequest.daysOfWeek != currentRideRequest.daysOfWeek) {
-        changes['daysOfWeek'] = editedRideRequest.daysOfWeek;
-      }
-
-      if (editedRideRequest.description != currentRideRequest.description) {
-        changes['description'] = editedRideRequest.description;
-      }
-
-      if (changes.isEmpty) {
-        updatedRideRequest = currentRideRequest;
-        return;
-      }
-
-      updatedRideRequest = await _rideRequestService.updateRideRequest(changes: changes);
     } catch (e) {
       errorMessage = _handleError(extractErrorCode(e));
     } finally {
@@ -114,7 +57,7 @@ class RideRequestController extends ChangeNotifier {
   String _handleError(int code) {
     switch (code) {
       case 400:
-        return 'Some ride reuqest details are invalid. Please check your entries.';
+        return 'Some ride request details are invalid. Please check your entries.';
       case 401:
         return 'Unable to save your ride request. Please try again.';
       case 500:
