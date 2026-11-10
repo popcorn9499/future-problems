@@ -74,6 +74,20 @@ class LoginControllerTest {
                 .andExpect(jsonPath("$.verified").value(true))
                 .andExpect(jsonPath("$.password").doesNotExist());
     }
+
+    @Test
+    void logoutInvalidatesAuthenticatedSession() throws Exception {
+        // Spring's logout filter also accepts unauthenticated requests and clears any stale cookie.
+        mvc.perform(post("/api/v1/auth/logout")).andExpect(status().isNoContent());
+
+        account(true);
+        var session = loginSession();
+        mvc.perform(post("/api/v1/auth/logout").session(session))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isUnauthorized());
+    }
+
     @Test
     void verifiedLoginSkipsEmail() throws Exception {
         account(true);

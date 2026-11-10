@@ -104,17 +104,60 @@ void main() {
     });
 
     test('current user sends a GET and handles session responses', () async {
-      final service = AuthService(client: MockClient((request) async {
-        expect(request.method, 'GET');
-        expect(request.url, Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'));
-        return http.Response('{"userId":"ada","verified":true}', 200);
-      }));
+      final service = AuthService(
+        client: MockClient((request) async {
+          expect(request.method, 'GET');
+          expect(request.url, Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'));
+          return http.Response('{"userId":"ada","verified":true}', 200);
+        }),
+      );
       expect((await service.currentUser())!['userId'], 'ada');
-      final signedOut = AuthService(client: MockClient((_) async => http.Response('', 401)));
+      final signedOut = AuthService(
+        client: MockClient((_) async => http.Response('', 401)),
+      );
       expect(await signedOut.currentUser(), isNull);
-      final failed = AuthService(client: MockClient((_) async => http.Response('', 500)));
+      final failed = AuthService(
+        client: MockClient((_) async => http.Response('', 500)),
+      );
       expect(failed.currentUser(), throwsException);
     });
+
+    test('logout sends a POST and accepts a no-content response', () async {
+      late http.Request capturedRequest;
+      final service = AuthService(
+        client: MockClient((request) async {
+          capturedRequest = request;
+          return http.Response('', 204);
+        }),
+      );
+
+      await service.logout();
+
+      expect(capturedRequest.method, 'POST');
+      expect(
+        capturedRequest.url,
+        Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/logout'),
+      );
+      expect(capturedRequest.headers['accept'], 'application/json');
+    });
+
+    test('logout throws when the server rejects the request', () async {
+      final service = AuthService(
+        client: MockClient((_) async => http.Response('Unauthorized', 401)),
+      );
+
+      expect(
+        service.logout(),
+        throwsA(
+          isA<Exception>().having(
+            (error) => error.toString(),
+            'message',
+            contains('Logout failed (401)'),
+          ),
+        ),
+      );
+    });
+
     group('login', () {
       test(
         'sends the correct request and returns successful response',
