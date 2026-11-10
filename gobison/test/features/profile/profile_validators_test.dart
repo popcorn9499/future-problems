@@ -95,5 +95,28 @@ void main() {
         );
       });
     });
+
+    group('validatePronouns', () {
+      test('returns error when pronouns contain numbers', () {
+        expect(
+          ProfileValidators.validatePronouns('he/him123'),
+          'Pronouns can only contain letters, spaces, / or \\',
+        );
+      });
+
+      test('returns error when pronouns contain special characters', () {
+        expect(
+          ProfileValidators.validatePronouns('he@him'),
+          'Pronouns can only contain letters, spaces, / or \\',
+        );
+      });
+
+      test('accepts valid pronouns', () {
+        expect(ProfileValidators.validatePronouns('he/him'), null);
+        expect(ProfileValidators.validatePronouns('they/them'), null);
+        expect(ProfileValidators.validatePronouns(r'he\him'), null);
+      });
+    });
+    
   });
 }

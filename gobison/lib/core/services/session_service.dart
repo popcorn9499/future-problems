@@ -45,7 +45,7 @@ class SessionService {
         firstName: 'Rebekah',
         lastName: 'Soneye',
         age: 22,
-        gender: 'Female',
+        pronouns: 'She/her',
         description: 'My car is quite messy, but I\'ll get you to campus safe!',
       );
 

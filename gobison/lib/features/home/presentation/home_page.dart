@@ -6,6 +6,7 @@ import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/widgets/go_bison_logo.dart';
+import '../../../core/theme/avatar_color_option.dart';
 
 // Add your ride page imports here.
 import '../../ride_request/presentation/ride_request_page.dart';
@@ -100,6 +101,8 @@ class HomePage extends StatelessWidget {
                 lastName: user.lastName,
                 radius: 21,
                 onTap: onProfileTap,
+                backgroundColor: AvatarColorOption.getBackgroundColor(profile.avatarColor,),
+                textColor: AvatarColorOption.getTextColor(profile.avatarColor,),
               ),
             ),
           ),
