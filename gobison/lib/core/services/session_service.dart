@@ -1,7 +1,6 @@
 import '../../features/auth/auth_service.dart';
 import '../models/user.dart';
 import '../models/user_profile.dart';
-import '../../features/auth/auth_service.dart';
 
 class SessionData {
   final String? accessToken;
