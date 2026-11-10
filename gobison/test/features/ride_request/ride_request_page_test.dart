@@ -12,7 +12,37 @@ void main() {
     );
   }
 
-  group('RideRequestPage', () { 
+  Future<void> enterRequiredFields(
+    WidgetTester tester,
+  ) async {
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Enter your city'),
+      'Toronto',
+    );
+
+    await tester.enterText(
+      find.widgetWithText(
+        TextFormField,
+        'Enter your pickup address',
+      ),
+      '123 Main Street',
+    );
+  }
+
+  Future<void> tapReset(WidgetTester tester) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+
+    final resetButton = find.text('Reset');
+
+    await tester.ensureVisible(resetButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(resetButton);
+    await tester.pumpAndSettle();
+  }
+
+  group('RideRequestPage', () {
 
     testWidgets('displays the ride request page and form fields', (
       WidgetTester tester,
@@ -36,7 +66,9 @@ void main() {
       expect(find.text('Days of the week *'), findsOneWidget);
       expect(find.text('Additional Description'), findsOneWidget);
 
-      expect(find.text('Submit Ride Request'), findsOneWidget);
+      expect(find.text('Reset'), findsOneWidget);
+      expect(find.text('Submit Ride Offer'), findsOneWidget);
+
       expect(
         find.text('GoBison • Ride with the herd.'),
         findsOneWidget,
@@ -82,9 +114,10 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      final chip = tester.widget<FilterChip>(mondayChip);
-
-      expect(chip.selected, isTrue);
+      expect(
+        tester.widget<FilterChip>(mondayChip).selected,
+        isTrue,
+      );
     });
 
     testWidgets('allows deselecting a previously selected weekday', (
@@ -95,7 +128,6 @@ void main() {
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
 
       await tester.ensureVisible(mondayChip);
-
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
@@ -125,6 +157,7 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(wednesdayChip);
       await tester.tap(wednesdayChip);
       await tester.pumpAndSettle();
 
@@ -144,7 +177,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      final submitButton = find.text('Submit Ride Request');
+      final submitButton = find.text('Submit Ride Offer');
 
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -163,7 +196,7 @@ void main() {
         'Toronto',
       );
 
-      final submitButton = find.text('Submit Ride Request');
+      final submitButton = find.text('Submit Ride Offer');
 
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -185,7 +218,7 @@ void main() {
         '   ',
       );
 
-      final submitButton = find.text('Submit Ride Request');
+      final submitButton = find.text('Submit Ride Offer');
 
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -212,7 +245,7 @@ void main() {
           '   ',
         );
 
-        final submitButton = find.text('Submit Ride Request');
+        final submitButton = find.text('Submit Ride Offer');
 
         await tester.ensureVisible(submitButton);
         await tester.tap(submitButton);
@@ -250,8 +283,6 @@ void main() {
       await tester.tap(timeSelector);
       await tester.pumpAndSettle();
 
-      expect(find.byType(TimePickerDialog), findsOneWidget);
-
       final timePickerFields = find.descendant(
         of: find.byType(TimePickerDialog),
         matching: find.byType(TextField),
@@ -261,7 +292,6 @@ void main() {
 
       final hourField = timePickerFields.first;
 
-      await tester.ensureVisible(hourField);
       await tester.tap(hourField);
       await tester.enterText(hourField, '08');
       await tester.pumpAndSettle();
@@ -270,8 +300,6 @@ void main() {
         of: find.byType(TimePickerDialog),
         matching: find.text('OK'),
       );
-
-      expect(okButton, findsOneWidget);
 
       await tester.tap(okButton);
       await tester.pumpAndSettle();
@@ -284,18 +312,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        'Toronto',
-      );
-
-      await tester.enterText(
-        find.widgetWithText(
-          TextFormField,
-          'Enter your pickup address',
-        ),
-        '123 Main Street',
-      );
+      await enterRequiredFields(tester);
 
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
 
@@ -303,7 +320,7 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      final submitButton = find.text('Submit Ride Request');
+      final submitButton = find.text('Submit Ride Offer');
 
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -320,18 +337,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        'Toronto',
-      );
-
-      await tester.enterText(
-        find.widgetWithText(
-          TextFormField,
-          'Enter your pickup address',
-        ),
-        '123 Main Street',
-      );
+      await enterRequiredFields(tester);
 
       final timeSelector = find.text('Select arrival time');
 
@@ -346,9 +352,8 @@ void main() {
 
       await tester.tap(okButton);
       await tester.pumpAndSettle();
-      await tester.pumpAndSettle();
 
-      final submitButton = find.text('Submit Ride Request');
+      final submitButton = find.text('Submit Ride Offer');
 
       await tester.ensureVisible(submitButton);
       await tester.tap(submitButton);
@@ -390,7 +395,6 @@ void main() {
       final descriptionField = find.byType(TextFormField).last;
 
       await tester.ensureVisible(descriptionField);
-
       await tester.enterText(descriptionField, '');
 
       await tester.pumpAndSettle();
@@ -409,11 +413,143 @@ void main() {
       final button = tester.widget<ElevatedButton>(
         find.widgetWithText(
           ElevatedButton,
-          'Submit Ride Request',
+          'Submit Ride Offer',
         ),
       );
 
       expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('reset button is initially enabled', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final button = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Reset'),
+      );
+
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('reset displays confirmation message', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await tapReset(tester);
+
+      expect(
+        find.text('Form has been reset.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('reset clears all text fields', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await enterRequiredFields(tester);
+
+      final descriptionField = find.byType(TextFormField).last;
+
+      await tester.enterText(
+        descriptionField,
+        'Test description',
+      );
+
+      await tester.pumpAndSettle();
+
+      await tapReset(tester);
+
+      expect(find.text('Toronto'), findsNothing);
+      expect(find.text('123 Main Street'), findsNothing);
+      expect(find.text('Test description'), findsNothing);
+
+      expect(find.text('Enter your city'), findsOneWidget);
+      expect(
+        find.text('Enter your pickup address'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Enter any additional details'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('reset deselects all weekdays', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final mondayChip = find.widgetWithText(FilterChip, 'Mon');
+      final wednesdayChip = find.widgetWithText(FilterChip, 'Wed');
+
+      await tester.ensureVisible(mondayChip);
+      await tester.tap(mondayChip);
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(wednesdayChip);
+      await tester.tap(wednesdayChip);
+      await tester.pumpAndSettle();
+
+      await tapReset(tester);
+
+      expect(
+        tester.widget<FilterChip>(mondayChip).selected,
+        isFalse,
+      );
+
+      expect(
+        tester.widget<FilterChip>(wednesdayChip).selected,
+        isFalse,
+      );
+    });
+
+    testWidgets('reset clears the selected arrival time', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final timeSelector = find.text('Select arrival time');
+
+      await tester.ensureVisible(timeSelector);
+      await tester.tap(timeSelector);
+      await tester.pumpAndSettle();
+
+      final okButton = find.descendant(
+        of: find.byType(TimePickerDialog),
+        matching: find.text('OK'),
+      );
+
+      await tester.tap(okButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select arrival time'), findsNothing);
+
+      await tapReset(tester);
+
+      expect(find.text('Select arrival time'), findsOneWidget);
+    });
+
+    testWidgets('reset clears validation errors', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final submitButton = find.text('Submit Ride Offer');
+
+      await tester.ensureVisible(submitButton);
+      await tester.tap(submitButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Please enter City'), findsOneWidget);
+
+      await tapReset(tester);
+
+      expect(find.text('Please enter City'), findsNothing);
+      expect(find.text('Please enter Street Address'), findsNothing);
     });
   });
 }

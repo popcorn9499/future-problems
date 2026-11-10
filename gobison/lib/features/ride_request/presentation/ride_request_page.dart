@@ -101,8 +101,21 @@ class _RideRequestPageState extends State<RideRequestPage> {
         ),
       );
 
-      Navigator.pop(context);
+      _resetForm();
     }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _cityController.clear();
+      _streetAddressController.clear();
+      _descriptionController.clear();
+
+      _arrivalTime = null;
+      _selectedDays.clear();
+    });
+
+    _formKey.currentState?.reset();
   }
 
   Widget _buildTextField({
@@ -450,37 +463,82 @@ class _RideRequestPageState extends State<RideRequestPage> {
                             const SizedBox(height: 14),
                           ],
 
-                          SizedBox(
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: _rideRequestController.isLoading
-                                  ? null
-                                  : _submitRequest,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: _rideRequestController.isLoading
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Submit Ride Request',
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 54,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _rideRequestController.isLoading
+                                        ? null
+                                        : () {
+                                            _resetForm();
+
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Form has been reset.'),
+                                              ),
+                                            );
+                                          },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text(
+                                      'Reset',
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                            ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.primary,
+                                      side: const BorderSide(
+                                        color: AppColors.primary,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height: 54,
+                                  child: ElevatedButton(
+                                    onPressed: _rideRequestController.isLoading
+                                        ? null
+                                        : _submitRequest,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: _rideRequestController.isLoading
+                                        ? const SizedBox(
+                                            height: 24,
+                                            width: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Submit Ride Offer',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
 
                           const SizedBox(height: 20),

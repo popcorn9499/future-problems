@@ -26,6 +26,8 @@ class _RideOfferPageState extends State<RideOfferPage> {
   final _cityController = TextEditingController();
   final _streetAddressController = TextEditingController();
   final _descriptionController = TextEditingController();
+
+  bool _showPassengerError = false;
   
   TimeOfDay? _arrivalTime;
   int? _passengerNum;
@@ -58,6 +60,13 @@ class _RideOfferPageState extends State<RideOfferPage> {
 
   Future<void> _submitOffer() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_passengerNum == null) {
+      setState(() {
+        _showPassengerError = true;
+      });
       return;
     }
 
@@ -104,8 +113,24 @@ class _RideOfferPageState extends State<RideOfferPage> {
         ),
       );
 
-      Navigator.pop(context);
+      _resetForm();
     }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _cityController.clear();
+      _streetAddressController.clear();
+      _descriptionController.clear();
+
+      _arrivalTime = null;
+      _passengerNum = null;
+      _selectedDays.clear();
+
+      _showPassengerError = false;
+    });
+
+    _formKey.currentState?.reset();
   }
 
   Widget _buildTextField({
@@ -324,61 +349,52 @@ class _RideOfferPageState extends State<RideOfferPage> {
         ),
         const SizedBox(height: 8),
 
-        DropdownButtonFormField<int>(
-          initialValue: _passengerNum,
-          isExpanded: true,
-          decoration: InputDecoration(
-            hintText: 'Select number of available seats',
-            filled: true,
-            fillColor: AppColors.background,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 17,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.border,
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: _passengerNum,
+              hint: const Text(
+                'Select number of available seats',
               ),
+              isExpanded: true,
+              items: List.generate(9, (index) {
+                final number = index + 1;
+
+                return DropdownMenuItem<int>(
+                  value: number,
+                  child: Text('$number'),
+                );
+              }),
+              onChanged: (value) {
+                setState(() {
+                  _passengerNum = value;
+                  _showPassengerError = false;
+                });
+              },
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
+          ),
+        ),
+
+        if (_showPassengerError && _passengerNum == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8, left: 12),
+            child: Text(
+              'Please select the number of available seats',
+              style: TextStyle(
                 color: AppColors.error,
+                fontSize: 12,
               ),
             ),
           ),
-          items: List.generate(9, (index) {
-            final number = index + 1;
-
-            return DropdownMenuItem<int>(
-              value: number,
-              child: Text('$number'),
-            );
-          }),
-          validator: (value) {
-            if (value == null) {
-              return 'Please select the number of available seats';
-            }
-            return null;
-          },
-          onChanged: (value) {
-            setState(() {
-              _passengerNum = value;
-            });
-          },
-        ),
       ],
     );
   }
@@ -530,37 +546,82 @@ class _RideOfferPageState extends State<RideOfferPage> {
                             const SizedBox(height: 14),
                           ],
 
-                          SizedBox(
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: _rideOfferController.isLoading
-                                  ? null
-                                  : _submitOffer,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: _rideOfferController.isLoading
-                                  ? const SizedBox(
-                                      height: 24,
-                                      width: 24,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Submit Ride Offer',
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 54,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _rideOfferController.isLoading
+                                        ? null
+                                        : () {
+                                            _resetForm();
+
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Form has been reset.'),
+                                              ),
+                                            );
+                                          },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text(
+                                      'Reset',
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                            ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.primary,
+                                      side: const BorderSide(
+                                        color: AppColors.primary,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height: 54,
+                                  child: ElevatedButton(
+                                    onPressed: _rideOfferController.isLoading
+                                        ? null
+                                        : _submitOffer,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: _rideOfferController.isLoading
+                                        ? const SizedBox(
+                                            height: 24,
+                                            width: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Submit Ride Offer',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
 
                           const SizedBox(height: 20),

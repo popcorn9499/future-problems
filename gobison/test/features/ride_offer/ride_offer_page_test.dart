@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/features/ride_offer/presentation/ride_offer_page.dart';
@@ -11,7 +12,46 @@ void main() {
     );
   }
 
-  group('RideOfferPage', () { 
+  Future<void> selectPassengerCount(
+    WidgetTester tester,
+    int count,
+  ) async {
+    final dropdown = find.byType(DropdownButton<int>);
+
+    await tester.ensureVisible(dropdown);
+    await tester.tap(dropdown);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('$count').last);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> enterRequiredFields(
+    WidgetTester tester,
+  ) async {
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Enter your city'),
+      'Toronto',
+    );
+
+    await tester.enterText(
+      find.widgetWithText(
+        TextFormField,
+        'Enter your starting address',
+      ),
+      '123 Main Street',
+    );
+  }
+
+  Future<void> submitForm(WidgetTester tester) async {
+    final submitButton = find.text('Submit Ride Offer');
+
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+  }
+
+  group('RideOfferPage', () {
 
     testWidgets('displays the ride offer page and form fields', (
       WidgetTester tester,
@@ -30,18 +70,23 @@ void main() {
 
       expect(find.text('City *'), findsOneWidget);
       expect(find.text('Street Address *'), findsOneWidget);
+
       expect(
         find.text('Desired campus arrival time *'),
         findsOneWidget,
       );
+
       expect(
         find.text('Number of Available Passenger Seats *'),
         findsOneWidget,
       );
+
       expect(find.text('Days of the week *'), findsOneWidget);
       expect(find.text('Additional Description'), findsOneWidget);
 
+      expect(find.text('Reset'), findsOneWidget);
       expect(find.text('Submit Ride Offer'), findsOneWidget);
+
       expect(
         find.text('GoBison • Ride with the herd.'),
         findsOneWidget,
@@ -54,10 +99,12 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('Enter your city'), findsOneWidget);
+
       expect(
         find.text('Enter your starting address'),
         findsOneWidget,
       );
+
       expect(
         find.text('Enter any additional details'),
         findsOneWidget,
@@ -87,9 +134,10 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      final chip = tester.widget<FilterChip>(mondayChip);
-
-      expect(chip.selected, isTrue);
+      expect(
+        tester.widget<FilterChip>(mondayChip).selected,
+        isTrue,
+      );
     });
 
     testWidgets('allows deselecting a previously selected weekday', (
@@ -100,7 +148,6 @@ void main() {
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
 
       await tester.ensureVisible(mondayChip);
-
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
@@ -149,11 +196,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await submitForm(tester);
 
       expect(find.text('Please enter City'), findsOneWidget);
     });
@@ -168,11 +211,7 @@ void main() {
         'Toronto',
       );
 
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await submitForm(tester);
 
       expect(
         find.text('Please enter Street Address'),
@@ -190,11 +229,7 @@ void main() {
         '   ',
       );
 
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await submitForm(tester);
 
       expect(find.text('Please enter City'), findsOneWidget);
     });
@@ -210,15 +245,14 @@ void main() {
       );
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your starting address'),
+        find.widgetWithText(
+          TextFormField,
+          'Enter your starting address',
+        ),
         '   ',
       );
 
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await submitForm(tester);
 
       expect(
         find.text('Please enter Street Address'),
@@ -226,30 +260,48 @@ void main() {
       );
     });
 
-    testWidgets('shows validation error when passenger seats are not selected', (
+    testWidgets('shows passenger validation when seats are not selected', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        'Toronto',
-      );
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your starting address'),
-        '123 Main Street',
-      );
-
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await enterRequiredFields(tester);
+      await submitForm(tester);
 
       expect(
         find.text('Please select the number of available seats'),
         findsOneWidget,
+      );
+    });
+
+    testWidgets('does not show validation errors when selecting passenger count', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await selectPassengerCount(tester, 3);
+
+      expect(find.text('Please enter City'), findsNothing);
+
+      expect(
+        find.text('Please select the number of available seats'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('does not show validation errors before submitting', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await selectPassengerCount(tester, 3);
+
+      expect(find.text('Please enter City'), findsNothing);
+      expect(find.text('Please enter Street Address'), findsNothing);
+
+      expect(
+        find.text('Please select the number of available seats'),
+        findsNothing,
       );
     });
 
@@ -258,16 +310,25 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      final dropdown = find.byType(DropdownButtonFormField<int>);
+      await selectPassengerCount(tester, 3);
+
+      expect(find.text('3'), findsOneWidget);
+    });
+
+    testWidgets('displays passenger seat options from 1 to 9', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final dropdown = find.byType(DropdownButton<int>);
 
       await tester.ensureVisible(dropdown);
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('3').last);
-      await tester.pumpAndSettle();
-
-      expect(find.text('3'), findsOneWidget);
+      for (int i = 1; i <= 9; i++) {
+        expect(find.text('$i'), findsWidgets);
+      }
     });
 
     testWidgets('displays time picker when arrival time is tapped', (
@@ -316,37 +377,19 @@ void main() {
         matching: find.text('OK'),
       );
 
-      expect(okButton, findsOneWidget);
-
       await tester.tap(okButton);
       await tester.pumpAndSettle();
 
       expect(find.text('Select arrival time'), findsNothing);
     });
 
-    testWidgets('shows validation message when arrival time is not selected', (
+    testWidgets('shows validation when arrival time is not selected', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        'Toronto',
-      );
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your starting address'),
-        '123 Main Street',
-      );
-
-      final dropdown = find.byType(DropdownButtonFormField<int>);
-
-      await tester.ensureVisible(dropdown);
-      await tester.tap(dropdown);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('2').last);
-      await tester.pumpAndSettle();
+      await enterRequiredFields(tester);
+      await selectPassengerCount(tester, 2);
 
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
 
@@ -354,11 +397,7 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await submitForm(tester);
 
       expect(
         find.text('Please select an arrival time.'),
@@ -366,29 +405,13 @@ void main() {
       );
     });
 
-    testWidgets('shows validation message when no weekday is selected', (
+    testWidgets('shows validation when no weekday is selected', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        'Toronto',
-      );
-
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your starting address'),
-        '123 Main Street',
-      );
-
-      final dropdown = find.byType(DropdownButtonFormField<int>);
-
-      await tester.ensureVisible(dropdown);
-      await tester.tap(dropdown);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('2').last);
-      await tester.pumpAndSettle();
+      await enterRequiredFields(tester);
+      await selectPassengerCount(tester, 2);
 
       final timeSelector = find.text('Select arrival time');
 
@@ -399,11 +422,7 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      final submitButton = find.text('Submit Ride Offer');
-
-      await tester.ensureVisible(submitButton);
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
+      await submitForm(tester);
 
       expect(
         find.text('Please select at least one day.'),
@@ -444,7 +463,6 @@ void main() {
       final descriptionField = find.byType(TextFormField).last;
 
       await tester.ensureVisible(descriptionField);
-
       await tester.enterText(descriptionField, '');
 
       await tester.pumpAndSettle();
@@ -470,20 +488,132 @@ void main() {
       expect(button.onPressed, isNotNull);
     });
 
-    testWidgets('displays the passenger seat options from 1 to 9', (
+    testWidgets('reset button is initially enabled', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      final dropdown = find.byType(DropdownButtonFormField<int>);
+      final button = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Reset'),
+      );
 
-      await tester.ensureVisible(dropdown);
-      await tester.tap(dropdown);
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('reset clears all text fields', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await enterRequiredFields(tester);
+
+      final descriptionField = find.byType(TextFormField).last;
+
+      await tester.enterText(
+        descriptionField,
+        'Test description',
+      );
+
       await tester.pumpAndSettle();
 
-      for (int i = 1; i <= 9; i++) {
-        expect(find.text('$i'), findsWidgets);
-      }
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      final resetButton = find.text('Reset');
+      await tester.ensureVisible(resetButton);
+      await tester.pumpAndSettle();
+      await tester.tap(resetButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Toronto'), findsNothing);
+      expect(find.text('123 Main Street'), findsNothing);
+      expect(find.text('Test description'), findsNothing);
+      expect(find.text('Enter your city'), findsOneWidget);
+      expect(find.text('Enter your starting address'), findsOneWidget,);
+      expect(
+        find.text('Enter any additional details'),
+        findsOneWidget,
+      );
     });
+
+    testWidgets('reset clears passenger selection', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await selectPassengerCount(tester, 3);
+
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Select number of available seats'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('reset deselects all weekdays', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final mondayChip = find.widgetWithText(FilterChip, 'Mon');
+      final wednesdayChip = find.widgetWithText(FilterChip, 'Wed');
+
+      await tester.ensureVisible(mondayChip);
+      await tester.tap(mondayChip);
+      await tester.pumpAndSettle();
+
+      await tester.tap(wednesdayChip);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<FilterChip>(mondayChip).selected,
+        isFalse,
+      );
+
+      expect(
+        tester.widget<FilterChip>(wednesdayChip).selected,
+        isFalse,
+      );
+    });
+
+    testWidgets('reset clears validation errors', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await submitForm(tester);
+
+      expect(find.text('Please enter City'), findsOneWidget);
+
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Please enter City'), findsNothing);
+      expect(find.text('Please enter Street Address'), findsNothing);
+      expect(
+        find.text('Please select the number of available seats'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('reset displays confirmation message', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final resetButton = find.text('Reset');
+
+      await tester.ensureVisible(resetButton);
+      await tester.pumpAndSettle();
+      await tester.tap(resetButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Form has been reset.'), findsOneWidget);
+    });
+
   });
 }
