@@ -44,8 +44,8 @@ For local development, run the backend on port 8080 and keep Flutter on port
 an HTTP-only session cookie, not a bearer token. Configure the backend database
 and SMTP credentials before registering. If verification email delivery fails,
 the account remains saved; log in to retry sending a code. Unverified users go
-to verification, and verified users go to the home screen. Refreshing the page
-requires logging in again because frontend session restoration is not implemented.
+to verification, and verified users go to the home screen. On startup, including
+reloads and new tabs, the app checks the existing session which restores the user without another login, or brings the user to the login screen. 
 
 ## Configuration
 

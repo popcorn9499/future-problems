@@ -103,6 +103,18 @@ void main() {
       });
     });
 
+    test('current user sends a GET and handles session responses', () async {
+      final service = AuthService(client: MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url, Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/me'));
+        return http.Response('{"userId":"ada","verified":true}', 200);
+      }));
+      expect((await service.currentUser())!['userId'], 'ada');
+      final signedOut = AuthService(client: MockClient((_) async => http.Response('', 401)));
+      expect(await signedOut.currentUser(), isNull);
+      final failed = AuthService(client: MockClient((_) async => http.Response('', 500)));
+      expect(failed.currentUser(), throwsException);
+    });
     group('login', () {
       test(
         'sends the correct request and returns successful response',
