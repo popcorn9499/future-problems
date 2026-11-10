@@ -18,7 +18,7 @@ class RideOfferService {
     required List<String> daysOfWeek,
     String? description,
   }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/rideoffer/create');
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/rides/offers');
     final response = await _client.post(
       uri,
       headers: {

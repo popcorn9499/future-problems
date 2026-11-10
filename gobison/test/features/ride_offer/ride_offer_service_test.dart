@@ -49,7 +49,7 @@ void main() {
           expect(
             capturedRequest.url,
             Uri.parse(
-              '${ApiConfig.baseUrl}/api/v1/rideoffer/create',
+              '${ApiConfig.baseUrl}/api/v1/rides/offers',
             ),
           );
 
