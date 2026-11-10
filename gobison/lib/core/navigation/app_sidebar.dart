@@ -50,8 +50,6 @@ class AppSidebar extends StatelessWidget {
                   )
                 : Center(child: LogoSmall(height: 45)),
           ),
-
-          // Toggle button when sidebar is collapsed
           if (!isExpanded)
             IconButton(
               onPressed: onToggle,
@@ -61,7 +59,6 @@ class AppSidebar extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Navigation items
           NavigationItem(
             label: 'Dashboard',
             icon: Icons.dashboard_outlined,
@@ -79,8 +76,6 @@ class AppSidebar extends StatelessWidget {
           ),
 
           const Spacer(),
-
-          // Logout
           NavigationItem(
             label: 'Log Out',
             icon: Icons.logout_rounded,

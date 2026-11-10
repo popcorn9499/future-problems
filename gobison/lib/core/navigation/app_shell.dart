@@ -81,7 +81,6 @@ class _AppShellState extends State<AppShell> {
       body: SafeArea(
         child: Row(
           children: [
-            // Persistent sidebar
             AppSidebar(
               isExpanded: _isSidebarExpanded,
               selectedIndex: _selectedIndex,
@@ -89,8 +88,6 @@ class _AppShellState extends State<AppShell> {
               onDestinationSelected: _selectPage,
               onLogout: handleLogout,
             ),
-
-            // Main application area
             Expanded(
               child: Column(
                 children: [
@@ -116,13 +113,9 @@ class _AppShellState extends State<AppShell> {
                           radius: 21,
                           onTap: widget.onProfileTap,
                         ),
-
-                        // Profile dropdown
                       ],
                     ),
                   ),
-
-                  // Selected page content
                   Expanded(
                     child: IndexedStack(index: _selectedIndex, children: pages),
                   ),
