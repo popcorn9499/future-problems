@@ -5,6 +5,7 @@ import 'login_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
+import '../../dashboard/presentation/dashboard_page.dart';
 
 import '../../../core/services/session_service.dart';
 
@@ -91,6 +92,15 @@ class _SessionGateState extends State<SessionGate> {
                       ),
                     );
                   },
+                ),
+              ),
+            );
+          },
+          onDashboardTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => DashboardPage(
+                  user: session.user,
                 ),
               ),
             );

@@ -12,12 +12,13 @@ class HomePage extends StatelessWidget {
     required this.user,
     required this.profile,
     required this.onProfileTap,
+    required this.onDashboardTap,
   });
 
   final User user;
   final UserProfile profile;
   final VoidCallback onProfileTap;
-
+  final VoidCallback onDashboardTap;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,6 +132,24 @@ class HomePage extends StatelessWidget {
                     onPressed: onProfileTap,
                     icon: const Icon(Icons.person_outline),
                     label: const Text('View My Profile'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  OutlinedButton.icon(
+                    onPressed: onDashboardTap,
+                    icon: const Icon(Icons.dashboard_outlined),
+                    label: const Text('View My Dashboard'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       side: const BorderSide(color: AppColors.primary),
