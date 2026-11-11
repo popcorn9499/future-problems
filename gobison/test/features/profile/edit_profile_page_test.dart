@@ -21,7 +21,7 @@ void main() {
       firstName: 'Rebekah',
       lastName: 'Soneye',
       age: 22,
-      gender: 'Female',
+      pronouns: 'She/her',
       description: 'I enjoy meeting new people.',
     );
   });
@@ -40,6 +40,14 @@ void main() {
     );
   }
 
+  void setUpTestViewport(WidgetTester tester) {
+    tester.view.physicalSize = const Size(1000, 1200);
+    tester.view.devicePixelRatio = 1.0;
+
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
   testWidgets('displays the edit profile page and form fields', (
     WidgetTester tester,
   ) async {
@@ -51,7 +59,7 @@ void main() {
     expect(find.text('First Name'), findsOneWidget);
     expect(find.text('Last Name'), findsOneWidget);
     expect(find.text('Age'), findsOneWidget);
-    expect(find.text('Gender'), findsOneWidget);
+    expect(find.text('She/her'), findsOneWidget);
     expect(find.text('About Me'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Save Changes'), findsOneWidget);
@@ -65,12 +73,11 @@ void main() {
     expect(find.widgetWithText(TextFormField, 'Rebekah'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Soneye'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, '22'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'She/her'), findsOneWidget);
     expect(
       find.widgetWithText(TextFormField, 'I enjoy meeting new people.'),
       findsOneWidget,
     );
-
-    expect(find.text('Female'), findsOneWidget);
   });
 
   testWidgets('shows optional fields as empty when profile values are null', (
@@ -81,14 +88,18 @@ void main() {
       firstName: 'Rebekah',
       lastName: null,
       age: null,
-      gender: null,
+      pronouns: null,
       description: null,
     );
 
     await tester.pumpWidget(createTestWidget(profile: profile));
 
     expect(find.text('Rebekah'), findsOneWidget);
-    expect(find.text('Select gender'), findsOneWidget);
+
+    final pronounsField = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Pronouns'),
+    );
+    expect(pronounsField.controller!.text, isEmpty);
 
     final ageField = tester.widget<TextFormField>(
       find.widgetWithText(TextFormField, 'Age'),
@@ -104,6 +115,7 @@ void main() {
   testWidgets('shows validation error when first name is empty', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
@@ -172,24 +184,10 @@ void main() {
     expect(find.text('Please enter your first name'), findsNothing);
   });
 
-  testWidgets('allows selecting a different gender', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(createTestWidget());
-
-    await tester.ensureVisible(find.text('Female'));
-    await tester.tap(find.text('Female'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Male').last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Male'), findsOneWidget);
-  });
-
   testWidgets('cancel returns to previous page when there are no changes', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -223,9 +221,12 @@ void main() {
     expect(find.text('Edit Profile'), findsNothing);
   });
 
-  testWidgets('cancel prompts before discarding unsaved changes', (
+ 
+ testWidgets('cancel prompts before discarding unsaved changes', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
+
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
@@ -248,20 +249,18 @@ void main() {
     expect(find.text('Discard'), findsOneWidget);
   });
 
+
   testWidgets('keep editing closes the discard dialog without leaving page', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
+
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'First Name'),
-      'Changed Name',
-    );
+      find.widgetWithText(TextFormField, 'First Name'), 'Changed Name',);
 
-    final cancelButton = find.text('Cancel');
-    await tester.ensureVisible(cancelButton);
-    await tester.pumpAndSettle();
-    await tester.tap(cancelButton);
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Keep Editing'));
@@ -275,6 +274,7 @@ void main() {
   testWidgets('discard closes the page after confirmation', (
     WidgetTester tester,
   ) async {
+    setUpTestViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -314,5 +314,31 @@ void main() {
 
     expect(find.text('Open Edit Profile'), findsOneWidget);
     expect(find.text('Edit Profile'), findsNothing);
+  });
+
+ testWidgets('displays avatar colour options and allows selection', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(createTestWidget());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Avatar Color'), findsOneWidget);
+    expect(find.byTooltip('Pastel Pink'), findsOneWidget);
+    expect(find.byTooltip('Default'), findsOneWidget);
+
+    final pastelPinkFinder = find.byTooltip('Pastel Pink');
+
+    await tester.ensureVisible(pastelPinkFinder);
+    await tester.pumpAndSettle();
+
+    await tester.tap(pastelPinkFinder);
+    await tester.pumpAndSettle();
+
+    final selectedSwatch = find.descendant(
+      of: pastelPinkFinder,
+      matching: find.byIcon(Icons.check),
+    );
+
+    expect(selectedSwatch, findsOneWidget);
   });
 }
