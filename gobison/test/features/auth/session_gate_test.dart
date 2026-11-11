@@ -10,6 +10,7 @@ import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/auth/presentation/session_gate.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/features/home/presentation/home_page.dart';
+import 'package:gobison/core/navigation/app_shell.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -56,7 +57,7 @@ void main() {
       }), 200));
       await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: sessionService)));
       await tester.pumpAndSettle();
-      expect(find.byType(verified ? HomePage : VerificationPage), findsOneWidget);
+      expect(find.byType(verified ? AppShell : VerificationPage), findsOneWidget);
       expect(SessionService.cachedSession!.user.email, 'ada@myumanitoba.ca');
     });
 
@@ -72,8 +73,7 @@ void main() {
       expect(session.profile.description, isNull);
       await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: sessionService)));
       await tester.pumpAndSettle();
-      expect(find.byType(verified ? HomePage : VerificationPage), findsOneWidget);
-    });
+      expect(find.byType(verified ? AppShell : VerificationPage), findsOneWidget);    });
   }
 
   testWidgets('server failure offers retry instead of login', (tester) async {
@@ -92,9 +92,10 @@ void main() {
     expect(find.byType(LoginPage), findsNothing);
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
+
     expect(requests, 2);
-    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
     expect(find.text('Unable to load your account.'), findsNothing);
-    expect(find.text('Try again'), findsNothing);
+    expect(find.byKey(const Key('session-retry-button')), findsNothing);
   });
 }
