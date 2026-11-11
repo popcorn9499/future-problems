@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gobison/features/ride_offer/presentation/ride_offer_page.dart';
 
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/models/user.dart';
@@ -12,6 +13,8 @@ import 'app_sidebar.dart';
 class AppShell extends StatefulWidget {
   final Widget dashboardPage;
   final Widget messagesPage;
+  final Widget rideRequestPage;
+  final Widget rideOfferPage;
   final User user;
   final ImageProvider? profileImage;
   final VoidCallback onProfileTap;
@@ -20,6 +23,8 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.dashboardPage,
     required this.messagesPage,
+    required this.rideRequestPage,
+    required this.rideOfferPage,
     required this.user,
     this.profileImage,
     required this.onProfileTap,
@@ -66,6 +71,10 @@ class _AppShellState extends State<AppShell> {
         return 'Dashboard';
       case 1:
         return 'Messages';
+      case 2:
+        return 'Create Ride Request';
+      case 3:
+        return 'Create Ride Offer';
       default:
         return '';
     }
@@ -75,7 +84,12 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    final pages = [widget.dashboardPage, widget.messagesPage];
+    final pages = [
+      widget.dashboardPage,
+      widget.messagesPage,
+      widget.rideRequestPage,
+      widget.rideOfferPage,
+    ];
 
     return Scaffold(
       body: SafeArea(

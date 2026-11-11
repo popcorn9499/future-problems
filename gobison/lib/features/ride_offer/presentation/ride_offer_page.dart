@@ -310,19 +310,22 @@ class _RideOfferPageState extends State<RideOfferPage> {
                   color: AppColors.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  _arrivalTime == null
-                      ? 'Select arrival time'
-                      : _arrivalTime!.format(context),
-                  style: TextStyle(
-                    color: _arrivalTime == null
-                        ? AppColors.textSecondary
-                        : AppColors.textPrimary,
-                    fontSize: 15,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _arrivalTime == null
+                        ? 'Select arrival time'
+                        : _arrivalTime!.format(context),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: _arrivalTime == null
+                          ? AppColors.textSecondary
+                          : AppColors.textPrimary,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-                const Spacer(),
                 const Icon(
                   Icons.keyboard_arrow_down,
                   color: AppColors.textSecondary,
@@ -428,15 +431,6 @@ class _RideOfferPageState extends State<RideOfferPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: const Text(
-          'Create Ride Offer',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -502,11 +496,12 @@ class _RideOfferPageState extends State<RideOfferPage> {
 
                           const SizedBox(height: 24),
 
-                          _buildArrivalTimeSelector(),
+                          _buildPair(
+                            _buildArrivalTimeSelector(),
+                            _buildPassengerNumSelector(),
+                          ),
 
                           const SizedBox(height: 24),
-
-                          _buildPassengerNumSelector(),
 
                           const SizedBox(height: 24),
 

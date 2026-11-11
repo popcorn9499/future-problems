@@ -349,15 +349,6 @@ class _RideRequestPageState extends State<RideRequestPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: const Text(
-          'Create Ride Request',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -381,7 +372,6 @@ class _RideRequestPageState extends State<RideRequestPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Heading
                           const Text(
                             'Request a Ride',
                             textAlign: TextAlign.center,
@@ -405,7 +395,6 @@ class _RideRequestPageState extends State<RideRequestPage> {
 
                           const SizedBox(height: 32),
 
-                          // City and Street Address
                           _buildPair(
                             _buildTextField(
                               label: 'City',

@@ -5,10 +5,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 
-// Add your ride page imports here.
-import '../../ride_request/presentation/ride_request_page.dart';
-import '../../ride_offer/presentation/ride_offer_page.dart';
-
 class HomePage extends StatelessWidget {
   const HomePage({super.key, required this.user, required this.profile});
 
@@ -71,37 +67,6 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-<<<<<<< HEAD
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        toolbarHeight: 100,
-        surfaceTintColor: Colors.transparent,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const GoBisonLogo(height: 100),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: UserAvatar(
-                firstName: user.firstName,
-                lastName: user.lastName,
-                radius: 21,
-                onTap: onProfileTap,
-                backgroundColor: AvatarColorOption.getBackgroundColor(profile.avatarColor,),
-                textColor: AvatarColorOption.getTextColor(profile.avatarColor,),
-              ),
-            ),
-          ),
-        ],
-      ),
-=======
->>>>>>> origin/dev
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -131,66 +96,6 @@ class HomePage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, height: 1.6, color: AppColors.textSecondary),
                   ),
 
-<<<<<<< HEAD
-                  const SizedBox(height: 36),
-
-                  Row(
-                    children: [
-                      _buildRideOption(
-                        context: context,
-                        title: 'Request a Ride',
-                        icon: Icons.person_outline,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  RideRequestPage(userId: user.id,),
-                            ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      _buildRideOption(
-                        context: context,
-                        title: 'Offer a Ride',
-                        icon: Icons.directions_car_outlined,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  RideOfferPage(userId: user.id),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 36),
-
-                  OutlinedButton.icon(
-                    onPressed: onProfileTap,
-                    icon: const Icon(Icons.person_outline),
-                    label: const Text('View My Profile'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(
-                        color: AppColors.primary,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-=======
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                     decoration: BoxDecoration(
@@ -213,7 +118,6 @@ class HomePage extends StatelessWidget {
                       ],
                     ),
                   ),
->>>>>>> origin/dev
                 ],
               ),
             ),

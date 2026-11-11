@@ -22,7 +22,8 @@ void main() {
     await tester.tap(dropdown);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('$count').last);
+    final option = find.text('$count').last;
+    await tester.tap(option);
     await tester.pumpAndSettle();
   }
 
@@ -58,7 +59,6 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      expect(find.text('Create Ride Offer'), findsOneWidget);
       expect(find.text('Offer a Ride'), findsOneWidget);
 
       expect(

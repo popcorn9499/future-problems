@@ -48,8 +48,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
-
-      expect(find.text('Create Ride Request'), findsOneWidget);
+      
       expect(find.text('Request a Ride'), findsOneWidget);
 
       expect(
