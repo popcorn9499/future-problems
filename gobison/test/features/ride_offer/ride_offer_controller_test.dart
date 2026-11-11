@@ -448,7 +448,7 @@ void main() {
 
       expect(
         controller.errorMessage,
-        'Unable to save your ride offer. Please try again.',
+        'Your session has expired. Please sign in again.',
       );
       expect(controller.isLoading, isFalse);
     });

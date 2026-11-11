@@ -65,7 +65,9 @@ class RideOfferController extends ChangeNotifier {
       case 400:
         return 'Some ride offer details are invalid. Please check your entries.';
       case 401:
-        return 'Unable to save your ride offer. Please try again.';
+        return 'Your session has expired. Please sign in again.';
+      case 403:
+        return 'Verify your email before posting a ride.';
       case 500:
         return 'Something went wrong. Please try again later.';
       default:
