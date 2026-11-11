@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/features/ride_offer/presentation/ride_offer_page.dart';
@@ -83,6 +82,9 @@ void main() {
 
       expect(find.text('Days of the week *'), findsOneWidget);
       expect(find.text('Additional Description'), findsOneWidget);
+
+      expect(find.text('Ride Preferences'), findsOneWidget);
+      expect(find.text('I am looking for other drivers to rideshare with.'), findsOneWidget);
 
       expect(find.text('Reset'), findsOneWidget);
       expect(find.text('Submit Ride Offer'), findsOneWidget);
@@ -500,7 +502,7 @@ void main() {
       expect(button.onPressed, isNotNull);
     });
 
-    testWidgets('reset clears all text fields', (
+    testWidgets('reset clears all text fields and ride preferences', (
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(createTestWidget());
@@ -514,10 +516,22 @@ void main() {
         'Test description',
       );
 
+      final checkboxFinder = find.byType(CheckboxListTile);
+
+      await tester.ensureVisible(checkboxFinder);
+      await tester.tap(checkboxFinder);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<CheckboxListTile>(checkboxFinder).value,
+        isTrue,
+      );
+
       await tester.pumpAndSettle();
 
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
+
       final resetButton = find.text('Reset');
       await tester.ensureVisible(resetButton);
       await tester.pumpAndSettle();
@@ -527,11 +541,14 @@ void main() {
       expect(find.text('Toronto'), findsNothing);
       expect(find.text('123 Main Street'), findsNothing);
       expect(find.text('Test description'), findsNothing);
+
       expect(find.text('Enter your city'), findsOneWidget);
-      expect(find.text('Enter your starting address'), findsOneWidget,);
+      expect(find.text('Enter your starting address'), findsOneWidget);
+      expect(find.text('Enter any additional details'), findsOneWidget);
+
       expect(
-        find.text('Enter any additional details'),
-        findsOneWidget,
+        tester.widget<CheckboxListTile>(checkboxFinder).value,
+        isFalse,
       );
     });
 
@@ -613,6 +630,55 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Form has been reset.'), findsOneWidget);
+    });
+
+    testWidgets('asking for drivers checkbox is unchecked by default', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final checkbox = tester.widget<CheckboxListTile>(
+        find.byType(CheckboxListTile),
+      );
+
+      expect(checkbox.value, isFalse);
+    });
+
+    testWidgets('allows selecting asking for drivers checkbox', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final checkboxFinder = find.byType(CheckboxListTile);
+
+      await tester.ensureVisible(checkboxFinder);
+      await tester.tap(checkboxFinder);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<CheckboxListTile>(checkboxFinder).value,
+        isTrue,
+      );
+    });
+
+    testWidgets('allows deselecting asking for drivers checkbox', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      final checkboxFinder = find.byType(CheckboxListTile);
+
+      await tester.ensureVisible(checkboxFinder);
+      await tester.tap(checkboxFinder);
+      await tester.pumpAndSettle();
+
+      await tester.tap(checkboxFinder);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<CheckboxListTile>(checkboxFinder).value,
+        isFalse,
+      );
     });
 
   });

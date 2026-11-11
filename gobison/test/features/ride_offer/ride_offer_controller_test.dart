@@ -1,6 +1,4 @@
-
 import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -25,6 +23,7 @@ class FakeRideOfferService extends RideOfferService {
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
+    required bool askingForDrivers,
   })? onCreateRideOffer;
 
   @override
@@ -36,6 +35,7 @@ class FakeRideOfferService extends RideOfferService {
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
+    required bool askingForDrivers,
   }) {
     return onCreateRideOffer!(
       userId: userId,
@@ -45,6 +45,7 @@ class FakeRideOfferService extends RideOfferService {
       passengerNum: passengerNum,
       daysOfWeek: daysOfWeek,
       description: description,
+      askingForDrivers: askingForDrivers,
     );
   }
 }
@@ -63,6 +64,7 @@ void main() {
       'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
       'passengerNum': 3,
       'description': 'Morning commute',
+      'askingForDrivers': false,
     };
 
     setUp(() {
@@ -91,6 +93,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         return rideOfferJson;
       };
@@ -103,6 +106,7 @@ void main() {
         passengerNum: 3,
         daysOfWeek: ['Monday', 'Wednesday', 'Friday'],
         description: 'Morning commute',
+        askingForDrivers: false,
       );
 
       expect(controller.createdRideOffer, isA<RideOffer>());
@@ -113,6 +117,7 @@ void main() {
       expect(controller.createdRideOffer?.passengerNum, 3);
       expect(controller.createdRideOffer?.daysOfWeek, ['Monday', 'Wednesday', 'Friday'],);
       expect(controller.createdRideOffer?.description, 'Morning commute');
+      expect(controller.createdRideOffer?.askingForDrivers, false);
       expect(controller.errorMessage, isNull);
       expect(controller.isLoading, isFalse);
     });
@@ -129,6 +134,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         receivedData = {
           'city': city,
@@ -145,6 +151,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(receivedData, {
@@ -165,6 +172,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         receivedDescription = description;
 
@@ -179,6 +187,7 @@ void main() {
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         description: '  Morning commute  ',
+        askingForDrivers: false,
       );
 
       expect(receivedDescription, 'Morning commute');
@@ -195,6 +204,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         receivedDescription = description;
 
@@ -209,6 +219,7 @@ void main() {
         passengerNum: 2,
         daysOfWeek: ['Monday'],
         description: '',
+        askingForDrivers: false,
       );
 
       expect(receivedDescription, isNull);
@@ -225,6 +236,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         receivedDescription = description;
 
@@ -239,6 +251,7 @@ void main() {
         passengerNum: 2,
         daysOfWeek: ['Monday'],
         description: '   ',
+        askingForDrivers: false,
       );
 
       expect(receivedDescription, isNull);
@@ -256,6 +269,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         receivedDescription = description;
 
@@ -269,11 +283,42 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 2,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(receivedDescription, isNull);
       expect(controller.errorMessage, isNull);
       expect(controller.isLoading, isFalse);
+    });
+
+    test('passes askingForDrivers to the service', () async {
+      bool? receivedValue;
+
+      rideOfferService.onCreateRideOffer = ({
+        required userId,
+        required city,
+        required streetAddress,
+        required arrivalTime,
+        required passengerNum,
+        required daysOfWeek,
+        required askingForDrivers,
+        description,
+      }) async {
+        receivedValue = askingForDrivers;
+        return rideOfferJson;
+      };
+
+      await controller.createRideOffer(
+        userId: '123',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: '08:30',
+        passengerNum: 3,
+        daysOfWeek: ['Monday'],
+        askingForDrivers: true,
+      );
+
+      expect(receivedValue, isTrue);
     });
 
     test('clears the previous created ride offer before creating another',
@@ -288,6 +333,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         callCount++;
 
@@ -304,6 +350,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(controller.createdRideOffer, isNotNull);
@@ -318,6 +365,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) {
         return completer.future;
       };
@@ -329,6 +377,7 @@ void main() {
         arrivalTime: '09:00',
         passengerNum: 2,
         daysOfWeek: ['Tuesday'],
+        askingForDrivers: true,
       );
 
       expect(controller.createdRideOffer, isNull);
@@ -349,6 +398,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         throw Exception('Ride offer creation failed (400)');
       };
@@ -360,6 +410,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(
@@ -380,6 +431,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         throw Exception('Ride offer creation failed (401)');
       };
@@ -391,6 +443,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(
@@ -410,6 +463,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         throw Exception('Ride offer creation failed (500)');
       };
@@ -421,6 +475,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(
@@ -440,6 +495,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         throw Exception('Ride offer creation failed (503)');
       };
@@ -451,6 +507,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(
@@ -472,6 +529,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) {
         return completer.future;
       };
@@ -483,6 +541,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(controller.isLoading, isTrue);
@@ -511,6 +570,7 @@ void main() {
         required passengerNum,
         required daysOfWeek,
         description,
+        required askingForDrivers,
       }) async {
         return rideOfferJson;
       };
@@ -522,6 +582,7 @@ void main() {
         arrivalTime: '08:30',
         passengerNum: 3,
         daysOfWeek: ['Monday'],
+        askingForDrivers: true,
       );
 
       expect(notificationCount, 2);
@@ -539,6 +600,7 @@ void main() {
         required daysOfWeek,
         required passengerNum,
         description,
+        required askingForDrivers,
       }) {
         serviceCallCount++;
         return completer.future;
@@ -551,6 +613,7 @@ void main() {
         arrivalTime: '08:30',
         daysOfWeek: ['Monday'],
         passengerNum: 2,
+        askingForDrivers: true,
       );
 
       await controller.createRideOffer(
@@ -560,6 +623,7 @@ void main() {
         arrivalTime: '09:00',
         daysOfWeek: ['Tuesday'],
         passengerNum: 3,
+        askingForDrivers: false,
       );
 
       expect(serviceCallCount, 1);

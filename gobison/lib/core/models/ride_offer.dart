@@ -6,6 +6,7 @@ class RideOffer {
   final List<String> daysOfWeek;
   final int passengerNum;
   final String? description;
+  final bool askingForDrivers;
 
   const RideOffer({
     required this.userId,
@@ -15,6 +16,7 @@ class RideOffer {
     required this.daysOfWeek,
     required this.passengerNum,
     this.description,
+    required this.askingForDrivers
   });
 
   factory RideOffer.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class RideOffer {
       daysOfWeek: json['daysOfWeek'] as List<String>,
       passengerNum: json['passengerNum'] as int,
       description: json['description'] as String?,
+      askingForDrivers: json['askingForDrivers'] as bool,
     );
   }
 }

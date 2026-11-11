@@ -27,6 +27,7 @@ void main() {
                 'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
                 'passengerNum': 3,
                 'description': 'Morning commute',
+                'askingForDrivers': false,
               }),
               200,
             );
@@ -42,6 +43,7 @@ void main() {
             passengerNum: 3,
             daysOfWeek: ['Monday', 'Wednesday', 'Friday'],
             description: 'Morning commute',
+            askingForDrivers: false,
           );
 
           expect(capturedRequest.method, 'POST');
@@ -70,6 +72,7 @@ void main() {
             'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
             'passengerNum': 3,
             'description': 'Morning commute',
+            'askingForDrivers': false,
           });
 
           expect(result, isA<Map<String, dynamic>>());
@@ -84,6 +87,7 @@ void main() {
           );
           expect(result['passengerNum'], 3);
           expect(result['description'], 'Morning commute');
+          expect(result['askingForDrivers'], false);
         },
       );
 
@@ -108,6 +112,7 @@ void main() {
             arrivalTime: '09:00',
             passengerNum: 2,
             daysOfWeek: ['Tuesday'],
+            askingForDrivers: true,
           );
 
           expect(result, isA<Map<String, dynamic>>());
@@ -137,6 +142,7 @@ void main() {
             arrivalTime: '07:30',
             passengerNum: 1,
             daysOfWeek: ['Monday'],
+            askingForDrivers: true,
           );
 
           final requestBody = jsonDecode(capturedRequest.body);
@@ -165,6 +171,7 @@ void main() {
             arrivalTime: '08:30',
             passengerNum: 3,
             daysOfWeek: ['Monday'],
+            askingForDrivers: true,
           ),
           throwsA(
             isA<Exception>().having(
@@ -197,6 +204,7 @@ void main() {
             arrivalTime: '08:30',
             passengerNum: 3,
             daysOfWeek: ['Monday'],
+            askingForDrivers: true,
           ),
           throwsA(
             isA<Exception>().having(
@@ -226,6 +234,7 @@ void main() {
             arrivalTime: '08:30',
             passengerNum: 3,
             daysOfWeek: ['Monday'],
+            askingForDrivers: true,
           ),
           throwsA(
             isA<Exception>().having(
@@ -256,6 +265,7 @@ void main() {
             arrivalTime: '08:30',
             passengerNum: 3,
             daysOfWeek: ['Monday'],
+            askingForDrivers: true,
           ),
           throwsA(
             isA<Exception>().having(

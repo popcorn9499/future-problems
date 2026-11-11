@@ -17,6 +17,7 @@ class RideOfferService {
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
+    required bool askingForDrivers,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/rides/offers');
     final response = await _client.post(
@@ -33,6 +34,7 @@ class RideOfferService {
         'daysOfWeek': daysOfWeek,
         'passengerNum': passengerNum,
         'description': description,
+        'askingForDrivers': askingForDrivers,
       }),
     );
 

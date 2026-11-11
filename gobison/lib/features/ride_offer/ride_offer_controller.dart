@@ -20,6 +20,7 @@ class RideOfferController extends ChangeNotifier {
     required List<String> daysOfWeek,
     required int passengerNum,
     String? description,
+    required bool askingForDrivers,
   }) async {
     if (isLoading) return;
     
@@ -44,11 +45,14 @@ class RideOfferController extends ChangeNotifier {
         description: trimmedDescription?.isEmpty == true
           ? null
           : trimmedDescription,
+        askingForDrivers: askingForDrivers,
       );
 
       createdRideOffer = RideOffer.fromJson(data);
 
     } catch (e) {
+      //errorMessage = _handleError(extractErrorCode(e));
+      debugPrint('Error creating ride offer: $e');
       errorMessage = _handleError(extractErrorCode(e));
     } finally {
       isLoading = false;

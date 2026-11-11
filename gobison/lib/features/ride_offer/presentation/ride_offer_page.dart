@@ -28,6 +28,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
   final _descriptionController = TextEditingController();
 
   bool _showPassengerError = false;
+  bool _askingForDrivers = false;
   
   TimeOfDay? _arrivalTime;
   int? _passengerNum;
@@ -87,7 +88,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
       );
       return;
     }
-    
+        
     final String arrivalString =
         '${_arrivalTime!.hour.toString().padLeft(2, '0')}:'
         '${_arrivalTime!.minute.toString().padLeft(2, '0')}';
@@ -102,6 +103,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
+      askingForDrivers: _askingForDrivers,
     );
 
     if (!mounted) return;
@@ -128,6 +130,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
       _selectedDays.clear();
 
       _showPassengerError = false;
+      _askingForDrivers = false;
     });
 
     _formKey.currentState?.reset();
@@ -402,6 +405,55 @@ class _RideOfferPageState extends State<RideOfferPage> {
     );
   }
 
+  Widget _buildAskingForDriversCheckbox() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Ride Preferences',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Container(
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Material(
+            color: AppColors.background,
+            child: CheckboxListTile(
+              value: _askingForDrivers,
+              onChanged: (value) {
+                setState(() {
+                  _askingForDrivers = value ?? false;
+                });
+              },
+              title: const Text(
+                'I am looking for other drivers to rideshare with.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              activeColor: AppColors.primary,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              dense: true,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
   Widget _buildPair(Widget first, Widget second) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -505,7 +557,10 @@ class _RideOfferPageState extends State<RideOfferPage> {
 
                           const SizedBox(height: 24),
 
-                          _buildDaySelector(),
+                          _buildPair(
+                            _buildDaySelector(),
+                            _buildAskingForDriversCheckbox(),
+                          ),
 
                           const SizedBox(height: 24),
 
