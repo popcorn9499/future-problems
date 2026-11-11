@@ -5,6 +5,7 @@ import 'login_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
+import '../../../core/navigation/app_shell.dart';
 
 import '../../../core/services/session_service.dart';
 
@@ -32,9 +33,7 @@ class _SessionGateState extends State<SessionGate> {
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         if (snapshot.hasError) {
@@ -48,7 +47,8 @@ class _SessionGateState extends State<SessionGate> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _sessionFuture = (widget.sessionService ?? SessionService()).loadCurrentSession();
+                        _sessionFuture = (widget.sessionService ?? SessionService())
+                            .loadCurrentSession();
                       });
                     },
                     child: const Text('Try again'),
@@ -72,10 +72,10 @@ class _SessionGateState extends State<SessionGate> {
             userProfile: session.profile,
           );
         }
-
-        return HomePage(
-          user: session.user,
-          profile: session.profile,
+        return AppShell(
+          dashboardPage: HomePage(user: session.user, profile: session.profile),
+          messagesPage: const Placeholder(),
+          user: session.user, // Adjust to your actual profile field.
           onProfileTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -86,10 +86,8 @@ class _SessionGateState extends State<SessionGate> {
                   onEdit: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => EditProfilePage(
-                          user: session.user,
-                          profile: session.profile,
-                        ),
+                        builder: (_) =>
+                            EditProfilePage(user: session.user, profile: session.profile),
                       ),
                     );
                   },

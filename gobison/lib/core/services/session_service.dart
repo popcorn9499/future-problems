@@ -7,20 +7,15 @@ class SessionData {
   final User user;
   final UserProfile profile;
 
-  const SessionData({
-    this.accessToken,
-    required this.user,
-    required this.profile,
-  });
+  const SessionData({this.accessToken, required this.user, required this.profile});
 }
 
 class SessionService {
-  SessionService({AuthService? authService}) : _authService = authService ?? AuthService();
-
-  final AuthService _authService;
   static String? _accessToken;
   static User? _currentUser;
   static UserProfile? _currentProfile;
+  final AuthService _authService;
+  SessionService({AuthService? authService}) : _authService = authService ?? AuthService();
 
   // Toggle this to false when switching to your real backend
   static const bool useMock = false;
@@ -53,11 +48,7 @@ class SessionService {
         description: 'My car is quite messy, but I\'ll get you to campus safe!',
       );
 
-      return SessionData(
-        accessToken: 'mock-jwt-token',
-        user: _mockUser!,
-        profile: _mockProfile!,
-      );
+      return SessionData(accessToken: 'mock-jwt-token', user: _mockUser!, profile: _mockProfile!);
     } else {
       final data = await _authService.currentUser();
       if (data == null) {
@@ -91,11 +82,9 @@ class SessionService {
     return SessionData(
       accessToken: _accessToken,
       user: user,
-      profile: _currentProfile ?? UserProfile(
-        userId: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      ),
+      profile:
+          _currentProfile ??
+          UserProfile(userId: user.id, firstName: user.firstName, lastName: user.lastName),
     );
   }
 
@@ -134,6 +123,12 @@ class SessionService {
     );
     SessionService.saveUser(user: tempUser);
   }
+
+  Future<void> logout() async {
+    if (!useMock) {
+      await _authService.logout();
+    }
+
+    await clearSession();
+  }
 }
-
-

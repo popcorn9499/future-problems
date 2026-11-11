@@ -3,53 +3,17 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
-import '../../../core/widgets/user_avatar.dart';
-import '../../../core/widgets/go_bison_logo.dart';
-import '../../../core/theme/avatar_color_option.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({
-    super.key,
-    required this.user,
-    required this.profile,
-    required this.onProfileTap,
-  });
+  const HomePage({super.key, required this.user, required this.profile});
 
   final User user;
   final UserProfile profile;
-  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        toolbarHeight: 100,
-        surfaceTintColor: Colors.transparent,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-
-          children: [const GoBisonLogo(height: 100)],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: UserAvatar(
-                firstName: user.firstName,
-                lastName: user.lastName,
-                radius: 21,
-                onTap: onProfileTap,
-                backgroundColor: AvatarColorOption.getBackgroundColor(profile.avatarColor,),
-                textColor: AvatarColorOption.getTextColor(profile.avatarColor,),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -91,19 +55,12 @@ class HomePage extends StatelessWidget {
                     'We’re working on something exciting '
                     'to make getting to campus easier.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.6,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 16, height: 1.6, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 28),
 
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 12,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(30),
@@ -112,11 +69,7 @@ class HomePage extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.construction_outlined,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
+                        Icon(Icons.construction_outlined, color: AppColors.primary, size: 20),
                         SizedBox(width: 10),
                         Text(
                           'Feature coming soon',
@@ -126,24 +79,6 @@ class HomePage extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 36),
-
-                  OutlinedButton.icon(
-                    onPressed: onProfileTap,
-                    icon: const Icon(Icons.person_outline),
-                    label: const Text('View My Profile'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
                   ),
                 ],
