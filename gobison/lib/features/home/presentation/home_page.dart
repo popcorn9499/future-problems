@@ -11,58 +11,6 @@ class HomePage extends StatelessWidget {
   final User user;
   final UserProfile profile;
 
-  Widget _buildRideOption({
-    required BuildContext context,
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: 28,
-            horizontal: 12,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: 76,
-                width: 76,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  icon,
-                  size: 38,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
