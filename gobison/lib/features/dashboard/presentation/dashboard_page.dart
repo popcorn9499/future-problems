@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+ 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/ride_agreement.dart';
 import '../dashboard_controller.dart';
 import '../dashboard_service.dart';
-
+ 
 const List<(String, String)> _weekdays = [
   ('MONDAY', 'M'),
   ('TUESDAY', 'T'),
@@ -16,20 +16,20 @@ const List<(String, String)> _weekdays = [
   ('SATURDAY', 'S'),
   ('SUNDAY', 'S'),
 ];
-
+ 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key, required this.user});
-
+ 
   final User user;
-
+ 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
-
+ 
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardService _dashboardService;
   late final DashboardController _dashboardController;
-
+ 
   @override
   void initState() {
     super.initState();
@@ -37,22 +37,22 @@ class _DashboardPageState extends State<DashboardPage> {
     _dashboardController = DashboardController(_dashboardService);
     _dashboardController.loadAgreements();
   }
-
+ 
   @override
   void dispose() {
     _dashboardController.dispose();
     super.dispose();
   }
-
+ 
   Widget _buildBody() {
     final controller = _dashboardController;
-
+ 
     if (controller.isLoading && controller.agreements.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
-
+ 
     if (controller.errorMessage != null && controller.agreements.isEmpty) {
       return _MessageState(
         icon: Icons.error_outline,
@@ -63,7 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
         onAction: controller.loadAgreements,
       );
     }
-
+ 
     if (controller.agreements.isEmpty) {
       return const _MessageState(
         icon: Icons.confirmation_number_outlined,
@@ -74,7 +74,7 @@ class _DashboardPageState extends State<DashboardPage> {
             'it will show up here like a ticket.',
       );
     }
-
+ 
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: controller.loadAgreements,
@@ -96,32 +96,21 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
-    
   }
-
+ 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        title: const Text(
-          'My Rides',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: _dashboardController,
-          builder: (context, child) => _buildBody(),
-        ),
+    // No Scaffold/AppBar/SafeArea: AppShell already provides the sidebar,
+    // the top bar with the page title, and the SafeArea.
+    return ColoredBox(
+      color: AppColors.background,
+      child: ListenableBuilder(
+        listenable: _dashboardController,
+        builder: (context, child) => _buildBody(),
       ),
     );
   }
-
+ 
   void _copyAddress(String? address) {
     if (address == null || address.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -131,9 +120,9 @@ class _DashboardPageState extends State<DashboardPage> {
       );
       return;
     }
-
+ 
     Clipboard.setData(ClipboardData(text: address));
-
+ 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Address copied to clipboard!'),
@@ -142,14 +131,18 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 }
-
+ 
 class _TicketCard extends StatelessWidget {
-  const _TicketCard({required this.agreement, required this.currentUserId, required this.onCopyAddress,});
-
+  const _TicketCard({
+    required this.agreement,
+    required this.currentUserId,
+    required this.onCopyAddress,
+  });
+ 
   final RideAgreement agreement;
   final String currentUserId;
   final ValueChanged<String?> onCopyAddress;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -214,12 +207,12 @@ class _TicketCard extends StatelessWidget {
     );
   }
 }
-
+ 
 class _TicketHeader extends StatelessWidget {
   const _TicketHeader({required this.agreement});
-
+ 
   final RideAgreement agreement;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -266,14 +259,14 @@ class _TicketHeader extends StatelessWidget {
     );
   }
 }
-
+ 
 class _Place extends StatelessWidget {
   const _Place({required this.label, required this.name, this.alignEnd = false});
-
+ 
   final String label;
   final String name;
   final bool alignEnd;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -303,12 +296,12 @@ class _Place extends StatelessWidget {
     );
   }
 }
-
+ 
 class _StatusChip extends StatelessWidget {
   const _StatusChip({required this.status});
-
+ 
   final String status;
-
+ 
   @override
   Widget build(BuildContext context) {
     final isActive = status.toUpperCase() == 'ACTIVE';
@@ -316,7 +309,7 @@ class _StatusChip extends StatelessWidget {
     final label = status.isEmpty
         ? ''
         : status[0].toUpperCase() + status.substring(1).toLowerCase();
-
+ 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -335,11 +328,11 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
-
+ 
 /// The dashed "perforation" between the header and body, with side notches.
 class _TearLine extends StatelessWidget {
   const _TearLine();
-
+ 
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -368,12 +361,12 @@ class _TearLine extends StatelessWidget {
     );
   }
 }
-
+ 
 class _Notch extends StatelessWidget {
   const _Notch({required this.isLeft});
-
+ 
   final bool isLeft;
-
+ 
   @override
   Widget build(BuildContext context) {
     const radius = Radius.circular(10);
@@ -391,12 +384,12 @@ class _Notch extends StatelessWidget {
     );
   }
 }
-
+ 
 class _WeekdayRow extends StatelessWidget {
   const _WeekdayRow({required this.activeDays});
-
+ 
   final List<String> activeDays;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -413,13 +406,13 @@ class _WeekdayRow extends StatelessWidget {
     );
   }
 }
-
+ 
 class _DayCircle extends StatelessWidget {
   const _DayCircle({required this.letter, required this.active});
-
+ 
   final String letter;
   final bool active;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -444,7 +437,7 @@ class _DayCircle extends StatelessWidget {
     );
   }
 }
-
+ 
 class _MemberSection extends StatelessWidget {
   const _MemberSection({
     required this.label,
@@ -452,12 +445,12 @@ class _MemberSection extends StatelessWidget {
     required this.currentUserId,
     required this.onCopyAddress,
   });
-
+ 
   final String label;
   final List<AgreementMember> members;
   final String currentUserId;
   final ValueChanged<String?> onCopyAddress;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -489,18 +482,18 @@ class _MemberSection extends StatelessWidget {
     );
   }
 }
-
+ 
 class _MemberChip extends StatelessWidget {
   const _MemberChip({
     required this.member,
     required this.isCurrentUser,
     required this.onCopyAddress,
   });
-
+ 
   final AgreementMember member;
   final bool isCurrentUser;
   final ValueChanged<String?> onCopyAddress;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -559,7 +552,7 @@ class _MemberChip extends StatelessWidget {
     );
   }
 }
-
+ 
 class _MessageState extends StatelessWidget {
   const _MessageState({
     required this.icon,
@@ -569,14 +562,14 @@ class _MessageState extends StatelessWidget {
     this.actionLabel,
     this.onAction,
   });
-
+ 
   final IconData icon;
   final Color iconColor;
   final String title;
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
-
+ 
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -633,3 +626,4 @@ class _MessageState extends StatelessWidget {
     );
   }
 }
+ 
