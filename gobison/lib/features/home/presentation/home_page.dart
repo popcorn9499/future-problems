@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -23,22 +24,6 @@ class HomePage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border, width: 1),
-                    ),
-                    child: const Icon(
-                      Icons.directions_car_filled_outlined,
-                      size: 58,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
                   const Text(
                     'Your next ride starts here.',
                     textAlign: TextAlign.center,
@@ -49,15 +34,15 @@ class HomePage extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
+
                   const SizedBox(height: 14),
 
                   const Text(
-                    'We’re working on something exciting '
-                    'to make getting to campus easier.',
+                    'Whether you need a ride or have room to offer one, '
+                    'GoBison makes getting to campus easier.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, height: 1.6, color: AppColors.textSecondary),
                   ),
-                  const SizedBox(height: 28),
 
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),

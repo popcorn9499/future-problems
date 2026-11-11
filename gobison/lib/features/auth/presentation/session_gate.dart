@@ -7,6 +7,9 @@ import '../../profile/presentation/edit_profile_page.dart';
 import '../../dashboard/presentation/dashboard_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
+import '../../ride_request/presentation/ride_request_page.dart';
+import '../../ride_offer/presentation/ride_offer_page.dart';
+
 import '../../../core/services/session_service.dart';
 
 class SessionGate extends StatefulWidget {
@@ -77,6 +80,8 @@ class _SessionGateState extends State<SessionGate> {
           dashboardPage: DashboardPage(user: session.user),
           messagesPage: const Placeholder(),
           user: session.user, // Adjust to your actual profile field.
+          rideRequestPage: RideRequestPage(userId: session.user.id),
+          rideOfferPage: RideOfferPage(userId: session.user.id),
           onProfileTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
