@@ -139,9 +139,9 @@ void main() {
           final requestBody = jsonDecode(capturedRequest.body);
 
           expect(requestBody['description'], isNull);
-          expect(requestBody['userId'], '123');
+          expect(requestBody.containsKey('userId'), isFalse);
           expect(requestBody['city'], 'Fargo');
-          expect(requestBody['daysOfWeek'], ['Monday']);
+          expect(requestBody['daysOfWeek'], ['MONDAY']);
         },
       );
 

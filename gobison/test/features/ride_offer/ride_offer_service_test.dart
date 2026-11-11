@@ -147,7 +147,7 @@ void main() {
           final requestBody = jsonDecode(capturedRequest.body);
 
           expect(requestBody['description'], isNull);
-          expect(requestBody['userId'], '123');
+          expect(requestBody.containsKey('userId'), isFalse);
           expect(requestBody['passengerNum'], 1);
         },
       );
