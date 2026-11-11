@@ -9,7 +9,6 @@ import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/auth/presentation/session_gate.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
-import 'package:gobison/features/home/presentation/home_page.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
