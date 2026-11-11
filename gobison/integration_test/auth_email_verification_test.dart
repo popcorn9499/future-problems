@@ -6,7 +6,8 @@ import 'package:gobison/core/models/user_profile.dart';
 import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
-import 'package:gobison/features/home/presentation/home_page.dart';
+import 'package:gobison/core/navigation/app_shell.dart';
+import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -89,7 +90,7 @@ void main() {
 
     expect(error, findsOneWidget);
     expect(find.byType(VerificationPage), findsOneWidget);
-    expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(DashboardPage), findsNothing);
 
     expect(SessionService.cachedSession!.user.verified, isFalse);
     final session = await SessionService().loadCurrentSession();
@@ -140,15 +141,15 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 100));
     }
 
-    final home = find.byType(HomePage);
+    final appShell = find.byType(AppShell);
 
-    for (var attempt = 0; attempt < 50 && home.evaluate().isEmpty; attempt++) {
+    for (var attempt = 0; attempt < 50 && appShell.evaluate().isEmpty; attempt++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    expect(home, findsOneWidget);
+    expect(appShell, findsOneWidget);
+    expect(find.byType(DashboardPage), findsOneWidget);
     expect(find.byType(VerificationPage), findsNothing);
-    expect(find.text('Your next ride starts here.'), findsOneWidget);
 
     expect(SessionService.cachedSession!.user.verified, isTrue);
     final session = await SessionService().loadCurrentSession();
