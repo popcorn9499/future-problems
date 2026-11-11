@@ -37,18 +37,25 @@ class AppSidebar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
             child: isExpanded
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GoBisonLogo(height: 60),
-                      IconButton(
-                        onPressed: onToggle,
-                        tooltip: 'Collapse sidebar',
-                        icon: const Icon(Icons.menu_open_rounded),
-                      ),
-                    ],
-                  )
-                : Center(child: LogoSmall(height: 45)),
+          ? Row(
+              children: [
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: GoBisonLogo(height: 60),
+                  ),
+                ),
+                IconButton(
+                  onPressed: onToggle,
+                  tooltip: 'Collapse sidebar',
+                  icon: const Icon(Icons.menu_open_rounded),
+                ),
+              ],
+            )
+          : Center(
+              child: LogoSmall(height: 45),
+            ),
           ),
           if (!isExpanded)
             IconButton(
@@ -73,6 +80,22 @@ class AppSidebar extends StatelessWidget {
             isSelected: selectedIndex == 1,
             isExpanded: isExpanded,
             onTap: () => onDestinationSelected(1),
+          ),
+
+          NavigationItem(
+            label: 'Create Ride Request',
+            icon: Icons.person_outline_rounded,
+            isSelected: selectedIndex == 2,
+            isExpanded: isExpanded,
+            onTap: () => onDestinationSelected(2),
+          ),
+
+          NavigationItem(
+            label: 'Create Ride Offer',
+            icon: Icons.directions_car_outlined,
+            isSelected: selectedIndex == 3,
+            isExpanded: isExpanded,
+            onTap: () => onDestinationSelected(3),
           ),
 
           const Spacer(),

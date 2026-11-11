@@ -1,0 +1,699 @@
+import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import '../ride_offer_controller.dart';
+import '../ride_offer_service.dart';
+
+class RideOfferPage extends StatefulWidget {
+
+  const RideOfferPage({
+    super.key,
+    required this.userId,
+  });
+
+  final String userId;
+
+  @override
+  State<RideOfferPage> createState() =>
+      _RideOfferPageState();
+}
+
+class _RideOfferPageState extends State<RideOfferPage> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final RideOfferService _rideOfferService;
+  late final RideOfferController _rideOfferController;
+
+  final _cityController = TextEditingController();
+  final _streetAddressController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  bool _showPassengerError = false;
+  bool _askingForDrivers = false;
+  
+  TimeOfDay? _arrivalTime;
+  int? _passengerNum;
+  final List<String> _selectedDays = [];
+  final List<String> _days = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _rideOfferService = RideOfferService();
+    _rideOfferController =
+        RideOfferController(_rideOfferService);
+  }
+
+  @override
+  void dispose() {
+    _cityController.dispose();
+    _streetAddressController.dispose();
+    _descriptionController.dispose();
+    _rideOfferController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitOffer() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_passengerNum == null) {
+      setState(() {
+        _showPassengerError = true;
+      });
+      return;
+    }
+
+    if (_arrivalTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an arrival time.'),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedDays.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one day.'),
+        ),
+      );
+      return;
+    }
+        
+    final String arrivalString =
+        '${_arrivalTime!.hour.toString().padLeft(2, '0')}:'
+        '${_arrivalTime!.minute.toString().padLeft(2, '0')}';
+
+    await _rideOfferController.createRideOffer(
+      userId: widget.userId,
+      city: _cityController.text.trim(),
+      streetAddress: _streetAddressController.text.trim(),
+      arrivalTime: arrivalString,
+      daysOfWeek: _selectedDays,
+      passengerNum: _passengerNum!,
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+      askingForDrivers: _askingForDrivers,
+    );
+
+    if (!mounted) return;
+
+    if (_rideOfferController.createdRideOffer != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ride offer created successfully!'),
+        ),
+      );
+
+      _resetForm();
+    }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _cityController.clear();
+      _streetAddressController.clear();
+      _descriptionController.clear();
+
+      _arrivalTime = null;
+      _passengerNum = null;
+      _selectedDays.clear();
+
+      _showPassengerError = false;
+      _askingForDrivers = false;
+    });
+
+    _formKey.currentState?.reset();
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required IconData icon,
+    bool includesAsterisk = true,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label + (includesAsterisk ? ' *' : ''),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          maxLength: label == 'Additional Description' ? 300 : null,
+          validator: includesAsterisk
+              ? (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter $label';
+                  }
+                  return null;
+                }
+              : null,
+          decoration: InputDecoration(
+            errorMaxLines: 2,
+            hintText: hint,
+            prefixIcon: Icon(
+              icon,
+              color: AppColors.primary,
+              size: 20,
+            ),
+            filled: true,
+            fillColor: AppColors.background,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 17,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.border,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDaySelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Days of the week *',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _days.map((day) {
+            final isSelected = _selectedDays.contains(
+              day.toUpperCase(),
+            );
+
+            return FilterChip(
+              label: Text(day.substring(0, 3)),
+              selected: isSelected,
+              showCheckmark: false,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedDays.add(day.toUpperCase());
+                  } else {
+                    _selectedDays.remove(day.toUpperCase());
+                  }
+                });
+              },
+              selectedColor: AppColors.primary,
+              backgroundColor: AppColors.background,
+              side: BorderSide(
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.border,
+              ),
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectArrivalTime() async {
+    final TimeOfDay? newTime = await showTimePicker(
+      context: context,
+      initialTime: _arrivalTime ?? const TimeOfDay(hour: 7, minute: 15),
+      initialEntryMode: TimePickerEntryMode.input,
+    );
+
+    if (newTime != null) {
+      setState(() {
+        _arrivalTime = newTime;
+      });
+    }
+  }
+
+  Widget _buildArrivalTimeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Desired campus arrival time *',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _selectArrivalTime,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 17,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.access_time,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _arrivalTime == null
+                        ? 'Select arrival time'
+                        : _arrivalTime!.format(context),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: _arrivalTime == null
+                          ? AppColors.textSecondary
+                          : AppColors.textPrimary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPassengerNumSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Number of Available Passenger Seats *',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: _passengerNum,
+              hint: const Text(
+                'Select number of available seats',
+              ),
+              isExpanded: true,
+              items: List.generate(9, (index) {
+                final number = index + 1;
+
+                return DropdownMenuItem<int>(
+                  value: number,
+                  child: Text('$number'),
+                );
+              }),
+              onChanged: (value) {
+                setState(() {
+                  _passengerNum = value;
+                  _showPassengerError = false;
+                });
+              },
+            ),
+          ),
+        ),
+
+        if (_showPassengerError && _passengerNum == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 8, left: 12),
+            child: Text(
+              'Please select the number of available seats',
+              style: TextStyle(
+                color: AppColors.error,
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAskingForDriversCheckbox() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Ride Preferences',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      const SizedBox(height: 8),
+      Container(
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Material(
+            color: AppColors.background,
+            child: CheckboxListTile(
+              value: _askingForDrivers,
+              onChanged: (value) {
+                setState(() {
+                  _askingForDrivers = value ?? false;
+                });
+              },
+              title: const Text(
+                'I am looking for other drivers to rideshare with.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              activeColor: AppColors.primary,
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              dense: true,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+  Widget _buildPair(Widget first, Widget second) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 460) {
+          return Column(
+            children: [
+              first,
+              const SizedBox(height: 18),
+              second,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: first),
+            const SizedBox(width: 16),
+            Expanded(child: second),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: ListenableBuilder(
+                listenable: _rideOfferController,
+                builder: (context, child) {
+                  return Form(
+                    key: _formKey,
+                    child: Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: const Color(0xFFEAE6DF),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Heading
+                          const Text(
+                            'Offer a Ride',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          const Text(
+                            'Let fellow Bisons know when and where you have room for a ride.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // City and Street Address
+                          _buildPair(
+                            _buildTextField(
+                              label: 'City',
+                              hint: 'Enter your city',
+                              controller: _cityController,
+                              icon: Icons.location_city_outlined,
+                            ),
+                            _buildTextField(
+                              label: 'Street Address',
+                              hint: 'Enter your starting address',
+                              controller: _streetAddressController,
+                              icon: Icons.location_on_outlined,
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _buildPair(
+                            _buildArrivalTimeSelector(),
+                            _buildPassengerNumSelector(),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          const SizedBox(height: 24),
+
+                          _buildPair(
+                            _buildDaySelector(),
+                            _buildAskingForDriversCheckbox(),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _buildTextField(
+                            label: 'Additional Description',
+                            hint: 'Enter any additional details',
+                            controller: _descriptionController,
+                            icon: Icons.description_outlined,
+                            includesAsterisk: false,
+                            maxLines: 3,
+                          ),
+
+                          const SizedBox(height: 28),
+
+                          if (_rideOfferController.errorMessage != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.error.withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: Text(
+                                _rideOfferController.errorMessage!,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 54,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _rideOfferController.isLoading
+                                        ? null
+                                        : () {
+                                            _resetForm();
+
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Form has been reset.'),
+                                              ),
+                                            );
+                                          },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text(
+                                      'Reset',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.primary,
+                                      side: const BorderSide(
+                                        color: AppColors.primary,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height: 54,
+                                  child: ElevatedButton(
+                                    onPressed: _rideOfferController.isLoading
+                                        ? null
+                                        : _submitOffer,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: _rideOfferController.isLoading
+                                        ? const SizedBox(
+                                            height: 24,
+                                            width: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Submit Ride Offer',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          const Text(
+                            'GoBison • Ride with the herd.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black38,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+   }
+}
