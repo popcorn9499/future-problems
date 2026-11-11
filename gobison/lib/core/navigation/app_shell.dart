@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gobison/features/ride_offer/presentation/ride_offer_page.dart';
-
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/models/user.dart';
 
