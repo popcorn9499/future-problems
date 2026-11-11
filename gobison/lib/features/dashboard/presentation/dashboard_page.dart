@@ -13,8 +13,6 @@ const List<(String, String)> _weekdays = [
   ('WEDNESDAY', 'W'),
   ('THURSDAY', 'T'),
   ('FRIDAY', 'F'),
-  ('SATURDAY', 'S'),
-  ('SUNDAY', 'S'),
 ];
  
 class DashboardPage extends StatefulWidget {
