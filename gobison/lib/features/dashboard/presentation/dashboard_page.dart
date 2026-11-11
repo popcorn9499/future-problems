@@ -522,14 +522,37 @@ class _MemberChip extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            isCurrentUser ? '${member.fullName} (you)' : member.fullName,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          if (member.address != null && member.address!.trim().isNotEmpty) ...[
+  member.fullName,
+  style: TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    color: isCurrentUser
+        ? AppColors.primary
+        : AppColors.textPrimary,
+  ),
+),
+if (isCurrentUser) ...[
+  const SizedBox(width: 5),
+  Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 6,
+      vertical: 2,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.primary.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: const Text(
+      'YOU',
+      style: TextStyle(
+        fontSize: 9,
+        fontWeight: FontWeight.bold,
+        color: AppColors.primary,
+      ),
+    ),
+  ),
+],
+          if (!isCurrentUser && member.address != null && member.address!.trim().isNotEmpty) ...[
             const SizedBox(width: 6),
             IconButton(
               tooltip: 'Copy address',
