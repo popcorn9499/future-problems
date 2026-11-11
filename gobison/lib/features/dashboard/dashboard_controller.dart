@@ -15,6 +15,14 @@ class DashboardController extends ChangeNotifier {
   String? errorMessage;
   List<RideAgreement> agreements = [];
 
+  List<RideAgreement> getFilteredAgreements(Set<String> selectedDays) {
+  if (selectedDays.isEmpty) return agreements;
+
+  return agreements.where((agreement) {
+    return agreement.daysOfWeek.any(selectedDays.contains);
+  }).toList();
+}
+
   Future<void> loadAgreements() async {
     isLoading = true;
     errorMessage = null;

@@ -27,6 +27,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   late final DashboardService _dashboardService;
   late final DashboardController _dashboardController;
+  final Set<String> _selectedDays = {};
  
   @override
   void initState() {
@@ -44,7 +45,7 @@ class _DashboardPageState extends State<DashboardPage> {
  
   Widget _buildBody() {
     final controller = _dashboardController;
- 
+    final filteredAgreements = controller.getFilteredAgreements(_selectedDays); 
     if (controller.isLoading && controller.agreements.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -74,26 +75,62 @@ class _DashboardPageState extends State<DashboardPage> {
     }
  
     return RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: controller.loadAgreements,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 850),
-          child: ListView.separated(
-            padding: const EdgeInsets.all(24),
-            itemCount: controller.agreements.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 20),
-            itemBuilder: (context, index) {
-              return _TicketCard(
-                agreement: controller.agreements[index],
-                currentUserId: widget.user.id,
-                onCopyAddress: _copyAddress,
-              );
-            },
-          ),
-        ),
+  color: AppColors.primary,
+  onRefresh: controller.loadAgreements,
+  child: Center(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 850),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(24),
+        itemCount: filteredAgreements.length + 1,
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: 20),
+        itemBuilder: (context, index) {
+  // Filter chips at the top
+  if (index == 0) {
+    return _DayFilter(
+      selectedDays: _selectedDays,
+      onDaySelected: (day) {
+        setState(() {
+          if (_selectedDays.contains(day)) {
+            _selectedDays.remove(day);
+          } else {
+            _selectedDays.add(day);
+          }
+        });
+      },
+      onClear: () {
+        setState(() {
+          _selectedDays.clear();
+        });
+      },
+    );
+  }
+
+  // No agreements match the selected day
+  if (filteredAgreements.isEmpty) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 40),
+      child: _MessageState(
+        icon: Icons.event_busy_outlined,
+        iconColor: AppColors.textSecondary,
+        title: 'No rides on this day',
+        message: 'You have no ride agreements scheduled for this day.',
       ),
     );
+  }
+
+  // Display agreement ticket
+  return _TicketCard(
+    agreement: filteredAgreements[index - 1],
+    currentUserId: widget.user.id,
+    onCopyAddress: _copyAddress,
+  );
+},
+      ),
+    ),
+  ),
+);
   }
  
   @override
@@ -647,4 +684,55 @@ class _MessageState extends StatelessWidget {
     );
   }
 }
- 
+
+ class _DayFilter extends StatelessWidget {
+  const _DayFilter({
+    required this.selectedDays,
+    required this.onDaySelected,
+    required this.onClear,
+  });
+
+  final Set<String> selectedDays;
+  final ValueChanged<String> onDaySelected;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final allSelected = selectedDays.isEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'FILTER BY DAY',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilterChip(
+              label: const Text('All'),
+              selected: allSelected,
+              onSelected: (_) => onClear(),
+            ),
+            for (final (day, _) in _weekdays)
+              FilterChip(
+                label: Text(
+                  day[0] + day.substring(1).toLowerCase(),
+                ),
+                selected: selectedDays.contains(day),
+                onSelected: (_) => onDaySelected(day),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}

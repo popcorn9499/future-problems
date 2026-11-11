@@ -12,7 +12,7 @@ class DashboardService {
   /// Flip to `false` (or delete the mock branch) once the endpoint is live.
   final bool useMock;
 
-  DashboardService({http.Client? client, this.useMock = true})
+  DashboardService({http.Client? client, this.useMock = false})
     : _client = client ?? createAuthClient();
 
   /// Fetches every ride agreement the logged-in user is part of.
@@ -65,7 +65,7 @@ final List<Map<String, dynamic>> _mockAgreements = [
     'destination': 'University of Manitoba',
     'departureTime': '12:30',
     'daysOfWeek': ['TUESDAY', 'THURSDAY'],
-    'status': 'PENDING',
+    'status': 'ARCHIVED',
     'drivers': [
       {'id': 15, 'firstName': 'Logan', 'lastName': 'Smith', 'address': '123 Pine Rd'},
     ],

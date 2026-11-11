@@ -49,12 +49,13 @@ public class StubRideAgreementSummaryRepository implements RideAgreementSummaryR
                         "University of Manitoba",
                         LocalTime.of(12, 30),
                         List.of(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY),
-                        "PENDING",
+                        "ARCHIVED",
                         List.of(new AgreementMember("soneyer1@myumanitoba.ca", "Rebekah", "Soneye", "321 Elm St")),
                         List.of(new AgreementMember("bauerl@myumanitoba.ca", "Leon", "Bauer", "654 Cedar Ave"),
                                 new AgreementMember("fanr1@myumanitoba.ca", "Ruitian", "Fan", "987 Oak St"),
                                 new AgreementMember("smithl3@myumanitoba.ca", "Logan", "Smith", "123 Pine Rd"), 
-                                currentUser)
+                                new AgreementMember("coless1@myumanitoba.ca", "Sasha", "Coles", "123 Main St"),
+                                new AgreementMember("carinr2@myumanitoba.ca", "Carina", "Rook", "789 Pine Rd"))
                 )
         );
     }
