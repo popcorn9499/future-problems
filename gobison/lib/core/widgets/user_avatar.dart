@@ -38,10 +38,11 @@ class UserAvatar extends StatelessWidget {
     final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
     final avatarBackgroundColor =
         backgroundColor ?? const Color(0xFFE9DFD2);
-
+    final last = lastName?.trim() ?? '';
+   
     return Semantics(
       button: onTap != null,
-      label: '${lastName?.isNotEmpty == true ? lastName : firstName} profile',
+      label: '${last.isNotEmpty ? last : firstName} profile',
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),

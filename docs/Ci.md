@@ -93,4 +93,4 @@ Chrome runs in headless mode in CI.
 3. Run registration response tests with a local mock backend.
 4. Run email verification tests with a mock backend, covering incorrect codes and successful verification.
 
-The response tests use a mock backend and do not verify the real backend,database ,or email delivery.
+The tests use a mock backend and do not verify the real backend,database ,or email delivery.

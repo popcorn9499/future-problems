@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:gobison/main.dart' as app;
+
+import 'support/registration_setup.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +14,7 @@ void main() {
 
   for (final scenario in scenarios.entries) {
     testWidgets('Registration handles ${scenario.key}', (tester) async {
-      app.main();
-      await tester.pumpAndSettle();
+      await openRegistration(tester);
 
       final fields = <String, String>{
         'Enter your first name': 'Test',

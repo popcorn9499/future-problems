@@ -4,25 +4,16 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
-import '../../../core/widgets/user_avatar.dart';
-import '../../../core/widgets/go_bison_logo.dart';
-import '../../../core/theme/avatar_color_option.dart';
 
 // Add your ride page imports here.
 import '../../ride_request/presentation/ride_request_page.dart';
 import '../../ride_offer/presentation/ride_offer_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({
-    super.key,
-    required this.user,
-    required this.profile,
-    required this.onProfileTap,
-  });
+  const HomePage({super.key, required this.user, required this.profile});
 
   final User user;
   final UserProfile profile;
-  final VoidCallback onProfileTap;
 
   Widget _buildRideOption({
     required BuildContext context,
@@ -80,6 +71,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+<<<<<<< HEAD
       appBar: AppBar(
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
@@ -108,6 +100,8 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
+=======
+>>>>>>> origin/dev
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -134,13 +128,10 @@ class HomePage extends StatelessWidget {
                     'Whether you need a ride or have room to offer one, '
                     'GoBison makes getting to campus easier.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.6,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 16, height: 1.6, color: AppColors.textSecondary),
                   ),
 
+<<<<<<< HEAD
                   const SizedBox(height: 36),
 
                   Row(
@@ -199,6 +190,30 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                   ),
+=======
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.construction_outlined, color: AppColors.primary, size: 20),
+                        SizedBox(width: 10),
+                        Text(
+                          'Feature coming soon',
+                          style: TextStyle(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+>>>>>>> origin/dev
                 ],
               ),
             ),
