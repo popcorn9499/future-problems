@@ -71,7 +71,7 @@ class _DashboardPageState extends State<DashboardPage> {
         title: 'No ride agreements yet',
         message:
             'Once you and other students agree on a ride, '
-            'it will show up here like a ticket.',
+            'it will show up here.',
       );
     }
  
@@ -305,13 +305,13 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = status.toUpperCase() == 'ACTIVE';
-    final color = isActive ? AppColors.primary : AppColors.textSecondary;
+    final color = isActive ? const Color.fromARGB(255, 87, 150, 71) : AppColors.textSecondary;
     final label = status.isEmpty
         ? ''
         : status[0].toUpperCase() + status.substring(1).toLowerCase();
  
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical:8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
@@ -320,7 +320,7 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 15,
           fontWeight: FontWeight.w600,
           color: color,
         ),
