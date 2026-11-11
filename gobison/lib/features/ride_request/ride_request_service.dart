@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/network/api_config.dart';
+import '../../core/network/auth_client.dart';
 
 class RideRequestService {
-  RideRequestService({http.Client? client}) : _client = client ?? http.Client();
+  RideRequestService({http.Client? client}) : _client = client ?? createAuthClient();
 
   final http.Client _client;
 
@@ -25,11 +26,10 @@ class RideRequestService {
         'Accept': 'application/json',
       },
       body: jsonEncode({
-        'userId': userId,
         'city': city,
         'streetAddress': streetAddress,
         'arrivalTime': arrivalTime,
-        'daysOfWeek': daysOfWeek,
+        'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),
         'description': description,
       }),
     );

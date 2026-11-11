@@ -64,11 +64,10 @@ void main() {
           );
 
           expect(jsonDecode(capturedRequest.body), {
-            'userId': '123',
             'city': 'Fargo',
             'streetAddress': '123 Main Street',
             'arrivalTime': '08:30',
-            'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
+            'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
             'description': 'Looking for a morning ride',
           });
 

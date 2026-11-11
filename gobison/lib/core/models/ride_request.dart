@@ -1,5 +1,7 @@
 class RideRequest {
   final String userId;
+  final String? requestId;
+  final String status;
   final String city;
   final String streetAddress;
   final String arrivalTime;
@@ -8,6 +10,8 @@ class RideRequest {
 
   const RideRequest({
     required this.userId,
+    this.requestId,
+    this.status = 'OPEN',
     required this.city,
     required this.streetAddress,
     required this.arrivalTime,
@@ -18,10 +22,12 @@ class RideRequest {
   factory RideRequest.fromJson(Map<String, dynamic> json) {
     return RideRequest(
       userId: json['userId'] as String,
+      requestId: json['requestId'] as String?,
+      status: json['status'] as String? ?? 'OPEN',
       city: json['city'] as String,
       streetAddress: json['streetAddress'] as String,
       arrivalTime: json['arrivalTime'] as String,
-      daysOfWeek: json['daysOfWeek'] as List<String>,
+      daysOfWeek: List<String>.from(json['daysOfWeek'] as List),
       description: json['description'] as String?,
     );
   }
