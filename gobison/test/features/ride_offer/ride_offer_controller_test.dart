@@ -17,9 +17,11 @@ class FakeRideOfferService extends RideOfferService {
 
   Future<Map<String, dynamic>> Function({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
@@ -29,9 +31,11 @@ class FakeRideOfferService extends RideOfferService {
   @override
   Future<Map<String, dynamic>> createRideOffer({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
@@ -39,9 +43,11 @@ class FakeRideOfferService extends RideOfferService {
   }) {
     return onCreateRideOffer!(
       userId: userId,
+      rideType: rideType,
       city: city,
       streetAddress: streetAddress,
       arrivalTime: arrivalTime,
+      departureTime: departureTime,
       passengerNum: passengerNum,
       daysOfWeek: daysOfWeek,
       description: description,
@@ -57,10 +63,12 @@ void main() {
 
     final rideOfferJson = {
       'id': 'ride123',
+      'rideType': 'arriving',
       'userId': '123',
       'city': 'Winnipeg',
       'streetAddress': '123 Main Street',
       'arrivalTime': '08:30',
+      'departureTime': null,
       'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
       'passengerNum': 3,
       'description': 'Morning commute',
@@ -87,9 +95,11 @@ void main() {
         () async {
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -100,9 +110,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday', 'Wednesday', 'Friday'],
         description: 'Morning commute',
@@ -111,9 +123,11 @@ void main() {
 
       expect(controller.createdRideOffer, isA<RideOffer>());
       expect(controller.createdRideOffer?.userId, '123');
+      expect(controller.createdRideOffer?.rideType, 'arriving');
       expect(controller.createdRideOffer?.city, 'Winnipeg');
       expect(controller.createdRideOffer?.streetAddress, '123 Main Street');
       expect(controller.createdRideOffer?.arrivalTime, '08:30');
+      expect(controller.createdRideOffer?.departureTime, null);
       expect(controller.createdRideOffer?.passengerNum, 3);
       expect(controller.createdRideOffer?.daysOfWeek, ['Monday', 'Wednesday', 'Friday'],);
       expect(controller.createdRideOffer?.description, 'Morning commute');
@@ -128,9 +142,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -147,8 +163,10 @@ void main() {
       await controller.createRideOffer(
         userId: '123',
         city: '  Winnipeg  ',
+        rideType: 'arriving',
         streetAddress: '  123 Main Street  ',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -166,9 +184,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -181,9 +201,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         description: '  Morning commute  ',
@@ -198,9 +220,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -213,9 +237,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 2,
         daysOfWeek: ['Monday'],
         description: '',
@@ -230,9 +256,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -245,9 +273,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 2,
         daysOfWeek: ['Monday'],
         description: '   ',
@@ -263,9 +293,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -278,9 +310,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 2,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -296,9 +330,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         required askingForDrivers,
@@ -310,9 +346,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -321,15 +359,196 @@ void main() {
       expect(receivedValue, isTrue);
     });
 
+    test('passes rideType to the service', () async {
+      String? receivedRideType;
+
+      rideOfferService.onCreateRideOffer = ({
+        required userId,
+        required rideType,
+        required city,
+        required streetAddress,
+        required arrivalTime,
+        required departureTime,
+        required passengerNum,
+        required daysOfWeek,
+        description,
+        required askingForDrivers,
+      }) async {
+        receivedRideType = rideType;
+        return rideOfferJson;
+      };
+
+      await controller.createRideOffer(
+        userId: '123',
+        rideType: 'arriving',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: '08:30',
+        departureTime: null,
+        passengerNum: 3,
+        daysOfWeek: ['Monday'],
+        askingForDrivers: true,
+      );
+
+      expect(receivedRideType, 'arriving');
+    });
+
+    test('passes departureTime to the service', () async {
+      String? receivedDepartureTime;
+
+      rideOfferService.onCreateRideOffer = ({
+        required userId,
+        required rideType,
+        required city,
+        required streetAddress,
+        required arrivalTime,
+        required departureTime,
+        required passengerNum,
+        required daysOfWeek,
+        description,
+        required askingForDrivers,
+      }) async {
+        receivedDepartureTime = departureTime;
+        return rideOfferJson;
+      };
+
+      await controller.createRideOffer(
+        userId: '123',
+        rideType: 'departing',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: null,
+        departureTime: '17:00',
+        passengerNum: 3,
+        daysOfWeek: ['Monday'],
+        askingForDrivers: true,
+      );
+
+      expect(receivedDepartureTime, '17:00');
+    });
+
+    test('passes both arrival and departure times for round trips', () async {
+      Map<String, dynamic>? receivedData;
+
+      rideOfferService.onCreateRideOffer = ({
+        required userId,
+        required rideType,
+        required city,
+        required streetAddress,
+        required arrivalTime,
+        required departureTime,
+        required passengerNum,
+        required daysOfWeek,
+        description,
+        required askingForDrivers,
+      }) async {
+        receivedData = {
+          'rideType': rideType,
+          'arrivalTime': arrivalTime,
+          'departureTime': departureTime,
+        };
+
+        return rideOfferJson;
+      };
+
+      await controller.createRideOffer(
+        userId: '123',
+        rideType: 'roundTrip',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: '08:30',
+        departureTime: '17:00',
+        passengerNum: 3,
+        daysOfWeek: ['Monday', 'Wednesday'],
+        askingForDrivers: true,
+      );
+
+      expect(receivedData, {
+        'rideType': 'roundTrip',
+        'arrivalTime': '08:30',
+        'departureTime': '17:00',
+      });
+    });
+
+    test('passes null arrivalTime for departing rides', () async {
+      String? receivedArrivalTime = 'not null';
+
+      rideOfferService.onCreateRideOffer = ({
+        required userId,
+        required rideType,
+        required city,
+        required streetAddress,
+        required arrivalTime,
+        required departureTime,
+        required passengerNum,
+        required daysOfWeek,
+        description,
+        required askingForDrivers,
+      }) async {
+        receivedArrivalTime = arrivalTime;
+        return rideOfferJson;
+      };
+
+      await controller.createRideOffer(
+        userId: '123',
+        rideType: 'departing',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: null,
+        departureTime: '17:00',
+        passengerNum: 2,
+        daysOfWeek: ['Monday'],
+        askingForDrivers: false,
+      );
+
+      expect(receivedArrivalTime, isNull);
+    });
+
+    test('passes null departureTime for arriving rides', () async {
+      String? receivedDepartureTime = 'not null';
+
+      rideOfferService.onCreateRideOffer = ({
+        required userId,
+        required rideType,
+        required city,
+        required streetAddress,
+        required arrivalTime,
+        required departureTime,
+        required passengerNum,
+        required daysOfWeek,
+        description,
+        required askingForDrivers,
+      }) async {
+        receivedDepartureTime = departureTime;
+        return rideOfferJson;
+      };
+
+      await controller.createRideOffer(
+        userId: '123',
+        rideType: 'arriving',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: '08:30',
+        departureTime: null,
+        passengerNum: 2,
+        daysOfWeek: ['Monday'],
+        askingForDrivers: false,
+      );
+
+      expect(receivedDepartureTime, isNull);
+    });
+
     test('clears the previous created ride offer before creating another',
         () async {
       var callCount = 0;
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -345,9 +564,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -359,9 +580,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -372,9 +595,11 @@ void main() {
 
       final future = controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '456 Oak Street',
         arrivalTime: '09:00',
+        departureTime: null,
         passengerNum: 2,
         daysOfWeek: ['Tuesday'],
         askingForDrivers: true,
@@ -392,9 +617,11 @@ void main() {
         () async {
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -405,9 +632,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -425,9 +654,11 @@ void main() {
         () async {
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -438,9 +669,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -457,9 +690,11 @@ void main() {
         () async {
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -470,9 +705,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -489,9 +726,11 @@ void main() {
         () async {
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -502,9 +741,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -523,9 +764,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -536,9 +779,11 @@ void main() {
 
       final future = controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -564,9 +809,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required passengerNum,
         required daysOfWeek,
         description,
@@ -577,9 +824,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         passengerNum: 3,
         daysOfWeek: ['Monday'],
         askingForDrivers: true,
@@ -594,9 +843,11 @@ void main() {
 
       rideOfferService.onCreateRideOffer = ({
         required userId,
+        required rideType,
         required city,
         required streetAddress,
         required arrivalTime,
+        required departureTime,
         required daysOfWeek,
         required passengerNum,
         description,
@@ -608,9 +859,11 @@ void main() {
 
       final firstCreation = controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '123 Main Street',
         arrivalTime: '08:30',
+        departureTime: null,
         daysOfWeek: ['Monday'],
         passengerNum: 2,
         askingForDrivers: true,
@@ -618,9 +871,11 @@ void main() {
 
       await controller.createRideOffer(
         userId: '123',
+        rideType: 'arriving',
         city: 'Winnipeg',
         streetAddress: '456 Oak Street',
         arrivalTime: '09:00',
+        departureTime: null,
         daysOfWeek: ['Tuesday'],
         passengerNum: 3,
         askingForDrivers: false,

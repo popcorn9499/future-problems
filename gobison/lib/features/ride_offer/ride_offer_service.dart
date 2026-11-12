@@ -11,9 +11,11 @@ class RideOfferService {
 
   Future<Map<String, dynamic>> createRideOffer({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
@@ -28,9 +30,11 @@ class RideOfferService {
       },
       body: jsonEncode({
         'userId': userId,
+        'rideType': rideType,
         'city': city,
         'streetAddress': streetAddress,
         'arrivalTime': arrivalTime,
+        'departureTime': departureTime,
         'daysOfWeek': daysOfWeek,
         'passengerNum': passengerNum,
         'description': description,
