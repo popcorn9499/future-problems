@@ -69,13 +69,12 @@ void main() {
           );
 
           expect(jsonDecode(capturedRequest.body), {
-            'userId': '123',
             'rideType': 'arriving',
             'city': 'Fargo',
             'streetAddress': '123 Main Street',
             'arrivalTime': '08:30',
             'departureTime': null,
-            'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
+            'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
             'passengerNum': 3,
             'description': 'Morning commute',
             'askingForDrivers': false,
@@ -160,7 +159,7 @@ void main() {
           final requestBody = jsonDecode(capturedRequest.body);
 
           expect(requestBody['description'], isNull);
-          expect(requestBody['userId'], '123');
+          expect(requestBody.containsKey('userId'), isFalse);
           expect(requestBody['passengerNum'], 1);
         },
       );
