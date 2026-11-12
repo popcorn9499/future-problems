@@ -115,9 +115,13 @@ void main() {
           password: 'password',
         );
         expect(controller.errorMessage, isNull);
-        final session = await SessionService().loadCurrentSession();
+        final session = SessionService.cachedSession;
         expect(session!.user.id, '123');
+        expect(session.user.firstName, 'Ada');
+        expect(session.user.lastName, isNull);
+        expect(session.user.email, 'ada@myumanitoba.ca');
         expect(session.user.verified, isTrue);
+        expect(session.accessToken, isNull);
       },
     );
 
@@ -215,13 +219,14 @@ void main() {
           email: 'ada@myumanitoba.ca',
         ),
       );
+      expect(SessionService.cachedSession!.user.verified, isFalse);
       completer.complete({'universityVerified': true});
 
       await future;
 
       expect(controller.isLoading, isFalse);
       expect(controller.errorMessage, isNull);
-      expect((await SessionService().loadCurrentSession())!.user.verified, isTrue);
+      expect(SessionService.cachedSession!.user.verified, isTrue);
     });
   });
 

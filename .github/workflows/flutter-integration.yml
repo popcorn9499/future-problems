@@ -59,15 +59,7 @@ jobs:
       - name: Test registration page and validation
         env:
           CHROME_EXECUTABLE: ${{ steps.chrome.outputs.chrome-path }}
-        run: |
-          flutter drive \
-            --driver=test_driver/integration_test.dart \
-            --target=integration_test/auth_registration_test.dart \
-            -d web-server \
-            --browser-name=chrome \
-            --driver-port=4444 \
-            --chrome-binary="$CHROME_EXECUTABLE" \
-            --headless
+        run: dart run test_driver/run_registration_with_mock.dart integration_test/auth_registration_test.dart
 
       - name: Test registration responses with mock backend
         env:

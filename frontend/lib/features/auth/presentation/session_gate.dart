@@ -5,11 +5,17 @@ import 'login_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
+import '../../../core/navigation/app_shell.dart';
+
+import '../../ride_request/presentation/ride_request_page.dart';
+import '../../ride_offer/presentation/ride_offer_page.dart';
 
 import '../../../core/services/session_service.dart';
 
 class SessionGate extends StatefulWidget {
-  const SessionGate({super.key});
+  const SessionGate({super.key, this.sessionService});
+
+  final SessionService? sessionService;
 
   @override
   State<SessionGate> createState() => _SessionGateState();
@@ -21,7 +27,7 @@ class _SessionGateState extends State<SessionGate> {
   @override
   void initState() {
     super.initState();
-    _sessionFuture = SessionService().loadCurrentSession();
+    _sessionFuture = (widget.sessionService ?? SessionService()).loadCurrentSession();
   }
 
   @override
@@ -30,9 +36,7 @@ class _SessionGateState extends State<SessionGate> {
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         if (snapshot.hasError) {
@@ -46,7 +50,8 @@ class _SessionGateState extends State<SessionGate> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _sessionFuture = SessionService().loadCurrentSession();
+                        _sessionFuture = (widget.sessionService ?? SessionService())
+                            .loadCurrentSession();
                       });
                     },
                     child: const Text('Try again'),
@@ -70,10 +75,12 @@ class _SessionGateState extends State<SessionGate> {
             userProfile: session.profile,
           );
         }
-
-        return HomePage(
-          user: session.user,
-          profile: session.profile,
+        return AppShell(
+          dashboardPage: HomePage(user: session.user, profile: session.profile),
+          messagesPage: const Placeholder(),
+          user: session.user, // Adjust to your actual profile field.
+          rideRequestPage: RideRequestPage(userId: session.user.id),
+          rideOfferPage: RideOfferPage(userId: session.user.id),
           onProfileTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -84,10 +91,8 @@ class _SessionGateState extends State<SessionGate> {
                   onEdit: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => EditProfilePage(
-                          user: session.user,
-                          profile: session.profile,
-                        ),
+                        builder: (_) =>
+                            EditProfilePage(user: session.user, profile: session.profile),
                       ),
                     );
                   },
