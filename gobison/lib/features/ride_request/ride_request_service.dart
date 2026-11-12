@@ -6,8 +6,7 @@ import '../../core/network/api_config.dart';
 import '../../core/network/auth_client.dart';
 
 class RideRequestService {
-  RideRequestService({http.Client? client})
-    : _client = client ?? createAuthClient();
+  RideRequestService({http.Client? client}) : _client = client ?? createAuthClient();
 
   final http.Client _client;
 

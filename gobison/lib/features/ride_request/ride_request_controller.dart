@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:gobison/core/models/ride_request.dart';
-
 import 'ride_request_service.dart';
 
 class RideRequestController extends ChangeNotifier {
@@ -24,7 +23,7 @@ class RideRequestController extends ChangeNotifier {
     String? description,
   }) async {
     if (isLoading) return;
-
+    
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -45,11 +44,12 @@ class RideRequestController extends ChangeNotifier {
         departureTime: departureTime,
         daysOfWeek: daysOfWeek,
         description: trimmedDescription?.isEmpty == true
-            ? null
-            : trimmedDescription,
+          ? null
+          : trimmedDescription,
       );
 
       createdRideRequest = RideRequest.fromJson(data);
+
     } catch (e) {
       errorMessage = _handleError(extractErrorCode(e));
     } finally {

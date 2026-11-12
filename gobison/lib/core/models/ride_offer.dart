@@ -30,7 +30,7 @@ class RideOffer {
     required this.daysOfWeek,
     required this.passengerNum,
     this.description,
-    required this.askingForDrivers,
+    required this.askingForDrivers
   });
 
   factory RideOffer.fromJson(Map<String, dynamic> json) {

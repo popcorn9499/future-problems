@@ -54,11 +54,19 @@ void main() {
 
           expect(
             capturedRequest.url,
-            Uri.parse('${ApiConfig.baseUrl}/api/v1/rides/requests'),
+            Uri.parse(
+              '${ApiConfig.baseUrl}/api/v1/rides/requests',
+            ),
           );
 
-          expect(capturedRequest.headers['content-type'], 'application/json');
-          expect(capturedRequest.headers['accept'], 'application/json');
+          expect(
+            capturedRequest.headers['content-type'],
+            'application/json',
+          );
+          expect(
+            capturedRequest.headers['accept'],
+            'application/json',
+          );
 
           expect(jsonDecode(capturedRequest.body), {
             'rideType': 'roundTrip',
@@ -75,11 +83,20 @@ void main() {
           expect(result['arrivalId'], 'request123');
           expect(result['departureId'], 'request124');
           expect(result['roundTripId'], 'shared-id');
+          expect(result['userId'], '123');
           expect(result['rideType'], 'roundTrip');
+          expect(result['city'], 'Fargo');
+          expect(result['streetAddress'], '123 Main Street');
           expect(result['arrivalTime'], '08:30');
           expect(result['departureTime'], '17:00');
-          expect(result['daysOfWeek'], ['MONDAY', 'WEDNESDAY', 'FRIDAY']);
-          expect(result['description'], 'Looking for a morning ride');
+          expect(
+            result['daysOfWeek'],
+            ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
+          );
+          expect(
+            result['description'],
+            'Looking for a morning ride',
+          );
         },
       );
 
@@ -129,7 +146,10 @@ void main() {
           final client = MockClient((request) async {
             capturedRequest = request;
 
-            return http.Response(jsonEncode({'id': 'requestDeparting'}), 200);
+            return http.Response(
+              jsonEncode({'id': 'requestDeparting'}),
+              200,
+            );
           });
 
           final service = RideRequestService(client: client);
@@ -152,37 +172,43 @@ void main() {
         },
       );
 
-      test('sends null description when no description is provided', () async {
-        late http.Request capturedRequest;
+      test(
+        'sends null description when no description is provided',
+        () async {
+          late http.Request capturedRequest;
 
-        final client = MockClient((request) async {
-          capturedRequest = request;
+          final client = MockClient((request) async {
+            capturedRequest = request;
 
-          return http.Response(jsonEncode({'id': 'request789'}), 200);
-        });
+            return http.Response(
+              jsonEncode({'id': 'request789'}),
+              200,
+            );
+          });
 
-        final service = RideRequestService(client: client);
+          final service = RideRequestService(client: client);
 
-        await service.createRideRequest(
-          userId: '123',
-          rideType: 'arriving',
-          city: 'Fargo',
-          streetAddress: '789 Oak Street',
-          arrivalTime: '07:30',
-          departureTime: null,
-          daysOfWeek: ['Monday'],
-        );
+          await service.createRideRequest(
+            userId: '123',
+            rideType: 'arriving',
+            city: 'Fargo',
+            streetAddress: '789 Oak Street',
+            arrivalTime: '07:30',
+            departureTime: null,
+            daysOfWeek: ['Monday'],
+          );
 
-        final requestBody = jsonDecode(capturedRequest.body);
+          final requestBody = jsonDecode(capturedRequest.body);
 
-        expect(requestBody['description'], isNull);
-        expect(requestBody.containsKey('userId'), isFalse);
-        expect(requestBody['rideType'], 'arriving');
-        expect(requestBody['arrivalTime'], '07:30');
-        expect(requestBody['departureTime'], isNull);
-        expect(requestBody['city'], 'Fargo');
-        expect(requestBody['daysOfWeek'], ['MONDAY']);
-      });
+          expect(requestBody['description'], isNull);
+          expect(requestBody.containsKey('userId'), isFalse);
+          expect(requestBody['rideType'], 'arriving');
+          expect(requestBody['arrivalTime'], '07:30');
+          expect(requestBody['departureTime'], isNull);
+          expect(requestBody['city'], 'Fargo');
+          expect(requestBody['daysOfWeek'], ['MONDAY']);
+        },
+      );
 
       test(
         'throws an exception when ride request creation fails (400)',
@@ -220,37 +246,45 @@ void main() {
         },
       );
 
-      test('throws an exception when the session has expired (401)', () async {
-        final client = MockClient(
-          (_) async => http.Response('{"message":"Unauthorized"}', 401),
-        );
-
-        final service = RideRequestService(client: client);
-
-        expect(
-          () => service.createRideRequest(
-            userId: '123',
-            rideType: 'arriving',
-            city: 'Fargo',
-            streetAddress: '123 Main Street',
-            arrivalTime: '08:30',
-            departureTime: null,
-            daysOfWeek: ['Monday'],
-          ),
-          throwsA(
-            isA<Exception>().having(
-              (error) => error.toString(),
-              'message',
-              contains('Ride request creation failed (401)'),
+      test(
+        'throws an exception when the session has expired (401)',
+        () async {
+          final client = MockClient(
+            (_) async => http.Response(
+              '{"message":"Unauthorized"}',
+              401,
             ),
-          ),
-        );
-      });
+          );
+
+          final service = RideRequestService(client: client);
+
+          expect(
+            () => service.createRideRequest(
+              userId: '123',
+              rideType: 'arriving',
+              city: 'Fargo',
+              streetAddress: '123 Main Street',
+              arrivalTime: '08:30',
+              departureTime: null,
+              daysOfWeek: ['Monday'],
+            ),
+            throwsA(
+              isA<Exception>().having(
+                (error) => error.toString(),
+                'message',
+                contains('Ride request creation failed (401)'),
+              ),
+            ),
+          );
+        },
+      );
 
       test('throws an exception on a server error (500)', () async {
         final client = MockClient(
-          (_) async =>
-              http.Response('{"message":"Internal server error"}', 500),
+          (_) async => http.Response(
+            '{"message":"Internal server error"}',
+            500,
+          ),
         );
 
         final service = RideRequestService(client: client);
@@ -275,32 +309,38 @@ void main() {
         );
       });
 
-      test('throws an exception when the response status is 405', () async {
-        final client = MockClient(
-          (_) async => http.Response('{"message":"Method not allowed"}', 405),
-        );
-
-        final service = RideRequestService(client: client);
-
-        expect(
-          () => service.createRideRequest(
-            userId: '123',
-            rideType: 'arriving',
-            city: 'Fargo',
-            streetAddress: '123 Main Street',
-            arrivalTime: '08:30',
-            departureTime: null,
-            daysOfWeek: ['Monday'],
-          ),
-          throwsA(
-            isA<Exception>().having(
-              (error) => error.toString(),
-              'message',
-              contains('Ride request creation failed (405)'),
+      test(
+        'throws an exception when the response status is 405',
+        () async {
+          final client = MockClient(
+            (_) async => http.Response(
+              '{"message":"Method not allowed"}',
+              405,
             ),
-          ),
-        );
-      });
+          );
+
+          final service = RideRequestService(client: client);
+
+          expect(
+            () => service.createRideRequest(
+              userId: '123',
+              rideType: 'arriving',
+              city: 'Fargo',
+              streetAddress: '123 Main Street',
+              arrivalTime: '08:30',
+              departureTime: null,
+              daysOfWeek: ['Monday'],
+            ),
+            throwsA(
+              isA<Exception>().having(
+                (error) => error.toString(),
+                'message',
+                contains('Ride request creation failed (405)'),
+              ),
+            ),
+          );
+        },
+      );
     });
   });
 }

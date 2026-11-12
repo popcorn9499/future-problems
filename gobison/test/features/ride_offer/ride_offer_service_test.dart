@@ -73,7 +73,7 @@ void main() {
             'city': 'Fargo',
             'streetAddress': '123 Main Street',
             'arrivalTime': '08:30',
-                        'departureTime': null,
+            'departureTime': null,
             'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
             'passengerNum': 3,
             'description': 'Morning commute',
