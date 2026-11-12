@@ -9,6 +9,9 @@ import com.gobison.backend.features.rides.presentation.RideRequestController;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.security.SecurityConfiguration;
+import com.gobison.backend.features.rides.domain.model.RideOffer;
+import com.gobison.backend.features.rides.domain.model.RideRequest;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -21,6 +24,10 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.Optional;
 
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,13 +78,13 @@ class RideCreationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$[0].userId").value(email))
-                .andExpect(jsonPath("$[0].requestId").isNotEmpty())
-                .andExpect(jsonPath("$[0].status").value("OPEN"))
-                .andExpect(jsonPath("$[0].city").value("Winnipeg"))
-                .andExpect(jsonPath("$[0].arrivalTime").value("08:30"))
-                .andExpect(jsonPath("$[0].daysOfWeek.length()").value(2))
-                .andExpect(jsonPath("$[0].daysOfWeek[0]").value("MONDAY"));
+                .andExpect(jsonPath("$.userId").value(email))
+                .andExpect(jsonPath("$.requestId").isNotEmpty())
+                .andExpect(jsonPath("$.status").value("OPEN"))
+                .andExpect(jsonPath("$.city").value("Winnipeg"))
+                .andExpect(jsonPath("$.arrivalTime").value("08:30"))
+                .andExpect(jsonPath("$.daysOfWeek.length()").value(2))
+                .andExpect(jsonPath("$.daysOfWeek[0]").value("MONDAY"));
     }
 
     @Test
@@ -88,9 +95,9 @@ class RideCreationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body.replace("\"status\":\"CLOSED\"", "\"passengerNum\":3")))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$[0].offerId").isNotEmpty())
-                .andExpect(jsonPath("$[0].userId").value(email))
-                .andExpect(jsonPath("$[0].askingForDrivers").value(false));
+                .andExpect(jsonPath("$.offerId").isNotEmpty())
+                .andExpect(jsonPath("$.userId").value(email))
+                .andExpect(jsonPath("$.askingForDrivers").value(false));
     }
 
     @Test
@@ -159,61 +166,64 @@ class RideCreationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body.replace("\"status\":\"CLOSED\"", "\"passengerNum\":3.9")))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$[0].passengerNum").value(3));
+                .andExpect(jsonPath("$.passengerNum").value(3));
     }
 
     @Test
-    void createsRoundTripsAndDepartureLegsForBothEndpoints() throws Exception {
+    void createsRoundTripSummariesAndPreservesSavedLegIds() throws Exception {
         account(true);
 
         for (String endpoint : new String[] {"requests", "offers"}) {
+            clearInvocations(rideRequestRepository, rideOfferRepository);
             String roundTripBody = body.replace("\"arriving\"", "\"roundTrip\"")
                     .replace("\"status\":\"CLOSED\"", "\"passengerNum\":3,\"departureTime\":\"16:30\"");
+            String idField = endpoint.equals("requests") ? "requestId" : "offerId";
             var result = mvc.perform(post("/api/v1/rides/" + endpoint)
                             .with(user(email))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(roundTripBody))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.length()").value(2))
-                    .andExpect(jsonPath("$[0].rideType").value("arriving"))
-                    .andExpect(jsonPath("$[0].arrivalTime").value("08:30"))
-                    .andExpect(jsonPath("$[0].departureTime").isEmpty())
-                    .andExpect(jsonPath("$[1].rideType").value("departing"))
-                    .andExpect(jsonPath("$[1].departureTime").value("16:30"))
-                    .andExpect(jsonPath("$[1].arrivalTime").isEmpty())
-                    .andExpect(jsonPath("$[0].userId").value(email))
-                    .andExpect(jsonPath("$[1].userId").value(email))
-                    .andExpect(jsonPath("$[0].roundTripId").isNotEmpty())
+                    .andExpect(jsonPath("$").isMap())
+                    .andExpect(jsonPath("$.rideType").value("roundTrip"))
+                    .andExpect(jsonPath("$.arrivalTime").value("08:30"))
+                    .andExpect(jsonPath("$.departureTime").value("16:30"))
+                    .andExpect(jsonPath("$." + idField).value(nullValue()))
+                    .andExpect(jsonPath("$.arrivalId").isNotEmpty())
+                    .andExpect(jsonPath("$.departureId").isNotEmpty())
+                    .andExpect(jsonPath("$.roundTripId").isNotEmpty())
+                    .andExpect(jsonPath("$.userId").value(email))
+                    .andExpect(jsonPath("$.city").value("Winnipeg"))
+                    .andExpect(jsonPath("$.status").value("OPEN"))
                     .andReturn();
 
-            var json = new ObjectMapper()
-                    .readTree(result.getResponse().getContentAsString());
-            assertEquals(
-                    json.get(0).get("roundTripId").asText(),
-                    json.get(1).get("roundTripId").asText());
-            String idField = endpoint.equals("requests") ? "requestId" : "offerId";
-            assertNotEquals(
-                    json.get(0).get(idField).asText(), json.get(1).get(idField).asText());
-            for (String field : new String[] {
-                    "userId", "city", "streetAddress", "daysOfWeek", "description", "status"}) {
-                assertEquals(json.get(0).get(field), json.get(1).get(field));
+            var json = new ObjectMapper().readTree(result.getResponse().getContentAsString());
+            assertNotEquals(json.get("arrivalId").asText(), json.get("departureId").asText());
+            if (endpoint.equals("requests")) {
+                var captor = ArgumentCaptor.forClass(
+                        RideRequest.class);
+                verify(rideRequestRepository, times(2)).create(captor.capture());
+                var arrival = captor.getAllValues().get(0);
+                var departure = captor.getAllValues().get(1);
+                assertEquals(arrival.getRequestId().toString(), json.get("arrivalId").asText());
+                assertEquals(departure.getRequestId().toString(), json.get("departureId").asText());
+                assertEquals(arrival.getRoundTripId(), departure.getRoundTripId());
+                assertEquals(arrival.getRoundTripId().toString(), json.get("roundTripId").asText());
+                assertEquals(arrival.getUserId(), departure.getUserId());
+                assertEquals(arrival.getDaysOfWeek(), departure.getDaysOfWeek());
+            } else {
+                var captor = ArgumentCaptor.forClass(
+                        RideOffer.class);
+                verify(rideOfferRepository, times(2)).create(captor.capture());
+                var arrival = captor.getAllValues().get(0);
+                var departure = captor.getAllValues().get(1);
+                assertEquals(arrival.getOfferId().toString(), json.get("arrivalId").asText());
+                assertEquals(departure.getOfferId().toString(), json.get("departureId").asText());
+                assertEquals(arrival.getRoundTripId(), departure.getRoundTripId());
+                assertEquals(arrival.getRoundTripId().toString(), json.get("roundTripId").asText());
+                assertEquals(arrival.getPassengerNum(), departure.getPassengerNum());
+                assertEquals(arrival.isAskingForDrivers(), departure.isAskingForDrivers());
+                assertEquals(3, json.get("passengerNum").asInt());
             }
-            if (endpoint.equals("offers")) {
-                assertEquals(json.get(0).get("passengerNum"), json.get(1).get("passengerNum"));
-                assertEquals(json.get(0).get("askingForDrivers"), json.get(1).get("askingForDrivers"));
-            }
-
-            mvc.perform(post("/api/v1/rides/" + endpoint)
-                            .with(user(email))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(roundTripBody.replace("\"roundTrip\"", "\"departing\"")
-                                    .replace("\"arrivalTime\":\"08:30\",", "")))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].rideType").value("departing"))
-                    .andExpect(jsonPath("$[0].arrivalTime").isEmpty())
-                    .andExpect(jsonPath("$[0].departureTime").value("16:30"))
-                    .andExpect(jsonPath("$[0].roundTripId").isEmpty());
         }
     }
 
@@ -254,6 +264,8 @@ class RideCreationTest {
         account(true);
 
         for (String endpoint : new String[] {"requests", "offers"}) {
+            String idField = endpoint.equals("requests") ? "requestId" : "offerId";
+            clearInvocations(rideRequestRepository, rideOfferRepository);
             String oneWayBody = body.replace(
                     "\"status\":\"CLOSED\"", "\"passengerNum\":3,\"departureTime\":\"16:30\"");
 
@@ -262,20 +274,23 @@ class RideCreationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(oneWayBody))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].rideType").value("arriving"))
-                    .andExpect(jsonPath("$[0].departureTime").isEmpty())
-                    .andExpect(jsonPath("$[0].roundTripId").isEmpty());
+                    .andExpect(jsonPath("$.rideType").value("arriving"))
+                    .andExpect(jsonPath("$.arrivalId").isNotEmpty())
+                    .andExpect(jsonPath("$.departureId").value(nullValue()))
+                    .andExpect(jsonPath("$.departureTime").isEmpty())
+                    .andExpect(jsonPath("$.roundTripId").value(nullValue()))
+                    .andExpect(jsonPath("$." + idField).isNotEmpty());
 
             mvc.perform(post("/api/v1/rides/" + endpoint)
                             .with(user(email))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(oneWayBody.replace("\"arriving\"", "\"departing\"")))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.length()").value(1))
-                    .andExpect(jsonPath("$[0].rideType").value("departing"))
-                    .andExpect(jsonPath("$[0].arrivalTime").isEmpty())
-                    .andExpect(jsonPath("$[0].roundTripId").isEmpty());
+                    .andExpect(jsonPath("$.rideType").value("departing"))
+                    .andExpect(jsonPath("$.departureId").isNotEmpty())
+                    .andExpect(jsonPath("$.arrivalId").value(nullValue()))
+                    .andExpect(jsonPath("$.arrivalTime").isEmpty())
+                    .andExpect(jsonPath("$.roundTripId").isEmpty());
         }
     }
 }

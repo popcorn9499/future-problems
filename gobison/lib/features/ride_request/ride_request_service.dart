@@ -11,7 +11,7 @@ class RideRequestService {
 
   final http.Client _client;
 
-  Future<List<Map<String, dynamic>>> createRideRequest({
+  Future<Map<String, dynamic>> createRideRequest({
     required String userId,
     required String rideType,
     required String city,
@@ -40,8 +40,7 @@ class RideRequestService {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body) as List;
-      return data.map((leg) => Map<String, dynamic>.from(leg as Map)).toList();
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
     throw Exception(

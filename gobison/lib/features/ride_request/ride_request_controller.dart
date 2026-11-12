@@ -10,7 +10,7 @@ class RideRequestController extends ChangeNotifier {
 
   bool isLoading = false;
   String? errorMessage;
-  List<RideRequest> createdRideRequests = [];
+  RideRequest? createdRideRequest;
   RideRequest? updatedRideRequest;
 
   Future<void> createRideRequest({
@@ -30,7 +30,7 @@ class RideRequestController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      createdRideRequests = [];
+      createdRideRequest = null;
 
       final trimmedCity = city.trim();
       final trimmedStreetAddress = streetAddress.trim();
@@ -49,7 +49,7 @@ class RideRequestController extends ChangeNotifier {
             : trimmedDescription,
       );
 
-      createdRideRequests = data.map(RideRequest.fromJson).toList();
+      createdRideRequest = RideRequest.fromJson(data);
     } catch (e) {
       errorMessage = _handleError(extractErrorCode(e));
     } finally {

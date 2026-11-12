@@ -1,4 +1,6 @@
 class RideRequest {
+  final String? arrivalId;
+  final String? departureId;
   final String userId;
   final String? requestId;
   final String? roundTripId;
@@ -12,6 +14,8 @@ class RideRequest {
   final String? description;
 
   const RideRequest({
+    this.arrivalId,
+    this.departureId,
     required this.userId,
     this.requestId,
     this.roundTripId,
@@ -27,6 +31,8 @@ class RideRequest {
 
   factory RideRequest.fromJson(Map<String, dynamic> json) {
     return RideRequest(
+      arrivalId: json['arrivalId'] as String?,
+      departureId: json['departureId'] as String?,
       userId: json['userId'] as String,
       requestId: json['requestId'] as String?,
       roundTripId: json['roundTripId'] as String?,

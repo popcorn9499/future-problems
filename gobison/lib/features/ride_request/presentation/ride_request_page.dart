@@ -116,7 +116,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
 
     if (!mounted) return;
 
-    if (_rideRequestController.createdRideRequests.isNotEmpty) {
+    if (_rideRequestController.createdRideRequest != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Ride request created successfully!'),

@@ -17,7 +17,7 @@ class FakeRideRequestService extends RideRequestService {
         }),
       );
 
-  Future<List<Map<String, dynamic>>> Function({
+  Future<Map<String, dynamic>> Function({
     required String userId,
     required String rideType,
     required String city,
@@ -30,7 +30,7 @@ class FakeRideRequestService extends RideRequestService {
   onCreateRideRequest;
 
   @override
-  Future<List<Map<String, dynamic>>> createRideRequest({
+  Future<Map<String, dynamic>> createRideRequest({
     required String userId,
     required String rideType,
     required String city,
@@ -81,7 +81,7 @@ void main() {
     test('starts with the correct initial state', () {
       expect(controller.isLoading, isFalse);
       expect(controller.errorMessage, isNull);
-      expect(controller.createdRideRequests, isEmpty);
+      expect(controller.createdRideRequest, isNull);
       expect(controller.updatedRideRequest, isNull);
     });
 
@@ -99,7 +99,7 @@ void main() {
               required daysOfWeek,
               description,
             }) async {
-              return [rideRequestJson];
+              return rideRequestJson;
             };
 
         await controller.createRideRequest(
@@ -113,25 +113,19 @@ void main() {
           description: 'Morning commute',
         );
 
-        expect(controller.createdRideRequests, isA<List<RideRequest>>());
-        expect(controller.createdRideRequests.single.userId, '123');
-        expect(controller.createdRideRequests.single.rideType, 'arriving');
-        expect(controller.createdRideRequests.single.city, 'Winnipeg');
-        expect(
-          controller.createdRideRequests.single.streetAddress,
-          '123 Main Street',
-        );
-        expect(controller.createdRideRequests.single.arrivalTime, '08:30');
-        expect(controller.createdRideRequests.single.departureTime, null);
-        expect(controller.createdRideRequests.single.daysOfWeek, [
+        expect(controller.createdRideRequest, isA<RideRequest>());
+        expect(controller.createdRideRequest!.userId, '123');
+        expect(controller.createdRideRequest!.rideType, 'arriving');
+        expect(controller.createdRideRequest!.city, 'Winnipeg');
+        expect(controller.createdRideRequest!.streetAddress, '123 Main Street');
+        expect(controller.createdRideRequest!.arrivalTime, '08:30');
+        expect(controller.createdRideRequest!.departureTime, null);
+        expect(controller.createdRideRequest!.daysOfWeek, [
           'Monday',
           'Wednesday',
           'Friday',
         ]);
-        expect(
-          controller.createdRideRequests.single.description,
-          'Morning commute',
-        );
+        expect(controller.createdRideRequest!.description, 'Morning commute');
         expect(controller.errorMessage, isNull);
         expect(controller.isLoading, isFalse);
       },
@@ -162,7 +156,7 @@ void main() {
               'description': description,
             };
 
-            return [rideRequestJson];
+            return rideRequestJson;
           };
 
       await controller.createRideRequest(
@@ -204,7 +198,7 @@ void main() {
             expect(streetAddress, '123 Main Street');
             expect(description, 'Morning commute');
 
-            return [rideRequestJson];
+            return rideRequestJson;
           };
 
       await controller.createRideRequest(
@@ -236,7 +230,7 @@ void main() {
           }) async {
             expect(description, isNull);
 
-            return [rideRequestJson];
+            return rideRequestJson;
           };
 
       await controller.createRideRequest(
@@ -268,7 +262,7 @@ void main() {
           }) async {
             expect(description, isNull);
 
-            return [rideRequestJson];
+            return rideRequestJson;
           };
 
       await controller.createRideRequest(
@@ -301,14 +295,12 @@ void main() {
             expect(arrivalTime, '08:30');
             expect(departureTime, isNull);
 
-            return [
-              {
-                ...rideRequestJson,
-                'rideType': 'arriving',
-                'arrivalTime': '08:30',
-                'departureTime': null,
-              },
-            ];
+            return {
+              ...rideRequestJson,
+              'rideType': 'arriving',
+              'arrivalTime': '08:30',
+              'departureTime': null,
+            };
           };
 
       await controller.createRideRequest(
@@ -322,8 +314,8 @@ void main() {
       );
 
       expect(controller.errorMessage, isNull);
-      expect(controller.createdRideRequests.single.arrivalTime, '08:30');
-      expect(controller.createdRideRequests.single.departureTime, isNull);
+      expect(controller.createdRideRequest!.arrivalTime, '08:30');
+      expect(controller.createdRideRequest!.departureTime, isNull);
     });
 
     test('departing request only sends departure time', () async {
@@ -342,14 +334,12 @@ void main() {
             expect(arrivalTime, isNull);
             expect(departureTime, '17:30');
 
-            return [
-              {
-                ...rideRequestJson,
-                'rideType': 'departing',
-                'arrivalTime': null,
-                'departureTime': '17:30',
-              },
-            ];
+            return {
+              ...rideRequestJson,
+              'rideType': 'departing',
+              'arrivalTime': null,
+              'departureTime': '17:30',
+            };
           };
 
       await controller.createRideRequest(
@@ -363,8 +353,8 @@ void main() {
       );
 
       expect(controller.errorMessage, isNull);
-      expect(controller.createdRideRequests.single.arrivalTime, isNull);
-      expect(controller.createdRideRequests.single.departureTime, '17:30');
+      expect(controller.createdRideRequest!.arrivalTime, isNull);
+      expect(controller.createdRideRequest!.departureTime, '17:30');
     });
 
     test('round-trip request sends both arrival and departure times', () async {
@@ -383,27 +373,18 @@ void main() {
             expect(arrivalTime, '08:30');
             expect(departureTime, '17:30');
 
-            final response = jsonDecode(
-              jsonEncode([
-                {
-                  ...rideRequestJson,
-                  'requestId': 'arrival-id',
-                  'roundTripId': 'shared-id',
-                  'rideType': 'arriving',
-                  'arrivalTime': '08:30',
-                  'departureTime': null,
-                },
-                {
-                  ...rideRequestJson,
-                  'requestId': 'departure-id',
-                  'roundTripId': 'shared-id',
-                  'rideType': 'departing',
-                  'arrivalTime': null,
-                  'departureTime': '17:30',
-                },
-              ]),
-            ) as List;
-            return response.cast<Map<String, dynamic>>();
+            return jsonDecode(
+              jsonEncode({
+                ...rideRequestJson,
+                'requestId': null,
+                'arrivalId': 'arrival-id',
+                'departureId': 'departure-id',
+                'roundTripId': 'shared-id',
+                'rideType': 'roundTrip',
+                'arrivalTime': '08:30',
+                'departureTime': '17:30',
+              }),
+            ) as Map<String, dynamic>;
           };
 
       await controller.createRideRequest(
@@ -417,19 +398,14 @@ void main() {
       );
 
       expect(controller.errorMessage, isNull);
-      expect(controller.createdRideRequests, hasLength(2));
-      final arrival = controller.createdRideRequests.first;
-      final departure = controller.createdRideRequests.last;
-      expect(arrival.requestId, 'arrival-id');
-      expect(departure.requestId, 'departure-id');
-      expect(arrival.rideType, 'arriving');
-      expect(departure.rideType, 'departing');
-      expect(arrival.arrivalTime, '08:30');
-      expect(arrival.departureTime, isNull);
-      expect(departure.arrivalTime, isNull);
-      expect(departure.departureTime, '17:30');
-      expect(arrival.roundTripId, 'shared-id');
-      expect(departure.roundTripId, arrival.roundTripId);
+      final summary = controller.createdRideRequest!;
+      expect(summary.requestId, isNull);
+      expect(summary.arrivalId, 'arrival-id');
+      expect(summary.departureId, 'departure-id');
+      expect(summary.rideType, 'roundTrip');
+      expect(summary.arrivalTime, '08:30');
+      expect(summary.departureTime, '17:30');
+      expect(summary.roundTripId, 'shared-id');
     });
 
     test(
@@ -450,9 +426,7 @@ void main() {
             }) async {
               callCount++;
 
-              return [
-                {...rideRequestJson, 'id': 'request$callCount'},
-              ];
+              return {...rideRequestJson, 'id': 'request$callCount'};
             };
 
         await controller.createRideRequest(
@@ -465,9 +439,9 @@ void main() {
           daysOfWeek: ['Monday'],
         );
 
-        expect(controller.createdRideRequests, isNotEmpty);
+        expect(controller.createdRideRequest, isNotNull);
 
-        final completer = Completer<List<Map<String, dynamic>>>();
+        final completer = Completer<Map<String, dynamic>>();
 
         rideRequestService.onCreateRideRequest =
             ({
@@ -493,12 +467,12 @@ void main() {
           daysOfWeek: ['Monday', 'Tuesday'],
         );
 
-        expect(controller.createdRideRequests, isEmpty);
+        expect(controller.createdRideRequest, isNull);
 
-        completer.complete([rideRequestJson]);
+        completer.complete(rideRequestJson);
         await future;
 
-        expect(controller.createdRideRequests, isNotEmpty);
+        expect(controller.createdRideRequest, isNotNull);
       },
     );
 
@@ -532,7 +506,7 @@ void main() {
         'Some ride request details are invalid. Please check your entries.',
       );
       expect(controller.isLoading, isFalse);
-      expect(controller.createdRideRequests, isEmpty);
+      expect(controller.createdRideRequest, isNull);
     });
 
     test('displays an error when the session expires', () async {
@@ -632,7 +606,7 @@ void main() {
     });
 
     test('sets loading while ride request creation is in progress', () async {
-      final completer = Completer<List<Map<String, dynamic>>>();
+      final completer = Completer<Map<String, dynamic>>();
 
       rideRequestService.onCreateRideRequest =
           ({
@@ -660,7 +634,7 @@ void main() {
 
       expect(controller.isLoading, isTrue);
 
-      completer.complete([rideRequestJson]);
+      completer.complete(rideRequestJson);
 
       await future;
 
@@ -686,7 +660,7 @@ void main() {
             required daysOfWeek,
             description,
           }) async {
-            return [rideRequestJson];
+            return rideRequestJson;
           };
 
       await controller.createRideRequest(
@@ -703,7 +677,7 @@ void main() {
     });
 
     test('ignores a second creation while the first is loading', () async {
-      final completer = Completer<List<Map<String, dynamic>>>();
+      final completer = Completer<Map<String, dynamic>>();
       var serviceCallCount = 0;
 
       rideRequestService.onCreateRideRequest =
@@ -743,11 +717,11 @@ void main() {
 
       expect(serviceCallCount, 1);
 
-      completer.complete([rideRequestJson]);
+      completer.complete(rideRequestJson);
       await firstCreation;
 
       expect(controller.isLoading, isFalse);
-      expect(controller.createdRideRequests, isNotEmpty);
+      expect(controller.createdRideRequest, isNotNull);
     });
   });
 

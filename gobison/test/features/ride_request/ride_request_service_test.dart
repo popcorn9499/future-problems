@@ -19,32 +19,20 @@ void main() {
             capturedRequest = request;
 
             return http.Response(
-              jsonEncode([
-                {
-                  'requestId': 'request123',
-                  'roundTripId': 'shared-id',
-                  'userId': '123',
-                  'rideType': 'arriving',
-                  'city': 'Fargo',
-                  'streetAddress': '123 Main Street',
-                  'arrivalTime': '08:30',
-                  'departureTime': null,
-                  'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
-                  'description': 'Looking for a morning ride',
-                },
-                {
-                  'requestId': 'request124',
-                  'roundTripId': 'shared-id',
-                  'userId': '123',
-                  'rideType': 'departing',
-                  'city': 'Fargo',
-                  'streetAddress': '123 Main Street',
-                  'arrivalTime': null,
-                  'departureTime': '17:00',
-                  'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
-                  'description': 'Looking for a morning ride',
-                },
-              ]),
+              jsonEncode({
+                'requestId': null,
+                'arrivalId': 'request123',
+                'departureId': 'request124',
+                'roundTripId': 'shared-id',
+                'userId': '123',
+                'rideType': 'roundTrip',
+                'city': 'Fargo',
+                'streetAddress': '123 Main Street',
+                'arrivalTime': '08:30',
+                'departureTime': '17:00',
+                'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
+                'description': 'Looking for a morning ride',
+              }),
               200,
             );
           });
@@ -82,21 +70,16 @@ void main() {
             'description': 'Looking for a morning ride',
           });
 
-          expect(result, isA<List<Map<String, dynamic>>>());
-          expect(result, hasLength(2));
-          expect(result.first['requestId'], 'request123');
-          expect(result.last['requestId'], 'request124');
-          expect(result.first['roundTripId'], result.last['roundTripId']);
-          expect(result.first['userId'], '123');
-          expect(result.first['rideType'], 'arriving');
-          expect(result.first['city'], 'Fargo');
-          expect(result.first['streetAddress'], '123 Main Street');
-          expect(result.first['arrivalTime'], '08:30');
-          expect(result.first['departureTime'], isNull);
-          expect(result.last['arrivalTime'], isNull);
-          expect(result.last['departureTime'], '17:00');
-          expect(result.first['daysOfWeek'], ['Monday', 'Wednesday', 'Friday']);
-          expect(result.first['description'], 'Looking for a morning ride');
+          expect(result, isA<Map<String, dynamic>>());
+          expect(result['requestId'], isNull);
+          expect(result['arrivalId'], 'request123');
+          expect(result['departureId'], 'request124');
+          expect(result['roundTripId'], 'shared-id');
+          expect(result['rideType'], 'roundTrip');
+          expect(result['arrivalTime'], '08:30');
+          expect(result['departureTime'], '17:00');
+          expect(result['daysOfWeek'], ['MONDAY', 'WEDNESDAY', 'FRIDAY']);
+          expect(result['description'], 'Looking for a morning ride');
         },
       );
 
@@ -105,16 +88,14 @@ void main() {
         () async {
           final client = MockClient(
             (_) async => http.Response(
-              jsonEncode([
-                {
-                  'id': 'request456',
-                  'userId': '123',
-                  'rideType': 'arriving',
-                  'city': 'Fargo',
-                  'arrivalTime': '09:00',
-                  'departureTime': null,
-                },
-              ]),
+              jsonEncode({
+                'id': 'request456',
+                'userId': '123',
+                'rideType': 'arriving',
+                'city': 'Fargo',
+                'arrivalTime': '09:00',
+                'departureTime': null,
+              }),
               201,
             ),
           );
@@ -131,12 +112,12 @@ void main() {
             daysOfWeek: ['Tuesday', 'Thursday'],
           );
 
-          expect(result, isA<List<Map<String, dynamic>>>());
-          expect(result.single['id'], 'request456');
-          expect(result.single['city'], 'Fargo');
-          expect(result.single['rideType'], 'arriving');
-          expect(result.single['arrivalTime'], '09:00');
-          expect(result.single['departureTime'], isNull);
+          expect(result, isA<Map<String, dynamic>>());
+          expect(result['id'], 'request456');
+          expect(result['city'], 'Fargo');
+          expect(result['rideType'], 'arriving');
+          expect(result['arrivalTime'], '09:00');
+          expect(result['departureTime'], isNull);
         },
       );
 
@@ -148,12 +129,7 @@ void main() {
           final client = MockClient((request) async {
             capturedRequest = request;
 
-            return http.Response(
-              jsonEncode([
-                {'id': 'requestDeparting'},
-              ]),
-              200,
-            );
+            return http.Response(jsonEncode({'id': 'requestDeparting'}), 200);
           });
 
           final service = RideRequestService(client: client);
@@ -182,12 +158,7 @@ void main() {
         final client = MockClient((request) async {
           capturedRequest = request;
 
-          return http.Response(
-            jsonEncode([
-              {'id': 'request789'},
-            ]),
-            200,
-          );
+          return http.Response(jsonEncode({'id': 'request789'}), 200);
         });
 
         final service = RideRequestService(client: client);
