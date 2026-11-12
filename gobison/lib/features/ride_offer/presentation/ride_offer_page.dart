@@ -30,7 +30,11 @@ class _RideOfferPageState extends State<RideOfferPage> {
   bool _showPassengerError = false;
   bool _askingForDrivers = false;
   
+  String _rideType = 'arriving';
+
   TimeOfDay? _arrivalTime;
+  TimeOfDay? _departureTime;
+
   int? _passengerNum;
   final List<String> _selectedDays = [];
   final List<String> _days = [
@@ -64,19 +68,30 @@ class _RideOfferPageState extends State<RideOfferPage> {
       return;
     }
 
-    if (_passengerNum == null) {
-      setState(() {
-        _showPassengerError = true;
-      });
-      return;
-    }
-
-    if (_arrivalTime == null) {
+    if ((_rideType == 'arriving' || _rideType == 'roundTrip') &&
+        _arrivalTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select an arrival time.'),
         ),
       );
+      return;
+    }
+
+    if ((_rideType == 'departing' || _rideType == 'roundTrip') &&
+        _departureTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a departure time.'),
+        ),
+      );
+      return;
+    }
+
+    if (_passengerNum == null) {
+      setState(() {
+        _showPassengerError = true;
+      });
       return;
     }
 
@@ -89,15 +104,21 @@ class _RideOfferPageState extends State<RideOfferPage> {
       return;
     }
         
-    final String arrivalString =
-        '${_arrivalTime!.hour.toString().padLeft(2, '0')}:'
-        '${_arrivalTime!.minute.toString().padLeft(2, '0')}';
+    String? formatTime(TimeOfDay? time) {
+      if (time == null) return null;
+
+      return '${time.hour.toString().padLeft(2, '0')}:'
+          '${time.minute.toString().padLeft(2, '0')}';
+    }
+
 
     await _rideOfferController.createRideOffer(
       userId: widget.userId,
+      rideType: _rideType,
       city: _cityController.text.trim(),
       streetAddress: _streetAddressController.text.trim(),
-      arrivalTime: arrivalString,
+      arrivalTime: formatTime(_arrivalTime),
+      departureTime: formatTime(_departureTime),
       daysOfWeek: _selectedDays,
       passengerNum: _passengerNum!,
       description: _descriptionController.text.trim().isEmpty
@@ -126,11 +147,14 @@ class _RideOfferPageState extends State<RideOfferPage> {
       _descriptionController.clear();
 
       _arrivalTime = null;
+      _departureTime = null;
+
       _passengerNum = null;
       _selectedDays.clear();
 
       _showPassengerError = false;
       _askingForDrivers = false;
+      _rideType = 'arriving';
     });
 
     _formKey.currentState?.reset();
@@ -211,6 +235,65 @@ class _RideOfferPageState extends State<RideOfferPage> {
     );
   }
 
+  Widget _buildRideTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Ride Type *',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _rideType,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(
+                  value: 'arriving',
+                  child: Text('Arriving at Campus'),
+                ),
+                DropdownMenuItem(
+                  value: 'departing',
+                  child: Text('Departing from Campus'),
+                ),
+                DropdownMenuItem(
+                  value: 'roundTrip',
+                  child: Text('Round Trip'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  _rideType = value;
+
+                  // Clear times that are no longer relevant.
+                  if (value == 'arriving') {
+                    _departureTime = null;
+                  } else if (value == 'departing') {
+                    _arrivalTime = null;
+                  }
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDaySelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,35 +349,47 @@ class _RideOfferPageState extends State<RideOfferPage> {
     );
   }
 
-  Future<void> _selectArrivalTime() async {
-    final TimeOfDay? newTime = await showTimePicker(
+  Future<void> _selectTime({required bool isArrival}) async {
+    final TimeOfDay? selectedTime = await showTimePicker(
       context: context,
-      initialTime: _arrivalTime ?? const TimeOfDay(hour: 7, minute: 15),
+      initialTime: isArrival
+          ? _arrivalTime ?? const TimeOfDay(hour: 7, minute: 15)
+          : _departureTime ?? const TimeOfDay(hour: 17, minute: 0),
       initialEntryMode: TimePickerEntryMode.input,
     );
 
-    if (newTime != null) {
+    if (selectedTime != null) {
       setState(() {
-        _arrivalTime = newTime;
+        if (isArrival) {
+          _arrivalTime = selectedTime;
+        } else {
+          _departureTime = selectedTime;
+        }
       });
     }
   }
 
-  Widget _buildArrivalTimeSelector() {
+  Widget _buildTimeSelector({
+    required String label,
+    required bool isArrival,
+  }) {
+    final selectedTime = isArrival ? _arrivalTime : _departureTime;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Desired campus arrival time *',
-          style: TextStyle(
+        Text(
+          '$label *',
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 8),
+
         InkWell(
-          onTap: _selectArrivalTime,
+          onTap: () => _selectTime(isArrival: isArrival),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -313,19 +408,17 @@ class _RideOfferPageState extends State<RideOfferPage> {
                   color: AppColors.primary,
                   size: 20,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _arrivalTime == null
-                        ? 'Select arrival time'
-                        : _arrivalTime!.format(context),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                    selectedTime == null
+                        ? 'Select time'
+                        : selectedTime.format(context),
                     style: TextStyle(
-                      color: _arrivalTime == null
+                      color: selectedTime == null
                           ? AppColors.textSecondary
                           : AppColors.textPrimary,
-                      fontSize: 14,
+                      fontSize: 15,
                     ),
                   ),
                 ),
@@ -339,6 +432,37 @@ class _RideOfferPageState extends State<RideOfferPage> {
         ),
       ],
     );
+  }
+
+  Widget _buildRideTimeSelectors() {
+    switch (_rideType) {
+      case 'arriving':
+        return _buildTimeSelector(
+          label: 'Desired campus arrival time',
+          isArrival: true,
+        );
+
+      case 'departing':
+        return _buildTimeSelector(
+          label: 'Desired campus departure time',
+          isArrival: false,
+        );
+
+      case 'roundTrip':
+        return _buildPair(
+          _buildTimeSelector(
+            label: 'Campus arrival time',
+            isArrival: true,
+          ),
+          _buildTimeSelector(
+            label: 'Campus departure time',
+            isArrival: false,
+          ),
+        );
+
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildPassengerNumSelector() {
@@ -410,7 +534,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const Text(
-        'Ride Preferences',
+        'Carpool',
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -506,7 +630,6 @@ class _RideOfferPageState extends State<RideOfferPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Heading
                           const Text(
                             'Offer a Ride',
                             textAlign: TextAlign.center,
@@ -530,7 +653,6 @@ class _RideOfferPageState extends State<RideOfferPage> {
 
                           const SizedBox(height: 32),
 
-                          // City and Street Address
                           _buildPair(
                             _buildTextField(
                               label: 'City',
@@ -540,28 +662,32 @@ class _RideOfferPageState extends State<RideOfferPage> {
                             ),
                             _buildTextField(
                               label: 'Street Address',
-                              hint: 'Enter your starting address',
+                              hint: 'Enter your address',
                               controller: _streetAddressController,
                               icon: Icons.location_on_outlined,
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                         const SizedBox(height: 24),
 
-                          _buildPair(
-                            _buildArrivalTimeSelector(),
-                            _buildPassengerNumSelector(),
-                          ),
+                          _buildRideTypeSelector(),
 
                           const SizedBox(height: 24),
 
+                          _buildRideTimeSelectors(),
+
                           const SizedBox(height: 24),
 
-                          _buildPair(
-                            _buildDaySelector(),
-                            _buildAskingForDriversCheckbox(),
-                          ),
+                          _buildAskingForDriversCheckbox(),
 
+                          const SizedBox(height: 24),
+
+                          _buildPassengerNumSelector(),
+
+                          const SizedBox(height: 24),
+                          
+                          _buildDaySelector(),
+                  
                           const SizedBox(height: 24),
 
                           _buildTextField(
