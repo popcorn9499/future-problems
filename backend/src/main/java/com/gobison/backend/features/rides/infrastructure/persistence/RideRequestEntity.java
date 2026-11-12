@@ -1,6 +1,7 @@
 package com.gobison.backend.features.rides.infrastructure.persistence;
 
 import com.gobison.backend.features.rides.domain.model.RideRequest;
+import com.gobison.backend.features.rides.domain.model.RideType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -22,6 +23,16 @@ import java.util.UUID;
 @Table(name = "ride_requests")
 public class RideRequestEntity {
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ride_type", nullable = false, length = 9)
+    private RideType rideType;
+
+    @Column(name = "departure_time")
+    private LocalTime departureTime;
+
+    @Column(name = "round_trip_id")
+    private UUID roundTripId;
+
     @Id
     @Column(name = "request_id", nullable = false)
     private UUID id;
@@ -35,7 +46,7 @@ public class RideRequestEntity {
     @Column(name = "street_address", nullable = false)
     private String streetAddress;
 
-    @Column(name = "arrival_time", nullable = false)
+    @Column(name = "arrival_time")
     private LocalTime arrivalTime;
 
     @Column(columnDefinition = "text")
@@ -57,6 +68,9 @@ public class RideRequestEntity {
     }
 
     public RideRequestEntity(RideRequest rideRequest) {
+        rideType = rideRequest.getRideType();
+        departureTime = rideRequest.getDepartureTime();
+        roundTripId = rideRequest.getRoundTripId();
         id = rideRequest.getRequestId();
         userEmail = rideRequest.getUserId();
         city = rideRequest.getCity();
@@ -69,6 +83,9 @@ public class RideRequestEntity {
 
     public RideRequest toDomain() {
         return new RideRequest(
+                rideType,
+                departureTime,
+                roundTripId,
                 id,
                 userEmail,
                 city,

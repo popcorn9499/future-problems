@@ -7,6 +7,10 @@ import java.util.UUID;
 
 public class RideOffer {
 
+    private final RideType rideType;
+    private final LocalTime departureTime;
+    private final UUID roundTripId;
+
     private final UUID offerId;
     private final String userId;
     private final String city;
@@ -19,6 +23,9 @@ public class RideOffer {
     private final boolean askingForDrivers;
 
     public RideOffer(
+            RideType rideType,
+            LocalTime departureTime,
+            UUID roundTripId,
             UUID offerId,
             String userId,
             String city,
@@ -29,6 +36,9 @@ public class RideOffer {
             String status,
             int passengerNum,
             boolean askingForDrivers) {
+        this.rideType = rideType;
+        this.departureTime = departureTime;
+        this.roundTripId = roundTripId;
         this.offerId = offerId;
         this.userId = userId;
         this.city = city;
@@ -79,5 +89,16 @@ public class RideOffer {
 
     public boolean isAskingForDrivers() {
         return askingForDrivers;
+    }
+    public RideType getRideType() {
+        return rideType;
+    }
+
+    public LocalTime getDepartureTime() {
+        return departureTime;
+    }
+
+    public UUID getRoundTripId() {
+        return roundTripId;
     }
 }

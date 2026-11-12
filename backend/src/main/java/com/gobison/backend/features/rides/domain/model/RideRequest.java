@@ -7,6 +7,10 @@ import java.util.UUID;
 
 public class RideRequest {
 
+    private final RideType rideType;
+    private final LocalTime departureTime;
+    private final UUID roundTripId;
+
     private final UUID requestId;
     private final String userId;
     private final String city;
@@ -17,6 +21,9 @@ public class RideRequest {
     private final String status;
 
     public RideRequest(
+            RideType rideType,
+            LocalTime departureTime,
+            UUID roundTripId,
             UUID requestId,
             String userId,
             String city,
@@ -25,6 +32,9 @@ public class RideRequest {
             Set<DayOfWeek> daysOfWeek,
             String description,
             String status) {
+        this.rideType = rideType;
+        this.departureTime = departureTime;
+        this.roundTripId = roundTripId;
         this.requestId = requestId;
         this.userId = userId;
         this.city = city;
@@ -65,5 +75,16 @@ public class RideRequest {
 
     public String getStatus() {
         return status;
+    }
+    public RideType getRideType() {
+        return rideType;
+    }
+
+    public LocalTime getDepartureTime() {
+        return departureTime;
+    }
+
+    public UUID getRoundTripId() {
+        return roundTripId;
     }
 }

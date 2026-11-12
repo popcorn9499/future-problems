@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/rides/requests")
 public class RideRequestController {
@@ -22,9 +24,11 @@ public class RideRequestController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public RideRequestResponse create(
+    public List<RideRequestResponse> create(
             Authentication authentication,
             @Valid @RequestBody CreateRideRequestRequest request) {
-        return RideRequestResponse.from(service.create(authentication.getName(), request));
+        return service.create(authentication.getName(), request).stream()
+                .map(RideRequestResponse::from)
+                .toList();
     }
 }
