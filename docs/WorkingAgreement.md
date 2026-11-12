@@ -106,17 +106,17 @@ gravitate towards.
 
 - How tasks will be assigned:
 
-    - Assign tasks during meetings and then document on Jira space
+  - Assign tasks during meetings and then document on Jira space
 
 - Definition of "done" for a task:
 
-    - Push is reviewed and merged -- close issue on Jira then
+  - Push is reviewed and merged -- close issue on Jira then
 
 - Expectations around code quality / documentation:
 
-    - Ahere to code standards created by group
+  - Ahere to code standards created by group
 
-    - Rotating documentation responsibility with responsibility on
+  - Rotating documentation responsibility with responsibility on
         individuals to document their own changes
 
 ## 7. Conflict Resolution & Unmet Expectations
@@ -130,7 +130,6 @@ process **in order**:
     together in person or online.
 
 3. Talk to Lauren.
-
 
 How will concerns be raised respectfully? -- Don't involve whole group
 if not necessarily and give them the benefit of a doubt.
@@ -169,7 +168,7 @@ team will:
 - Have a more serious discussion and consider bringing the issue to
     Lauren.
 
-*(Be explicit --- vague answers are not acceptable.)*
+(Be explicit --- vague answers are not acceptable.)
 
 ## 10. Agreement
 

@@ -13,26 +13,33 @@
 1. Install the Flutter SDK by following the [official Flutter installation guide](https://docs.flutter.dev/get-started/install).
 
 2. Verify that Flutter is installed and configured correctly:
+
    ```bash
    flutter doctor
    ```
 
 3. Navigate to the frontend project directory:
+
    ```bash
    cd frontend
    ```
+
 4. Install the project dependencies:
+
    ```bash
    flutter pub get
    ```
+
 5. Ensure the backend is running. See backend.md
 
 6. Run the application:
+
    ```bash
    flutter run -d chrome --web-port=3000 --dart-define=API_BASE_URL=http://localhost:8080
    ```
 
    alternatively, something like the following, where the port is defined as an allowed origin in application.properties:
+
    ```bash
    flutter run -d edge --web-port=64636
    ```
@@ -85,7 +92,6 @@ The frontend is organized into separate components to keep UI code, application 
 - **Validators:** Validate user input against predefined rules.
 - **Core:** Contains shared configuration, theme definitions, colors, and reusable widgets.
 - **Tests:** Contain automated Flutter tests.
-
 
 ## Core Features
 
