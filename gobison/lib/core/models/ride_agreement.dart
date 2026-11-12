@@ -3,13 +3,14 @@ class AgreementMember {
   final String id;
   final String firstName;
   final String? lastName;
-  final String? address;
+  final String address;
 
   const AgreementMember({
     required this.id,
     required this.firstName,
+    required this.address,
     this.lastName = '',
-    this.address = '',
+    
   });
 
   String get fullName {
@@ -29,7 +30,7 @@ class AgreementMember {
       id: json['id'].toString(),
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String?,
-      address: json['address'] as String?,
+      address: json['address'] as String,
     );
   }
 }

@@ -16,9 +16,10 @@ const List<(String, String)> _weekdays = [
 ];
  
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key, required this.user});
+  const DashboardPage({super.key, required this.user, this.dashboardService});
  
   final User user;
+  final DashboardService? dashboardService;
  
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -32,7 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _dashboardService = DashboardService();
+      _dashboardService = widget.dashboardService ?? DashboardService();
     _dashboardController = DashboardController(_dashboardService);
     _dashboardController.loadAgreements();
   }
@@ -82,7 +83,7 @@ class _DashboardPageState extends State<DashboardPage> {
       constraints: const BoxConstraints(maxWidth: 850),
       child: ListView.separated(
         padding: const EdgeInsets.all(24),
-        itemCount: filteredAgreements.length + 1,
+        itemCount: filteredAgreements.isEmpty ? 2 : filteredAgreements.length + 1,
         separatorBuilder: (context, index) =>
             const SizedBox(height: 20),
         itemBuilder: (context, index) {
@@ -587,7 +588,7 @@ if (isCurrentUser) ...[
     ),
   ),
 ],
-          if (!isCurrentUser && member.address != null && member.address!.trim().isNotEmpty) ...[
+          if (!isCurrentUser && member.address.trim().isNotEmpty) ...[
             const SizedBox(width: 6),
             IconButton(
               tooltip: 'Copy address',
