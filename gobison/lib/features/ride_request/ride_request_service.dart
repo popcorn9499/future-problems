@@ -6,15 +6,18 @@ import '../../core/network/api_config.dart';
 import '../../core/network/auth_client.dart';
 
 class RideRequestService {
-  RideRequestService({http.Client? client}) : _client = client ?? createAuthClient();
+  RideRequestService({http.Client? client})
+    : _client = client ?? createAuthClient();
 
   final http.Client _client;
 
-  Future<Map<String, dynamic>> createRideRequest({
+  Future<List<Map<String, dynamic>>> createRideRequest({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required List<String> daysOfWeek,
     String? description,
   }) async {
@@ -26,16 +29,19 @@ class RideRequestService {
         'Accept': 'application/json',
       },
       body: jsonEncode({
+        'rideType': rideType,
         'city': city,
         'streetAddress': streetAddress,
         'arrivalTime': arrivalTime,
+        'departureTime': departureTime,
         'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),
         'description': description,
       }),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body);
+      final data = jsonDecode(response.body) as List;
+      return data.map((leg) => Map<String, dynamic>.from(leg as Map)).toList();
     }
 
     throw Exception(

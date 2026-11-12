@@ -20,10 +20,12 @@ void main() {
             return http.Response(
               jsonEncode({
                 'id': 'ride123',
+                'rideType': 'arriving',
                 'userId': '123',
                 'city': 'Fargo',
                 'streetAddress': '123 Main Street',
                 'arrivalTime': '08:30',
+                'departureTime': null,
                 'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
                 'passengerNum': 3,
                 'description': 'Morning commute',
@@ -37,9 +39,11 @@ void main() {
 
           final result = await service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '123 Main Street',
             arrivalTime: '08:30',
+            departureTime: null,
             passengerNum: 3,
             daysOfWeek: ['Monday', 'Wednesday', 'Friday'],
             description: 'Morning commute',
@@ -65,9 +69,11 @@ void main() {
           );
 
           expect(jsonDecode(capturedRequest.body), {
+            'rideType': 'arriving',
             'city': 'Fargo',
             'streetAddress': '123 Main Street',
             'arrivalTime': '08:30',
+                        'departureTime': null,
             'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
             'passengerNum': 3,
             'description': 'Morning commute',
@@ -76,10 +82,12 @@ void main() {
 
           expect(result, isA<Map<String, dynamic>>());
           expect(result['id'], 'ride123');
+          expect(result['rideType'], 'arriving');
           expect(result['userId'], '123');
           expect(result['city'], 'Fargo');
           expect(result['streetAddress'], '123 Main Street');
           expect(result['arrivalTime'], '08:30');
+          expect(result['departureTime'], null);
           expect(
             result['daysOfWeek'],
             ['Monday', 'Wednesday', 'Friday'],
@@ -106,9 +114,11 @@ void main() {
 
           final result = await service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '456 University Drive',
             arrivalTime: '09:00',
+            departureTime: null,
             passengerNum: 2,
             daysOfWeek: ['Tuesday'],
             askingForDrivers: true,
@@ -136,9 +146,11 @@ void main() {
 
           await service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '789 Oak Street',
             arrivalTime: '07:30',
+            departureTime: null,
             passengerNum: 1,
             daysOfWeek: ['Monday'],
             askingForDrivers: true,
@@ -165,9 +177,11 @@ void main() {
         expect(
           () => service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '123 Main Street',
             arrivalTime: '08:30',
+            departureTime: null,
             passengerNum: 3,
             daysOfWeek: ['Monday'],
             askingForDrivers: true,
@@ -198,9 +212,11 @@ void main() {
         expect(
           () => service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '123 Main Street',
             arrivalTime: '08:30',
+            departureTime: null,
             passengerNum: 3,
             daysOfWeek: ['Monday'],
             askingForDrivers: true,
@@ -228,9 +244,11 @@ void main() {
         expect(
           () => service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '123 Main Street',
             arrivalTime: '08:30',
+            departureTime: null,
             passengerNum: 3,
             daysOfWeek: ['Monday'],
             askingForDrivers: true,
@@ -259,9 +277,11 @@ void main() {
         expect(
           () => service.createRideOffer(
             userId: '123',
+            rideType: 'arriving',
             city: 'Fargo',
             streetAddress: '123 Main Street',
             arrivalTime: '08:30',
+            departureTime: null,
             passengerNum: 3,
             daysOfWeek: ['Monday'],
             askingForDrivers: true,

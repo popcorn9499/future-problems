@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gobison/core/models/ride_request.dart';
+
 import 'ride_request_service.dart';
 
 class RideRequestController extends ChangeNotifier {
@@ -9,25 +10,27 @@ class RideRequestController extends ChangeNotifier {
 
   bool isLoading = false;
   String? errorMessage;
-  RideRequest? createdRideRequest;
+  List<RideRequest> createdRideRequests = [];
   RideRequest? updatedRideRequest;
 
   Future<void> createRideRequest({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required List<String> daysOfWeek,
     String? description,
   }) async {
     if (isLoading) return;
-    
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
-      createdRideRequest = null;
+      createdRideRequests = [];
 
       final trimmedCity = city.trim();
       final trimmedStreetAddress = streetAddress.trim();
@@ -35,17 +38,18 @@ class RideRequestController extends ChangeNotifier {
 
       final data = await _rideRequestService.createRideRequest(
         userId: userId,
+        rideType: rideType,
         city: trimmedCity,
         streetAddress: trimmedStreetAddress,
         arrivalTime: arrivalTime,
+        departureTime: departureTime,
         daysOfWeek: daysOfWeek,
         description: trimmedDescription?.isEmpty == true
-          ? null
-          : trimmedDescription,
+            ? null
+            : trimmedDescription,
       );
 
-      createdRideRequest = RideRequest.fromJson(data);
-
+      createdRideRequests = data.map(RideRequest.fromJson).toList();
     } catch (e) {
       errorMessage = _handleError(extractErrorCode(e));
     } finally {

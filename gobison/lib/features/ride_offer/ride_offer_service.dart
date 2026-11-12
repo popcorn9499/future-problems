@@ -12,9 +12,11 @@ class RideOfferService {
 
   Future<Map<String, dynamic>> createRideOffer({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
@@ -28,9 +30,11 @@ class RideOfferService {
         'Accept': 'application/json',
       },
       body: jsonEncode({
+        'rideType': rideType,
         'city': city,
         'streetAddress': streetAddress,
         'arrivalTime': arrivalTime,
+        'departureTime': departureTime,
         'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),
         'passengerNum': passengerNum,
         'description': description,

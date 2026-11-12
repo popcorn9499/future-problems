@@ -14,9 +14,11 @@ class RideOfferController extends ChangeNotifier {
 
   Future<void> createRideOffer({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required List<String> daysOfWeek,
     required int passengerNum,
     String? description,
@@ -37,9 +39,11 @@ class RideOfferController extends ChangeNotifier {
 
       final data = await _rideOfferService.createRideOffer(
         userId: userId,
+        rideType: rideType,
         city: trimmedCity,
         streetAddress: trimmedStreetAddress,
         arrivalTime: arrivalTime,
+        departureTime: departureTime,
         daysOfWeek: daysOfWeek,
         passengerNum: passengerNum,
         description: trimmedDescription?.isEmpty == true
@@ -51,8 +55,6 @@ class RideOfferController extends ChangeNotifier {
       createdRideOffer = RideOffer.fromJson(data);
 
     } catch (e) {
-      //errorMessage = _handleError(extractErrorCode(e));
-      debugPrint('Error creating ride offer: $e');
       errorMessage = _handleError(extractErrorCode(e));
     } finally {
       isLoading = false;
