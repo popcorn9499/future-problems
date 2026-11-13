@@ -1,11 +1,11 @@
-**Team Working Agreement**
+# Team Working Agreement
 
 **Course: COMP 4350**\
 **Project Name:**\
 **Team Name: Future Problem**\
 **Date Created: September 9th, 2026**
 
-**Team Members**
+## Team Members
 
 | Name | Program / Year (optional) | Preferred Name / Pronouns (optional) |
 | --- | --- | --- |
@@ -17,21 +17,21 @@
 | Ruitian Fan | CS | |
 | Logan Smith | CS | She/Her |
 
-**1. Shared Team Goals (can add more than 3)**
+## 1. Shared Team Goals (can add more than 3)
 
 As a team, we agree that our shared goals for this project are:
 
--   Meeting deadlines early (code freezes day of -- barring emergencies)
+- Meeting deadlines early (code freezes day of -- barring emergencies)
 
--   Maintaining low stress
+- Maintaining low stress
 
--   Good communication throughout project
+- Good communication throughout project
 
 *(Examples: learning specific technical skills, producing a high-quality
 final product, maintaining low stress, equal workload, meeting deadlines
 early, etc.)*
 
-**2. Individual Goals**
+## 2. Individual Goals
 
 Each team member lists their personal goals for this project.
 
@@ -45,7 +45,7 @@ Each team member lists their personal goals for this project.
 | Ruitian Fan | Learn something/good grade/have fun |
 | Logan Smith | Create an interesting project |
 
-**3. Roles and Responsibilities**
+## 3. Roles and Responsibilities
 
 Roles may rotate unless otherwise specified. Note: none of these are
 developer roles. You are all responsible for development as well and
@@ -65,26 +65,26 @@ As of sprint 0, we are deciding to not assign concrete roles to any
 group members. Instead, we will take this sprint to see which roles we
 gravitate towards.
 
-**4. Communication Plan**
+## 4. Communication Plan
 
 **Primary communication channel(s):** Telegram
 
 **Expected response time:**
 
--   Weekdays: 1 day at most
+- Weekdays: 1 day at most
 
--   Weekends: Within weekend (only for emergencies)
+- Weekends: Within weekend (only for emergencies)
 
--   During critical deadlines: 2 hours
+- During critical deadlines: 2 hours
 
 **When is escalation required?**\
 (e.g., no response after 24--48 hours, missed meeting, blocked progress)
 
--   No response within 48 hours
+- No response within 48 hours
 
--   Missed meeting without notice
+- Missed meeting without notice
 
-**5. Meetings**
+## 5. Meetings
 
 **Regular meeting time(s):** Monday @ 4pm\
 **Meeting platform/location:** On campus
@@ -99,27 +99,27 @@ gravitate towards.
 
 **What happens if someone cannot attend?**
 
--   They should give notice and then group will send them notes after
+- They should give notice and then group will send them notes after
     meeting
 
-**6. Work Expectations**
+## 6. Work Expectations
 
 - How tasks will be assigned:
 
-    - Assign tasks during meetings and then document on Jira space
+  - Assign tasks during meetings and then document on Jira space
 
 - Definition of "done" for a task:
 
-    - Push is reviewed and merged -- close issue on Jira then
+  - Push is reviewed and merged -- close issue on Jira then
 
 - Expectations around code quality / documentation:
 
-    - Ahere to code standards created by group
+  - Ahere to code standards created by group
 
-    - Rotating documentation responsibility with responsibility on
+  - Rotating documentation responsibility with responsibility on
         individuals to document their own changes
 
-**7. Conflict Resolution & Unmet Expectations**
+## 7. Conflict Resolution & Unmet Expectations
 
 If conflict arises or expectations are not met, we agree to follow this
 process **in order**:
@@ -131,11 +131,10 @@ process **in order**:
 
 3. Talk to Lauren.
 
-
 How will concerns be raised respectfully? -- Don't involve whole group
 if not necessarily and give them the benefit of a doubt.
 
-**8. Responsible GenAI Use**
+## 8. Responsible GenAI Use
 
 As a team, we have discussed the responsible and ethical use of
 Generative AI tools (e.g., ChatGPT, Copilot) for this project. We agree
@@ -158,20 +157,20 @@ How our team will ensure transparency, accountability, and shared
 understanding of AI-assisted work:\
 • Clarify how AI was used in the PR
 
-**9. Accountability**
+## 9. Accountability
 
 If a team member repeatedly misses deadlines or responsibilities, the
 team will:
 
--   Have a discussion with them and ask if they need some grace for this
+- Have a discussion with them and ask if they need some grace for this
     sprint and pick up the slack next sprint
 
--   Have a more serious discussion and consider bringing the issue to
+- Have a more serious discussion and consider bringing the issue to
     Lauren.
 
-*(Be explicit --- vague answers are not acceptable.)*
+(Be explicit --- vague answers are not acceptable.)
 
-**10. Agreement**
+## 10. Agreement
 
 By signing below, we confirm that we have discussed this document
 together and agree to follow it.

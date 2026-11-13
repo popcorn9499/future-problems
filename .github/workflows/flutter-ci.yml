@@ -19,19 +19,19 @@ jobs:
                 channel: stable
         
           - name: Install dependencies
-            working-directory: gobison
+            working-directory: frontend
             run: flutter pub get
           
           - name: Analyze code
-            working-directory: gobison
+            working-directory: frontend
             run: flutter analyze  --no-fatal-infos
         
           - name: Run tests
-            working-directory: gobison
+            working-directory: frontend
             run: flutter test --coverage
 
           - name: Generate HTML coverage report
-            working-directory: gobison
+            working-directory: frontend
             run: |
               sudo apt-get update
               sudo apt-get install -y lcov
@@ -41,5 +41,5 @@ jobs:
             uses: actions/upload-artifact@v7
             with:
                 name: flutter-coverage
-                path: gobison/coverage/
+                path: frontend/coverage/
                 if-no-files-found: error

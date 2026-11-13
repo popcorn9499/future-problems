@@ -16,7 +16,7 @@ Push checks provide early feedback. Pull request checks help the team review cha
 
 The workflow runs on `ubuntu-latest` and uses Flutter `3.47.7` from the stable channel.
 
-## Checks
+## Flutter Checks
 
 1. Install dependencies with `flutter pub get`.
 2. Analyze code with `flutter analyze --no-fatal-infos`.
@@ -29,7 +29,7 @@ Info-level findings remain visible in the CI logs but do not fail the workflow. 
 
 This allows the team to address existing style suggestions separately while keeping checks for warnings and errors active.
 
-## Viewing results
+## Flutter Results
 
 Open the repository's Actions tab and select a Flutter CI run. Select the `flutter-check` job to view the logs for each step.
 
@@ -54,14 +54,14 @@ The backend connects to this database using environment variables.
 
 Hibernate uses `create-drop` to create tables when the application starts and drop them when it shuts down.
 
-### Checks
+### Backend Checks
 
 1. Build and test the backend with `bash ./mvnw --batch-mode verify`.
 2. Collect coverage with JaCoCo and generate reports during the `verify` phase.
 3. Upload test reports from `backend/target/surefire-reports/`, even if tests fail.
 4. Upload coverage reports from `backend/target/site/jacoco/` after a successful build.
 
-### Viewing results
+### Backend Results
 
 Open the repository's Actions tab and select a Backend CI run.
 Select the `backend-check` job to view the logs for each step.
@@ -73,24 +73,23 @@ For a successful run, download the `backend-coverage` artifact and extract the Z
 
 If the build fails before reports are generated, check the workflow logs.
 
-
 ## Flutter Integration Tests
 
 The workflow is defined in [flutter-integration.yml](../.github/workflows/flutter-integration.yml).
 
 It runs on every push and when a pull request is opened, reopened, or updated.
 
-### Environment
+### Integration Test Environment
 
 The workflow runs on `ubuntu-latest` with Flutter `3.47.7`, Chrome, and a compatible ChromeDriver.
 
 Chrome runs in headless mode in CI.
 
-### Checks
+### Integration Checks
 
 1. Start ChromeDriver on port `4444`.
 2. Run registration page and input validation tests.
 3. Run registration response tests with a local mock backend.
 4. Run email verification tests with a mock backend, covering incorrect codes and successful verification.
 
-The tests use a mock backend and do not verify the real backend,database ,or email delivery.
+The tests use a mock backend and do not verify the real backend, database, or email delivery.

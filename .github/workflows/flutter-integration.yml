@@ -17,7 +17,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: gobison
+        working-directory: frontend
 
     steps:
       - name: Download project code
