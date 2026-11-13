@@ -38,8 +38,13 @@ public class LoginController {
     public LoginResponse login(@Valid @RequestBody LoginRequest credentials,
                                HttpServletRequest request, HttpServletResponse response) {
         var user = users.findByEmail(credentials.email().trim().toLowerCase(Locale.ROOT))
-                .filter(account -> passwords.matches(credentials.password(), account.getPassword()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (user.isDeleted()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "ACCOUNT_DELETED");
+        }
+        if (!passwords.matches(credentials.password(), user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
         if (!user.isVerified()) {
             verification.sendVerificationCode(user.getEmail());
         }
