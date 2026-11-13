@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -5,17 +6,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+import 'package:gobison/core/models/ride_agreement.dart';
 import 'package:gobison/features/dashboard/dashboard_controller.dart';
 import 'package:gobison/features/dashboard/dashboard_service.dart';
 
-/// Replaces the network layer so the controller is tested on its own.
-/// Set [onFetchAgreements] in each test to decide what the "server" does.
 class FakeDashboardService extends DashboardService {
   FakeDashboardService()
-    : super(
-        client: MockClient((_) async => http.Response('[]', 200)),
-        useMock: false,
-      );
+      : super(
+          client: MockClient((_) async => http.Response('[]', 200))
+        );
 
   Future<List<Map<String, dynamic>>> Function()? onFetchAgreements;
 
@@ -25,35 +24,219 @@ class FakeDashboardService extends DashboardService {
   }
 }
 
-Map<String, dynamic> _agreementJson({
+Map<String, dynamic> agreementJson({
   int id = 1,
+  String? listingId,
+  String? roundTripId,
+  String rideType = 'ARRIVAL',
+  String? arrivalTime = '07:45:00',
+  String? departureTime,
   List<String> days = const ['MONDAY', 'WEDNESDAY'],
-}) => {
-  'id': id,
-  'origin': 'Steinbach',
-  'destination': 'University of Manitoba',
-  'departureTime': '07:45',
-  'daysOfWeek': days,
-  'status': 'ACTIVE',
-  'drivers': [
-    {
-      'id': 'd$id',
-      'firstName': 'Dana',
-      'lastName': 'Driver',
-      'address': '1 Main St',
-    },
-  ],
-  'passengers': [
-    {
-      'id': 'p$id',
-      'firstName': 'Pat',
-      'lastName': 'Passenger',
-      'address': '2 Oak Ave',
-    },
-  ],
-};
+  String status = 'OPEN',
+  bool createdByCurrentUser = false,
+  List<Map<String, dynamic>>? drivers,
+  List<Map<String, dynamic>>? passengers,
+}) {
+  return {
+    'id': id,
+    'listingId': listingId ?? 'listing-$id',
+    'roundTripId': roundTripId,
+    'rideType': rideType,
+    'origin': 'Steinbach',
+    'destination': 'University of Manitoba',
+    'arrivalTime': arrivalTime,
+    'departureTime': departureTime,
+    'daysOfWeek': days,
+    'status': status,
+    'createdByCurrentUser': createdByCurrentUser,
+    'drivers': drivers ??
+        [
+          {
+            'id': 'driver-$id',
+            'firstName': 'Dana',
+            'lastName': 'Driver',
+          },
+        ],
+    'passengers': passengers ??
+        [
+          {
+            'id': 'passenger-$id',
+            'firstName': 'Pat',
+            'lastName': 'Passenger',
+          },
+        ],
+  };
+}
 
 void main() {
+  group('AgreementMember', () {
+    test('combines first and last name', () {
+      const member = AgreementMember(
+        id: 'dana@example.com',
+        firstName: 'Dana',
+        lastName: 'Driver',
+      );
+
+      expect(member.fullName, 'Dana Driver');
+      expect(member.initials, 'DD');
+    });
+
+    test('handles a missing last name', () {
+      const member = AgreementMember(
+        id: 'rebekah@example.com',
+        firstName: 'Rebekah',
+      );
+
+      expect(member.fullName, 'Rebekah');
+      expect(member.initials, 'R');
+    });
+
+    test('handles a null last name from JSON', () {
+      final member = AgreementMember.fromJson({
+        'id': 'rebekah@example.com',
+        'firstName': 'Rebekah',
+        'lastName': null,
+      });
+
+      expect(member.fullName, 'Rebekah');
+      expect(member.initials, 'R');
+    });
+
+    test('handles an empty last name', () {
+      const member = AgreementMember(
+        id: 'rebekah@example.com',
+        firstName: 'Rebekah',
+        lastName: '',
+      );
+
+      expect(member.fullName, 'Rebekah');
+      expect(member.initials, 'R');
+    });
+  });
+
+  group('RideAgreement', () {
+    test('parses a one-way arrival', () {
+      final agreement = RideAgreement.fromJson(
+        agreementJson(
+          rideType: 'ARRIVAL',
+          arrivalTime: '07:45:00',
+          departureTime: null,
+        ),
+      );
+
+      expect(agreement.rideType, 'ARRIVAL');
+      expect(agreement.arrivalTime, '07:45:00');
+      expect(agreement.departureTime, isNull);
+      expect(agreement.rideTime, '07:45:00');
+      expect(agreement.rideTimeLabel, '7:45 AM');
+      expect(agreement.roundTripId, isNull);
+    });
+
+    test('parses a one-way departure', () {
+      final agreement = RideAgreement.fromJson(
+        agreementJson(
+          rideType: 'DEPARTURE',
+          arrivalTime: null,
+          departureTime: '16:30:00',
+        ),
+      );
+
+      expect(agreement.rideType, 'DEPARTURE');
+      expect(agreement.arrivalTime, isNull);
+      expect(agreement.departureTime, '16:30:00');
+      expect(agreement.rideTime, '16:30:00');
+      expect(agreement.rideTimeLabel, '4:30 PM');
+    });
+
+    test('parses a round-trip arrival leg', () {
+      final agreement = RideAgreement.fromJson(
+        agreementJson(
+          listingId: 'arrival-listing',
+          roundTripId: 'round-trip-123',
+          rideType: 'ARRIVAL',
+          arrivalTime: '08:00:00',
+          departureTime: null,
+        ),
+      );
+
+      expect(agreement.listingId, 'arrival-listing');
+      expect(agreement.roundTripId, 'round-trip-123');
+      expect(agreement.rideType, 'ARRIVAL');
+      expect(agreement.rideTimeLabel, '8:00 AM');
+    });
+
+    test('parses a round-trip departure leg', () {
+      final agreement = RideAgreement.fromJson(
+        agreementJson(
+          listingId: 'departure-listing',
+          roundTripId: 'round-trip-123',
+          rideType: 'DEPARTURE',
+          arrivalTime: null,
+          departureTime: '16:30:00',
+        ),
+      );
+
+      expect(agreement.listingId, 'departure-listing');
+      expect(agreement.roundTripId, 'round-trip-123');
+      expect(agreement.rideType, 'DEPARTURE');
+      expect(agreement.rideTimeLabel, '4:30 PM');
+    });
+
+    test('parses ownership and status fields', () {
+      final agreement = RideAgreement.fromJson(
+        agreementJson(
+          status: 'FULL',
+          createdByCurrentUser: true,
+        ),
+      );
+
+      expect(agreement.status, 'FULL');
+      expect(agreement.createdByCurrentUser, isTrue);
+    });
+
+    test('defaults missing optional status and ownership fields', () {
+      final json = agreementJson()
+        ..remove('status')
+        ..remove('createdByCurrentUser');
+
+      final agreement = RideAgreement.fromJson(json);
+
+      expect(agreement.status, 'OPEN');
+      expect(agreement.createdByCurrentUser, isFalse);
+    });
+
+    test('formats noon and midnight correctly', () {
+      final noon = RideAgreement.fromJson(
+        agreementJson(
+          arrivalTime: '12:00:00',
+        ),
+      );
+
+      final midnight = RideAgreement.fromJson(
+        agreementJson(
+          arrivalTime: '00:15:00',
+        ),
+      );
+
+      expect(noon.rideTimeLabel, '12:00 PM');
+      expect(midnight.rideTimeLabel, '12:15 AM');
+    });
+
+    test('returns the original value when time cannot be parsed', () {
+      final agreement = RideAgreement.fromJson(
+        agreementJson(arrivalTime: 'unknown'),
+      );
+
+      expect(agreement.rideTimeLabel, 'unknown');
+    });
+
+    test('formats weekday abbreviations', () {
+      expect(RideAgreement.shortDay('MONDAY'), 'Mon');
+      expect(RideAgreement.shortDay('WEDNESDAY'), 'Wed');
+      expect(RideAgreement.shortDay('FRIDAY'), 'Fri');
+    });
+  });
+
   group('DashboardController', () {
     late FakeDashboardService dashboardService;
     late DashboardController controller;
@@ -73,17 +256,68 @@ void main() {
       expect(controller.agreements, isEmpty);
     });
 
-    test('loadAgreements stores the agreements after success', () async {
+    test('loadAgreements stores agreements after success', () async {
       dashboardService.onFetchAgreements = () async => [
-        _agreementJson(id: 1),
-        _agreementJson(id: 2),
-      ];
+            agreementJson(id: 1),
+            agreementJson(id: 2),
+          ];
 
       await controller.loadAgreements();
 
       expect(controller.agreements.map((a) => a.id), ['1', '2']);
       expect(controller.errorMessage, isNull);
       expect(controller.isLoading, isFalse);
+    });
+
+    test('loads both legs of a round trip', () async {
+      dashboardService.onFetchAgreements = () async => [
+            agreementJson(
+              id: 1,
+              listingId: 'arrival-listing',
+              roundTripId: 'round-trip-123',
+              rideType: 'ARRIVAL',
+              arrivalTime: '08:00:00',
+              departureTime: null,
+            ),
+            agreementJson(
+              id: 1,
+              listingId: 'departure-listing',
+              roundTripId: 'round-trip-123',
+              rideType: 'DEPARTURE',
+              arrivalTime: null,
+              departureTime: '16:30:00',
+            ),
+          ];
+
+      await controller.loadAgreements();
+
+      expect(controller.agreements, hasLength(2));
+      expect(
+        controller.agreements.map((a) => a.roundTripId).toSet(),
+        {'round-trip-123'},
+      );
+      expect(
+        controller.agreements.map((a) => a.rideType).toList(),
+        ['ARRIVAL', 'DEPARTURE'],
+      );
+      expect(
+        controller.agreements.map((a) => a.rideTimeLabel).toList(),
+        ['8:00 AM', '4:30 PM'],
+      );
+    });
+
+    test('preserves createdByCurrentUser for each agreement', () async {
+      dashboardService.onFetchAgreements = () async => [
+            agreementJson(id: 1, createdByCurrentUser: true),
+            agreementJson(id: 2, createdByCurrentUser: false),
+          ];
+
+      await controller.loadAgreements();
+
+      expect(
+        controller.agreements.map((a) => a.createdByCurrentUser).toList(),
+        [true, false],
+      );
     });
 
     test('an empty response is a success, not an error', () async {
@@ -97,24 +331,32 @@ void main() {
     });
 
     test('sets loading while agreements are being fetched', () async {
-      final completer = Completer<List<Map<String, dynamic>>>();
+      final completer =
+          Completer<List<Map<String, dynamic>>>();
+
       dashboardService.onFetchAgreements = () => completer.future;
 
       final future = controller.loadAgreements();
 
       expect(controller.isLoading, isTrue);
 
-      completer.complete([_agreementJson()]);
+      completer.complete([agreementJson()]);
       await future;
 
       expect(controller.isLoading, isFalse);
       expect(controller.agreements, hasLength(1));
     });
 
-    test('notifies listeners when loading starts and when it finishes', () async {
+    test('notifies listeners when loading starts and finishes', () async {
       final loadingStates = <bool>[];
-      controller.addListener(() => loadingStates.add(controller.isLoading));
-      dashboardService.onFetchAgreements = () async => [_agreementJson()];
+
+      controller.addListener(
+        () => loadingStates.add(controller.isLoading),
+      );
+
+      dashboardService.onFetchAgreements = () async => [
+            agreementJson(),
+          ];
 
       await controller.loadAgreements();
 
@@ -124,13 +366,15 @@ void main() {
     const expectedMessages = {
       401: 'Your session has expired. Please log in again.',
       429: 'Too many requests. Please try again in a moment.',
-      500: 'It\'s not you, it\'s us. Please try again later.',
+      500: "It's not you, it's us. Please try again later.",
     };
 
     expectedMessages.forEach((status, message) {
-      test('loadAgreements displays the right message for HTTP $status', () async {
+      test('displays the correct message for HTTP $status', () async {
         dashboardService.onFetchAgreements = () async {
-          throw Exception('Loading ride agreements failed ($status): ');
+          throw Exception(
+            'Loading ride agreements failed ($status): ',
+          );
         };
 
         await controller.loadAgreements();
@@ -141,7 +385,7 @@ void main() {
       });
     });
 
-    test('loadAgreements displays the generic message for other failures', () async {
+    test('displays a generic message for other failures', () async {
       dashboardService.onFetchAgreements = () async {
         throw Exception('offline');
       };
@@ -155,10 +399,10 @@ void main() {
       expect(controller.isLoading, isFalse);
     });
 
-    test('loadAgreements displays the generic message for malformed agreements', () async {
+    test('displays a generic message for malformed agreements', () async {
       dashboardService.onFetchAgreements = () async => [
-        {'unexpected': true},
-      ];
+            {'unexpected': true},
+          ];
 
       await controller.loadAgreements();
 
@@ -172,25 +416,37 @@ void main() {
 
     test('clears an earlier error when a retry succeeds', () async {
       dashboardService.onFetchAgreements = () async {
-        throw Exception('Loading ride agreements failed (500): ');
+        throw Exception(
+          'Loading ride agreements failed (500): ',
+        );
       };
+
       await controller.loadAgreements();
       expect(controller.errorMessage, isNotNull);
 
-      dashboardService.onFetchAgreements = () async => [_agreementJson()];
+      dashboardService.onFetchAgreements = () async => [
+            agreementJson(),
+          ];
+
       await controller.loadAgreements();
 
       expect(controller.errorMessage, isNull);
       expect(controller.agreements, hasLength(1));
     });
 
-    test('keeps previously loaded agreements when a refresh fails', () async {
-      dashboardService.onFetchAgreements = () async => [_agreementJson()];
+    test('keeps previously loaded agreements when refresh fails', () async {
+      dashboardService.onFetchAgreements = () async => [
+            agreementJson(),
+          ];
+
       await controller.loadAgreements();
 
       dashboardService.onFetchAgreements = () async {
-        throw Exception('Loading ride agreements failed (500): ');
+        throw Exception(
+          'Loading ride agreements failed (500): ',
+        );
       };
+
       await controller.loadAgreements();
 
       expect(controller.agreements, hasLength(1));
@@ -199,22 +455,24 @@ void main() {
   });
 
   group('DashboardController with the real service', () {
-    // These two go through the real DashboardService so the link between its
-    // exception text and extractErrorCode is exercised, which a fake that
-    // throws a hand-written string cannot check.
-    DashboardController controllerFor(http.Response Function() respond) {
+    DashboardController controllerFor(
+      http.Response Function() respond,
+    ) {
       final controller = DashboardController(
         DashboardService(
-          client: MockClient((request) async => respond()),
-          useMock: false,
+          client: MockClient((request) async => respond())
         ),
       );
+
       addTearDown(controller.dispose);
       return controller;
     }
 
-    test('an HTTP 401 response becomes the session-expired message', () async {
-      final controller = controllerFor(() => http.Response('', 401));
+    test('an HTTP 401 response becomes the session-expired message',
+        () async {
+      final controller = controllerFor(
+        () => http.Response('', 401),
+      );
 
       await controller.loadAgreements();
 
@@ -224,15 +482,55 @@ void main() {
       );
     });
 
-    test('a 200 response with agreements is parsed into models', () async {
+    test('a 200 response is parsed into the current models', () async {
       final controller = controllerFor(
-        () => http.Response(jsonEncode([_agreementJson(id: 7)]), 200),
+        () => http.Response(
+          jsonEncode([
+            agreementJson(
+              id: 7,
+              createdByCurrentUser: true,
+            ),
+          ]),
+          200,
+        ),
       );
 
       await controller.loadAgreements();
 
-      expect(controller.agreements.single.id, '7');
-      expect(controller.agreements.single.drivers.single.fullName, 'Dana Driver');
+      final agreement = controller.agreements.single;
+
+      expect(agreement.id, '7');
+      expect(agreement.listingId, 'listing-7');
+      expect(agreement.rideType, 'ARRIVAL');
+      expect(agreement.createdByCurrentUser, isTrue);
+      expect(agreement.drivers.single.fullName, 'Dana Driver');
+      expect(agreement.passengers.single.fullName, 'Pat Passenger');
+      expect(controller.errorMessage, isNull);
+    });
+
+    test('a 200 response parses a member without a last name',
+        () async {
+      final json = agreementJson(
+        drivers: [
+          {
+            'id': 'rebekah@example.com',
+            'firstName': 'Rebekah',
+            'lastName': null,
+          },
+        ],
+        passengers: [],
+      );
+
+      final controller = controllerFor(
+        () => http.Response(jsonEncode([json]), 200),
+      );
+
+      await controller.loadAgreements();
+
+      expect(
+        controller.agreements.single.drivers.single.fullName,
+        'Rebekah',
+      );
       expect(controller.errorMessage, isNull);
     });
   });
@@ -244,10 +542,20 @@ void main() {
     setUp(() async {
       dashboardService = FakeDashboardService()
         ..onFetchAgreements = () async => [
-          _agreementJson(id: 1, days: ['MONDAY', 'WEDNESDAY']),
-          _agreementJson(id: 2, days: ['TUESDAY', 'THURSDAY']),
-          _agreementJson(id: 3, days: ['FRIDAY']),
-        ];
+              agreementJson(
+                id: 1,
+                days: ['MONDAY', 'WEDNESDAY'],
+              ),
+              agreementJson(
+                id: 2,
+                days: ['TUESDAY', 'THURSDAY'],
+              ),
+              agreementJson(
+                id: 3,
+                days: ['FRIDAY'],
+              ),
+            ];
+
       controller = DashboardController(dashboardService);
       await controller.loadAgreements();
     });
@@ -257,7 +565,10 @@ void main() {
     });
 
     List<String> idsFor(Set<String> days) =>
-        controller.getFilteredAgreements(days).map((a) => a.id).toList();
+        controller
+            .getFilteredAgreements(days)
+            .map((a) => a.id!)
+            .toList();
 
     test('returns everything when no days are selected', () {
       expect(idsFor({}), ['1', '2', '3']);
@@ -268,11 +579,11 @@ void main() {
       expect(idsFor({'FRIDAY'}), ['3']);
     });
 
-    test('matches if any selected day overlaps, not all of them', () {
+    test('matches if any selected day overlaps, not all', () {
       expect(idsFor({'MONDAY', 'THURSDAY'}), ['1', '2']);
     });
 
-    test('returns an empty list when nothing runs on the selected days', () {
+    test('returns empty when no agreements run on selected days', () {
       expect(idsFor({'SUNDAY'}), isEmpty);
     });
 

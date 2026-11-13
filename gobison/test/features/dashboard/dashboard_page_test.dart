@@ -1,18 +1,8 @@
-// Widget tests for DashboardPage.
-//
-// These need one small change to the page so a test can supply its own
-// service instead of the real network-backed one:
-//
-//   const DashboardPage({super.key, required this.user, this.dashboardService});
-//   final DashboardService? dashboardService;
-//   ...
-//   _dashboardService = widget.dashboardService ?? DashboardService();
 
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -33,55 +23,88 @@ Map<String, dynamic> _member(
   String id,
   String first,
   String last,
-  String address,
-) => {'id': id, 'firstName': first, 'lastName': last, 'address': address};
+) => {
+  'id': id,
+  'firstName': first,
+  'lastName': last,
+};
 
-/// One agreement. By default Kamryn (the current user) drives and Sasha rides,
-/// and both have an address.
 Map<String, dynamic> _agreement({
-  int id = 1,
+  int? id = 1,
+  String? listingId,
+  String? roundTripId,
+  String rideType = 'ARRIVAL',
   String origin = 'Morris',
   List<String> days = const ['MONDAY', 'WEDNESDAY'],
-  String status = 'ACTIVE',
+  String status = 'OPEN',
+  bool createdByCurrentUser = false,
+  String? arrivalTime = '07:45:00',
+  String? departureTime,
   List<Map<String, dynamic>>? drivers,
   List<Map<String, dynamic>>? passengers,
 }) => {
   'id': id,
+  'listingId': listingId ??
+      (id == null ? 'unjoined-listing' : 'listing-$id'),
+  'roundTripId': roundTripId,
+  'rideType': rideType,
   'origin': origin,
   'destination': 'University of Manitoba',
-  'departureTime': '07:45',
+  'arrivalTime': arrivalTime,
+  'departureTime': departureTime,
   'daysOfWeek': days,
   'status': status,
-  'drivers':
-      drivers ??
-      [_member('jankek@myumanitoba.ca', 'Kamryn', 'Janke', '123 Main St, Morris')],
-  'passengers':
-      passengers ??
-      [_member('coless1@myumanitoba.ca', 'Sasha', 'Coles', '45 Elm Ave, Morris')],
+  'createdByCurrentUser': createdByCurrentUser,
+  'drivers': drivers ??
+      [
+        _member(
+          'jankek@myumanitoba.ca',
+          'Kamryn',
+          'Janke',
+        ),
+      ],
+  'passengers': passengers ??
+      [
+        _member(
+          'coless1@myumanitoba.ca',
+          'Sasha',
+          'Coles',
+        ),
+      ],
 };
 
-/// Two agreements on different days, for the filter tests.
 List<Map<String, dynamic>> _twoAgreements() => [
-  _agreement(id: 1, origin: 'Morris', days: ['MONDAY', 'WEDNESDAY']),
-  _agreement(id: 2, origin: 'Osborne Village', days: ['TUESDAY', 'THURSDAY']),
+  _agreement(
+    id: 1,
+    origin: 'Morris',
+    days: ['MONDAY', 'WEDNESDAY'],
+  ),
+  _agreement(
+    id: 2,
+    origin: 'Osborne Village',
+    days: ['TUESDAY', 'THURSDAY'],
+  ),
 ];
 
 http.Response _ok(List<Map<String, dynamic>> body) =>
     http.Response(jsonEncode(body), 200);
 
-Future<void> _pumpPage(WidgetTester tester, MockClient client) async {
-  // Tall enough that every ticket is built without scrolling.
+Future<void> _pumpPage(
+  WidgetTester tester,
+  MockClient client,
+) async {
   tester.view.physicalSize = const Size(1000, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
     MaterialApp(
-      // The app's AppShell supplies a Scaffold; snackbars need one here too.
       home: Scaffold(
         body: DashboardPage(
           user: _currentUser,
-          dashboardService: DashboardService(client: client, useMock: false),
+          dashboardService: DashboardService(
+            client: client,
+          ),
         ),
       ),
     ),
@@ -92,243 +115,598 @@ Future<void> _pumpWith(
   WidgetTester tester,
   List<Map<String, dynamic>> agreements,
 ) async {
-  await _pumpPage(tester, MockClient((request) async => _ok(agreements)));
+  await _pumpPage(
+    tester,
+    MockClient((request) async => _ok(agreements)),
+  );
   await tester.pumpAndSettle();
 }
 
-Finder _chip(String label) => find.widgetWithText(FilterChip, label);
+Finder _chip(String label) =>
+    find.widgetWithText(FilterChip, label);
 
 bool _isSelected(WidgetTester tester, String label) =>
     tester.widget<FilterChip>(_chip(label)).selected;
 
-Future<void> _tapChip(WidgetTester tester, String label) async {
+Future<void> _tapChip(
+  WidgetTester tester,
+  String label,
+) async {
   await tester.tap(_chip(label));
-  await tester.pump();
+  await tester.pumpAndSettle();
 }
 
 void main() {
   group('loading, empty and error states', () {
-    testWidgets('shows a spinner while loading, then the tickets', (tester) async {
-      final completer = Completer<http.Response>();
-      await _pumpPage(tester, MockClient((request) => completer.future));
+    testWidgets(
+      'shows a spinner while loading, then the tickets',
+      (tester) async {
+        final completer = Completer<http.Response>();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        await _pumpPage(
+          tester,
+          MockClient((request) => completer.future),
+        );
 
-      completer.complete(_ok([_agreement()]));
-      await tester.pumpAndSettle();
+        expect(
+          find.byType(CircularProgressIndicator),
+          findsOneWidget,
+        );
 
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Morris'), findsOneWidget);
-      expect(find.text('University of Manitoba'), findsOneWidget);
-      expect(find.text('7:45 AM'), findsOneWidget);
-      expect(find.text('Active'), findsOneWidget);
-    });
+        completer.complete(_ok([_agreement()]));
+        await tester.pumpAndSettle();
 
-    testWidgets('shows the empty state, without filters, when there are no agreements', (tester) async {
-      await _pumpWith(tester, []);
+        expect(
+          find.byType(CircularProgressIndicator),
+          findsNothing,
+        );
+        expect(find.text('Morris'), findsOneWidget);
+        expect(
+          find.text('University of Manitoba'),
+          findsOneWidget,
+        );
+        expect(find.text('7:45 AM'), findsOneWidget);
+        expect(find.text('Open'), findsOneWidget);
+      },
+    );
 
-      expect(find.text('No ride agreements yet'), findsOneWidget);
-      expect(find.byType(FilterChip), findsNothing);
-    });
+    testWidgets(
+      'shows the empty state without filters when there are no agreements',
+      (tester) async {
+        await _pumpWith(tester, []);
 
-    testWidgets('shows the error state and recovers when retrying', (tester) async {
-      var status = 500;
-      await _pumpPage(
-        tester,
-        MockClient(
-          (request) async =>
-              status == 200 ? _ok([_agreement()]) : http.Response('', status),
-        ),
-      );
-      await tester.pumpAndSettle();
+        expect(
+          find.text('No ride agreements yet'),
+          findsOneWidget,
+        );
+        expect(find.byType(FilterChip), findsNothing);
+      },
+    );
 
-      expect(find.text('Something went wrong'), findsOneWidget);
-      expect(
-        find.text('It\'s not you, it\'s us. Please try again later.'),
-        findsOneWidget,
-      );
+    testWidgets(
+      'shows the error state and recovers when retrying',
+      (tester) async {
+        var status = 500;
 
-      status = 200;
-      await tester.tap(find.text('Try again'));
-      await tester.pumpAndSettle();
+        await _pumpPage(
+          tester,
+          MockClient(
+            (request) async => status == 200
+                ? _ok([_agreement()])
+                : http.Response('', status),
+          ),
+        );
 
-      expect(find.text('Something went wrong'), findsNothing);
-      expect(find.text('Morris'), findsOneWidget);
-    });
+        await tester.pumpAndSettle();
 
-    testWidgets('shows the session-expired message for a 401', (tester) async {
-      await _pumpPage(
-        tester,
-        MockClient((request) async => http.Response('', 401)),
-      );
-      await tester.pumpAndSettle();
+        expect(
+          find.text('Something went wrong'),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            "It's not you, it's us. Please try again later.",
+          ),
+          findsOneWidget,
+        );
 
-      expect(
-        find.text('Your session has expired. Please log in again.'),
-        findsOneWidget,
-      );
-    });
+        status = 200;
+
+        await tester.tap(find.text('Try again'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Something went wrong'),
+          findsNothing,
+        );
+        expect(find.text('Morris'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'shows the session-expired message for a 401',
+      (tester) async {
+        await _pumpPage(
+          tester,
+          MockClient(
+            (request) async => http.Response('', 401),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            'Your session has expired. Please log in again.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('ticket contents', () {
-    testWidgets('uses singular section labels for one driver and one passenger', (tester) async {
-      await _pumpWith(tester, [_agreement()]);
+    testWidgets(
+      'displays the origin, destination and arrival time',
+      (tester) async {
+        await _pumpWith(tester, [_agreement()]);
 
-      expect(find.text('DRIVER'), findsOneWidget);
-      expect(find.text('PASSENGER'), findsOneWidget);
-    });
+        expect(find.text('Morris'), findsOneWidget);
+        expect(
+          find.text('University of Manitoba'),
+          findsOneWidget,
+        );
+        expect(find.text('ARRIVAL TIME'), findsOneWidget);
+        expect(find.text('7:45 AM'), findsOneWidget);
+      },
+    );
 
-    testWidgets('pluralises DRIVERS when there are several drivers', (tester) async {
-      await _pumpWith(tester, [
-        _agreement(
-          drivers: [
-            _member('a', 'Ann', 'One', '1 A St'),
-            _member('b', 'Bob', 'Two', '2 B St'),
-          ],
-        ),
-      ]);
+    testWidgets(
+      'uses singular section labels for one driver and one passenger',
+      (tester) async {
+        await _pumpWith(tester, [_agreement()]);
 
-      expect(find.text('DRIVERS'), findsOneWidget);
-    });
+        expect(find.text('DRIVER'), findsOneWidget);
+        expect(find.text('PASSENGER'), findsOneWidget);
+      },
+    );
 
-    testWidgets('shows non-active statuses with a capitalised label', (tester) async {
-      await _pumpWith(tester, [_agreement(status: 'PENDING')]);
+    testWidgets(
+      'pluralises DRIVERS when there are several drivers',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            drivers: [
+              _member('driver1', 'Ann', 'One'),
+              _member('driver2', 'Bob', 'Two'),
+            ],
+          ),
+        ]);
 
-      expect(find.text('Pending'), findsOneWidget);
-    });
+        expect(find.text('DRIVERS'), findsOneWidget);
+        expect(find.text('DRIVER'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'pluralises PASSENGERS when there are several passengers',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            passengers: [
+              _member('passenger1', 'Sam', 'One'),
+              _member('passenger2', 'Alex', 'Two'),
+            ],
+          ),
+        ]);
+
+        expect(find.text('PASSENGERS'), findsOneWidget);
+        expect(find.text('PASSENGER'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'does not display the passenger section when there are no passengers',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            createdByCurrentUser: true,
+            id: null,
+            drivers: [
+              _member(
+                'jankek@myumanitoba.ca',
+                'Kamryn',
+                'Janke',
+              ),
+            ],
+            passengers: [],
+          ),
+        ]);
+
+        expect(find.text('DRIVER'), findsOneWidget);
+        expect(find.text('PASSENGER'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'does not display the driver section when there are no drivers',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            createdByCurrentUser: true,
+            id: null,
+            drivers: [],
+            passengers: [
+              _member(
+                'jankek@myumanitoba.ca',
+                'Kamryn',
+                'Janke',
+              ),
+            ],
+          ),
+        ]);
+
+        expect(find.text('DRIVER'), findsNothing);
+        expect(find.text('PASSENGER'), findsOneWidget);
+      },
+    );
   });
 
   group('current user marker', () {
-    testWidgets('shows a YOU badge only on the current user', (tester) async {
-      await _pumpWith(tester, [_agreement()]);
+    testWidgets(
+      'shows a YOU badge only on the current user',
+      (tester) async {
+        await _pumpWith(tester, [_agreement()]);
 
-      expect(find.text('YOU'), findsOneWidget);
-      expect(find.text('Kamryn Janke'), findsOneWidget);
-      expect(find.text('Sasha Coles'), findsOneWidget);
-    });
+        expect(find.text('YOU'), findsOneWidget);
+        expect(find.text('Kamryn Janke'), findsOneWidget);
+        expect(find.text('Sasha Coles'), findsOneWidget);
+      },
+    );
 
-    testWidgets('does not append the old "(you)" suffix to names', (tester) async {
-      await _pumpWith(tester, [_agreement()]);
-
-      expect(find.text('Kamryn Janke (you)'), findsNothing);
-    });
   });
 
-  group('copy address', () {
-    testWidgets('shows a copy button for other members but not for the current user', (tester) async {
-      await _pumpWith(tester, [_agreement()]);
+  group('ownership labels', () {
+    testWidgets(
+      'shows CREATED BY YOU for an arrangement created by the current user',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(createdByCurrentUser: true),
+        ]);
 
-      // Kamryn (you) and Sasha both have addresses; only Sasha gets a button.
-      expect(find.byTooltip('Copy address'), findsOneWidget);
-    });
+        expect(find.text('CREATED BY YOU'), findsOneWidget);
+        expect(find.text('JOINED'), findsNothing);
+      },
+    );
 
+    testWidgets(
+      'shows JOINED for an arrangement created by another user',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: 5,
+            createdByCurrentUser: false,
+          ),
+        ]);
 
-    testWidgets('tapping copy puts the other member\'s address on the clipboard and confirms', (tester) async {
-      String? copied;
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async {
-          if (call.method == 'Clipboard.setData') {
-            copied =
-                (call.arguments as Map<dynamic, dynamic>)['text'] as String?;
-          }
-          return null;
-        },
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        ),
-      );
+        expect(find.text('JOINED'), findsOneWidget);
+        expect(find.text('CREATED BY YOU'), findsNothing);
+      },
+    );
 
-      await _pumpWith(tester, [_agreement()]);
+    testWidgets(
+      'shows YOUR RIDE OFFER and WAITING FOR OTHERS for an unjoined offer',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: null,
+            createdByCurrentUser: true,
+            drivers: [
+              _member(
+                'jankek@myumanitoba.ca',
+                'Kamryn',
+                'Janke',
+              ),
+            ],
+            passengers: [],
+          ),
+        ]);
 
-      await tester.tap(find.byTooltip('Copy address'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
+        expect(find.text('YOUR RIDE OFFER'), findsOneWidget);
+        expect(
+          find.text('WAITING FOR OTHERS'),
+          findsOneWidget,
+        );
+        expect(find.text('CREATED BY YOU'), findsOneWidget);
+      },
+    );
 
-      expect(copied, '45 Elm Ave, Morris');
-      expect(find.text('Address copied to clipboard!'), findsOneWidget);
-    });
+    testWidgets(
+      'shows YOUR RIDE REQUEST and WAITING FOR OTHERS for an unjoined request',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: null,
+            createdByCurrentUser: true,
+            drivers: [],
+            passengers: [
+              _member(
+                'jankek@myumanitoba.ca',
+                'Kamryn',
+                'Janke',
+              ),
+            ],
+          ),
+        ]);
+
+        expect(find.text('YOUR RIDE REQUEST'), findsOneWidget);
+        expect(
+          find.text('WAITING FOR OTHERS'),
+          findsOneWidget,
+        );
+        expect(find.text('CREATED BY YOU'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'does not show WAITING FOR OTHERS when an arrangement has joiners',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: null,
+            createdByCurrentUser: true,
+            drivers: [
+              _member(
+                'jankek@myumanitoba.ca',
+                'Kamryn',
+                'Janke',
+              ),
+            ],
+            passengers: [
+              _member(
+                'coless1@myumanitoba.ca',
+                'Sasha',
+                'Coles',
+              ),
+            ],
+          ),
+        ]);
+
+        expect(find.text('CREATED BY YOU'), findsOneWidget);
+        expect(
+          find.text('WAITING FOR OTHERS'),
+          findsNothing,
+        );
+        expect(find.text('RIDE ARRANGEMENT'), findsOneWidget);
+      },
+    );
+  });
+
+  group('ride statuses', () {
+    testWidgets(
+      'displays Open, Full and Archived status labels',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(id: 1, origin: 'Morris', status: 'OPEN'),
+          _agreement(id: 2, origin: 'Winnipeg', status: 'FULL'),
+          _agreement(id: 3, origin: 'Steinbach', status: 'ARCHIVED'),
+        ]);
+
+        expect(find.text('Open'), findsOneWidget);
+        expect(find.text('Full'), findsOneWidget);
+        expect(find.text('Archived'), findsOneWidget);
+      },
+    );
+  });
+
+  group('round trips', () {
+    testWidgets(
+      'groups two legs with the same roundTripId into one round trip',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: 10,
+            listingId: 'departure-listing',
+            roundTripId: 'round-trip-1',
+            rideType: 'DEPARTURE',
+            origin: 'University of Manitoba',
+            arrivalTime: null,
+            departureTime: '16:30:00',
+          ),
+          _agreement(
+            id: 10,
+            listingId: 'arrival-listing',
+            roundTripId: 'round-trip-1',
+            rideType: 'ARRIVAL',
+            origin: 'Morris',
+            arrivalTime: '07:45:00',
+            departureTime: null,
+          ),
+        ]);
+
+        expect(find.text('ROUND TRIP'), findsOneWidget);
+        expect(
+          find.text('TWO LEGS · ONE ROUND TRIP'),
+          findsOneWidget,
+        );
+        expect(find.text('ARRIVAL TIME'), findsOneWidget);
+        expect(find.text('DEPARTURE TIME'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'displays the arrival leg before the departure leg',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: 10,
+            listingId: 'departure-listing',
+            roundTripId: 'round-trip-1',
+            rideType: 'DEPARTURE',
+            origin: 'University of Manitoba',
+            arrivalTime: null,
+            departureTime: '16:30:00',
+          ),
+          _agreement(
+            id: 10,
+            listingId: 'arrival-listing',
+            roundTripId: 'round-trip-1',
+            rideType: 'ARRIVAL',
+            origin: 'Morris',
+            arrivalTime: '07:45:00',
+            departureTime: null,
+          ),
+        ]);
+
+        final arrivalPosition = tester.getTopLeft(
+          find.text('ARRIVAL TIME'),
+        );
+        final departurePosition = tester.getTopLeft(
+          find.text('DEPARTURE TIME'),
+        );
+
+        expect(
+          arrivalPosition.dy,
+          lessThan(departurePosition.dy),
+        );
+      },
+    );
+
+    testWidgets(
+      'displays the correct time for each leg',
+      (tester) async {
+        await _pumpWith(tester, [
+          _agreement(
+            id: 10,
+            listingId: 'arrival-listing',
+            roundTripId: 'round-trip-1',
+            rideType: 'ARRIVAL',
+            arrivalTime: '07:45:00',
+            departureTime: null,
+          ),
+          _agreement(
+            id: 10,
+            listingId: 'departure-listing',
+            roundTripId: 'round-trip-1',
+            rideType: 'DEPARTURE',
+            arrivalTime: null,
+            departureTime: '16:30:00',
+          ),
+        ]);
+
+        expect(find.text('7:45 AM'), findsOneWidget);
+        expect(find.text('4:30 PM'), findsOneWidget);
+      },
+    );
   });
 
   group('day filter', () {
-    testWidgets('shows the filter chips above the tickets', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+    testWidgets(
+      'shows the filter chips above the tickets',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-      expect(find.text('FILTER BY DAY'), findsOneWidget);
-      expect(find.byType(FilterChip), findsNWidgets(6));
-      for (final label in ['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']) {
-        expect(_chip(label), findsOneWidget, reason: label);
-      }
-    });
+        expect(find.text('FILTER BY DAY'), findsOneWidget);
+        expect(find.byType(FilterChip), findsNWidgets(6));
 
-    testWidgets('starts with All selected and shows every ticket', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+        for (final label in [
+          'All',
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+        ]) {
+          expect(_chip(label), findsOneWidget, reason: label);
+        }
+      },
+    );
 
-      expect(_isSelected(tester, 'All'), isTrue);
-      expect(_isSelected(tester, 'Monday'), isFalse);
-      expect(find.text('Morris'), findsOneWidget);
-      expect(find.text('Osborne Village'), findsOneWidget);
-    });
+    testWidgets(
+      'starts with All selected and shows every ticket',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-    testWidgets('tapping a day shows only tickets that run on that day', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+        expect(_isSelected(tester, 'All'), isTrue);
+        expect(_isSelected(tester, 'Monday'), isFalse);
+        expect(find.text('Morris'), findsOneWidget);
+        expect(find.text('Osborne Village'), findsOneWidget);
+      },
+    );
 
-      await _tapChip(tester, 'Monday');
+    testWidgets(
+      'tapping a day shows only tickets that run on that day',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-      expect(_isSelected(tester, 'Monday'), isTrue);
-      expect(_isSelected(tester, 'All'), isFalse);
-      expect(find.text('Morris'), findsOneWidget);
-      expect(find.text('Osborne Village'), findsNothing);
-    });
+        await _tapChip(tester, 'Monday');
 
-    testWidgets('tapping the same day again removes the filter', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+        expect(_isSelected(tester, 'Monday'), isTrue);
+        expect(_isSelected(tester, 'All'), isFalse);
+        expect(find.text('Morris'), findsOneWidget);
+        expect(find.text('Osborne Village'), findsNothing);
+      },
+    );
 
-      await _tapChip(tester, 'Monday');
-      await _tapChip(tester, 'Monday');
+    testWidgets(
+      'tapping the same day again removes the filter',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-      expect(_isSelected(tester, 'All'), isTrue);
-      expect(find.text('Morris'), findsOneWidget);
-      expect(find.text('Osborne Village'), findsOneWidget);
-    });
+        await _tapChip(tester, 'Monday');
+        await _tapChip(tester, 'Monday');
 
-    testWidgets('selecting several days shows tickets matching any of them', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+        expect(_isSelected(tester, 'All'), isTrue);
+        expect(find.text('Morris'), findsOneWidget);
+        expect(find.text('Osborne Village'), findsOneWidget);
+      },
+    );
 
-      await _tapChip(tester, 'Monday');
-      await _tapChip(tester, 'Tuesday');
+    testWidgets(
+      'selecting several days shows tickets matching any of them',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-      expect(find.text('Morris'), findsOneWidget);
-      expect(find.text('Osborne Village'), findsOneWidget);
-    });
+        await _tapChip(tester, 'Monday');
+        await _tapChip(tester, 'Tuesday');
 
-    testWidgets('All clears the selected days', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+        expect(find.text('Morris'), findsOneWidget);
+        expect(find.text('Osborne Village'), findsOneWidget);
+      },
+    );
 
-      await _tapChip(tester, 'Tuesday');
-      expect(find.text('Morris'), findsNothing);
+    testWidgets(
+      'All clears the selected days',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-      await _tapChip(tester, 'All');
+        await _tapChip(tester, 'Tuesday');
+        expect(find.text('Morris'), findsNothing);
 
-      expect(_isSelected(tester, 'All'), isTrue);
-      expect(_isSelected(tester, 'Tuesday'), isFalse);
-      expect(find.text('Morris'), findsOneWidget);
-      expect(find.text('Osborne Village'), findsOneWidget);
-    });
+        await _tapChip(tester, 'All');
 
-    testWidgets('shows a message when no ticket runs on the selected day', (tester) async {
-      await _pumpWith(tester, _twoAgreements());
+        expect(_isSelected(tester, 'All'), isTrue);
+        expect(_isSelected(tester, 'Tuesday'), isFalse);
+        expect(find.text('Morris'), findsOneWidget);
+        expect(find.text('Osborne Village'), findsOneWidget);
+      },
+    );
 
-      await _tapChip(tester, 'Friday');
+    testWidgets(
+      'shows a message when no ticket runs on the selected day',
+      (tester) async {
+        await _pumpWith(tester, _twoAgreements());
 
-      expect(find.text('No rides on this day'), findsOneWidget);
-      expect(find.text('Morris'), findsNothing);
-      expect(find.text('Osborne Village'), findsNothing);
-      // The filter stays visible so the user can change their selection.
-      expect(find.text('FILTER BY DAY'), findsOneWidget);
-    });
+        await _tapChip(tester, 'Friday');
+
+        expect(
+          find.text('No rides on this day'),
+          findsOneWidget,
+        );
+        expect(find.text('Morris'), findsNothing);
+        expect(find.text('Osborne Village'), findsNothing);
+        expect(find.text('FILTER BY DAY'), findsOneWidget);
+      },
+    );
   });
 }

@@ -1,6 +1,3 @@
-
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -55,8 +52,7 @@ class _DashboardPageState extends State<DashboardPage> {
   List<List<RideAgreement>> _groupAgreements(
     List<RideAgreement> agreements,
   ) {
-    final groups = LinkedHashMap<String, List<RideAgreement>>();
-
+    final groups = <String, List<RideAgreement>>{};
     for (final agreement in agreements) {
       final key = agreement.roundTripId != null
           ? 'roundTrip:${agreement.roundTripId}'
