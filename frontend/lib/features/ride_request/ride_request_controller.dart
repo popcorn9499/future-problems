@@ -14,9 +14,11 @@ class RideRequestController extends ChangeNotifier {
 
   Future<void> createRideRequest({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required List<String> daysOfWeek,
     String? description,
   }) async {
@@ -35,9 +37,11 @@ class RideRequestController extends ChangeNotifier {
 
       final data = await _rideRequestService.createRideRequest(
         userId: userId,
+        rideType: rideType,
         city: trimmedCity,
         streetAddress: trimmedStreetAddress,
         arrivalTime: arrivalTime,
+        departureTime: departureTime,
         daysOfWeek: daysOfWeek,
         description: trimmedDescription?.isEmpty == true
           ? null
