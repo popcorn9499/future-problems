@@ -1,5 +1,6 @@
 
 
+
 package com.gobison.backend.features.dashboard.infrastructure.persistence;
 
 import com.gobison.backend.features.dashboard.domain.model.AgreementMember;
@@ -8,7 +9,10 @@ import com.gobison.backend.features.dashboard.domain.repository.RideAgreementSum
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -33,81 +37,167 @@ public class RideAgreementSummaryRepositoryImpl
             LocalTime departureTime,
             String status,
             String rideType,
-            UUID roundTripId
+            UUID roundTripId,
+            boolean isOffer
+    ) {}
+
+    private record AgreementReference(
+            long agreementId,
+            boolean isOffer,
+            UUID listingId
     ) {}
 
     @Override
+    @Transactional(readOnly = true)
     public List<RideAgreementSummary> findByMemberEmail(String email) {
-        String sql = """
-            SELECT
+
+        List<RideAgreementSummary> results = new ArrayList<>();
+
+        /*
+         * Find agreements involving this user.
+         *
+         * A user is included if they are either:
+         * - a member of the agreement, or
+         * - the creator of the listing referenced by the agreement.
+         *
+         * The LEFT JOINs allow us to check either offers or requests.
+         */
+        String agreementSql = """
+            SELECT DISTINCT
                 ra.agreement_id,
                 ra.offer_id,
                 ra.request_id
             FROM ride_agreements ra
-            JOIN ride_agreement_members ram
+            LEFT JOIN ride_agreement_members ram
                 ON ram.agreement_id = ra.agreement_id
-            WHERE LOWER(ram.user_email) = LOWER(?)
-            ORDER BY ra.created_at DESC
+            LEFT JOIN ride_offers ro
+                ON ra.offer_id = ro.offer_id
+            LEFT JOIN ride_requests rr
+                ON ra.request_id = rr.request_id
+            WHERE ram.user_email = ?
+               OR ro.user_email = ?
+               OR rr.user_email = ?
+            ORDER BY ra.agreement_id
             """;
 
-        List<List<RideAgreementSummary>> agreementLegs =
-                jdbcTemplate.query(sql, (rs, rowNum) -> {
+        List<AgreementReference> agreements = jdbcTemplate.query(
+                agreementSql,
+                (rs, rowNum) -> {
+                    UUID offerId = rs.getObject("offer_id", UUID.class);
+                    UUID requestId = rs.getObject("request_id", UUID.class);
 
-            long agreementId = rs.getLong("agreement_id");
+                    boolean isOffer = offerId != null;
+                    UUID listingId = isOffer ? offerId : requestId;
 
-            UUID offerId = rs.getObject("offer_id", UUID.class);
-            UUID requestId = rs.getObject("request_id", UUID.class);
+                    return new AgreementReference(
+                            rs.getLong("agreement_id"),
+                            isOffer,
+                            listingId
+                    );
+                },
+                email,
+                email,
+                email
+        );
 
-            boolean isOffer = offerId != null;
-            UUID listingId = isOffer ? offerId : requestId;
+        /*
+         * Process agreements after the original query has completed.
+         * This avoids running additional queries while its ResultSet
+         * is still open.
+         */
+        for (AgreementReference agreement : agreements) {
 
-            ListingData listing = findListing(isOffer, listingId);
+            ListingData listing = findListing(
+                    agreement.isOffer(),
+                    agreement.listingId()
+            );
+
+            if (listing == null) {
+                continue;
+            }
 
             List<AgreementMember> drivers =
-                    findMembers(agreementId, "DRIVER");
+                    findMembers(agreement.agreementId(), "DRIVER");
 
             List<AgreementMember> passengers =
-                    findMembers(agreementId, "PASSENGER");
+                    findMembers(agreement.agreementId(), "PASSENGER");
 
-            List<RideAgreementSummary> legs = new ArrayList<>();
-
-            // Add the original listing.
-            legs.add(buildLeg(
-                    agreementId,
+            // Add the listing referenced by the agreement.
+            results.add(buildLeg(
+                    agreement.agreementId(),
                     listing,
-                    isOffer,
                     email,
                     drivers,
                     passengers
             ));
 
-            // If this is a round trip, retrieve and add the other leg.
+            /*
+             * A round trip has two listing rows but only one agreement.
+             * Find the other leg and give it the same agreement ID
+             * and participant lists.
+             */
             if (listing.roundTripId() != null) {
+
                 ListingData otherLeg = findRoundTripLeg(
-                        isOffer,
+                        agreement.isOffer(),
                         listing.roundTripId(),
                         listing.rideType()
                 );
 
-                legs.add(buildLeg(
-                        agreementId,
-                        otherLeg,
-                        isOffer,
-                        email,
-                        drivers,
-                        passengers
-                ));
+                if (otherLeg != null) {
+                    results.add(buildLeg(
+                            agreement.agreementId(),
+                            otherLeg,
+                            email,
+                            drivers,
+                            passengers
+                    ));
+                }
             }
+        }
 
-            return legs;
-        }, email);
+        /*
+         * Find the user's own listings that do not have an agreement.
+         * Both legs of an unjoined round trip are returned separately.
+         */
+        List<ListingData> unjoinedListings =
+                findOwnListingsWithoutAgreement(email);
 
-        return agreementLegs.stream()
-                .flatMap(List::stream)
-                .toList();
+        for (ListingData listing : unjoinedListings) {
+
+            List<AgreementMember> owner =
+                    findOwner(listing.userEmail());
+
+            /*
+             * The creator of an offer is always a driver.
+             * The creator of a request is a passenger.
+             */
+            List<AgreementMember> drivers =
+                    listing.isOffer() ? owner : List.of();
+
+            List<AgreementMember> passengers =
+                    listing.isOffer() ? List.of() : owner;
+
+            results.add(buildLeg(
+                    null,
+                    listing,
+                    email,
+                    drivers,
+                    passengers
+            ));
+        }
+
+        return results;
     }
 
-    private ListingData findListing(boolean isOffer, UUID listingId) {
+    private ListingData findListing(
+            boolean isOffer,
+            UUID listingId
+    ) {
+        if (listingId == null) {
+            return null;
+        }
+
         String table = isOffer ? "ride_offers" : "ride_requests";
         String idColumn = isOffer ? "offer_id" : "request_id";
 
@@ -125,56 +215,13 @@ public class RideAgreementSummaryRepositoryImpl
             WHERE %s = ?
             """.formatted(idColumn, table, idColumn);
 
-        return jdbcTemplate.queryForObject(
+        List<ListingData> listings = jdbcTemplate.query(
                 sql,
-                (rs, rowNum) -> new ListingData(
-                        rs.getObject("id", UUID.class),
-                        rs.getString("user_email"),
-                        rs.getString("city"),
-                        rs.getObject("arrival_time", LocalTime.class),
-                        rs.getObject("departure_time", LocalTime.class),
-                        rs.getString("status"),
-                        rs.getString("ride_type"),
-                        rs.getObject("round_trip_id", UUID.class)
-                ),
+                (rs, rowNum) -> mapListing(rs, isOffer),
                 listingId
         );
-    }
 
-    private RideAgreementSummary buildLeg(
-            long agreementId,
-            ListingData listing,
-            boolean isOffer,
-            String currentUserEmail,
-            List<AgreementMember> drivers,
-            List<AgreementMember> passengers
-    ) {
-        String origin;
-        String destination;
-
-        if ("ARRIVAL".equals(listing.rideType())) {
-            origin = listing.city();
-            destination = "University of Manitoba";
-        } else {
-            origin = "University of Manitoba";
-            destination = listing.city();
-        }
-
-        return new RideAgreementSummary(
-                agreementId,
-                listing.id(),
-                listing.roundTripId(),
-                listing.rideType(),
-                origin,
-                destination,
-                listing.arrivalTime(),
-                listing.departureTime(),
-                findDays(isOffer, listing.id()),
-                listing.status(),
-                listing.userEmail().equalsIgnoreCase(currentUserEmail),
-                drivers,
-                passengers
-        );
+        return listings.size() == 1 ? listings.get(0) : null;
     }
 
     private ListingData findRoundTripLeg(
@@ -200,20 +247,77 @@ public class RideAgreementSummaryRepositoryImpl
               AND ride_type <> ?
             """.formatted(idColumn, table);
 
-        return jdbcTemplate.queryForObject(
+        List<ListingData> listings = jdbcTemplate.query(
                 sql,
-                (rs, rowNum) -> new ListingData(
-                        rs.getObject("id", UUID.class),
-                        rs.getString("user_email"),
-                        rs.getString("city"),
-                        rs.getObject("arrival_time", LocalTime.class),
-                        rs.getObject("departure_time", LocalTime.class),
-                        rs.getString("status"),
-                        rs.getString("ride_type"),
-                        rs.getObject("round_trip_id", UUID.class)
-                ),
+                (rs, rowNum) -> mapListing(rs, isOffer),
                 roundTripId,
                 currentRideType
+        );
+
+        /*
+         * A valid round trip should have exactly one other leg.
+         * Return null if the paired leg is missing or the data
+         * contains multiple matching rows.
+         */
+        return listings.size() == 1 ? listings.get(0) : null;
+    }
+
+    private ListingData mapListing(
+            ResultSet rs,
+            boolean isOffer
+    ) throws SQLException {
+
+        return new ListingData(
+                rs.getObject("id", UUID.class),
+                rs.getString("user_email"),
+                rs.getString("city"),
+                rs.getObject("arrival_time", LocalTime.class),
+                rs.getObject("departure_time", LocalTime.class),
+                rs.getString("status"),
+                rs.getString("ride_type"),
+                rs.getObject("round_trip_id", UUID.class),
+                isOffer
+        );
+    }
+
+    private RideAgreementSummary buildLeg(
+            Long agreementId,
+            ListingData listing,
+            String currentUserEmail,
+            List<AgreementMember> drivers,
+            List<AgreementMember> passengers
+    ) {
+        String origin;
+        String destination;
+
+        switch (listing.rideType()) {
+            case "ARRIVAL" -> {
+                origin = listing.city();
+                destination = "University of Manitoba";
+            }
+            case "DEPARTURE" -> {
+                origin = "University of Manitoba";
+                destination = listing.city();
+            }
+            default -> throw new IllegalStateException(
+                    "Unexpected ride type: " + listing.rideType()
+            );
+        }
+
+        return new RideAgreementSummary(
+                agreementId,
+                listing.id(),
+                listing.roundTripId(),
+                listing.rideType(),
+                origin,
+                destination,
+                listing.arrivalTime(),
+                listing.departureTime(),
+                findDays(listing.isOffer(), listing.id()),
+                listing.status(),
+                listing.userEmail().equalsIgnoreCase(currentUserEmail),
+                drivers,
+                passengers
         );
     }
 
@@ -221,7 +325,10 @@ public class RideAgreementSummaryRepositoryImpl
             boolean isOffer,
             UUID listingId
     ) {
-        String table = isOffer ? "ride_offer_days" : "ride_request_days";
+        String table = isOffer
+                ? "ride_offer_days"
+                : "ride_request_days";
+
         String idColumn = isOffer ? "offer_id" : "request_id";
 
         String sql = """
@@ -245,6 +352,100 @@ public class RideAgreementSummaryRepositoryImpl
         );
     }
 
+    private List<ListingData> findOwnListingsWithoutAgreement(
+            String email
+    ) {
+        String sql = """
+            SELECT
+                o.offer_id AS id,
+                o.user_email,
+                o.city,
+                o.arrival_time,
+                o.departure_time,
+                o.status,
+                o.ride_type,
+                o.round_trip_id,
+                TRUE AS is_offer
+            FROM ride_offers o
+            WHERE o.user_email = ?
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM ride_agreements ra
+                  JOIN ride_offers linked
+                      ON linked.offer_id = ra.offer_id
+                  WHERE linked.offer_id = o.offer_id
+                     OR (
+                         o.round_trip_id IS NOT NULL
+                         AND linked.round_trip_id = o.round_trip_id
+                     )
+              )
+
+            UNION ALL
+
+            SELECT
+                r.request_id AS id,
+                r.user_email,
+                r.city,
+                r.arrival_time,
+                r.departure_time,
+                r.status,
+                r.ride_type,
+                r.round_trip_id,
+                FALSE AS is_offer
+            FROM ride_requests r
+            WHERE r.user_email = ?
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM ride_agreements ra
+                  JOIN ride_requests linked
+                      ON linked.request_id = ra.request_id
+                  WHERE linked.request_id = r.request_id
+                     OR (
+                         r.round_trip_id IS NOT NULL
+                         AND linked.round_trip_id = r.round_trip_id
+                     )
+              )
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new ListingData(
+                        rs.getObject("id", UUID.class),
+                        rs.getString("user_email"),
+                        rs.getString("city"),
+                        rs.getObject("arrival_time", LocalTime.class),
+                        rs.getObject("departure_time", LocalTime.class),
+                        rs.getString("status"),
+                        rs.getString("ride_type"),
+                        rs.getObject("round_trip_id", UUID.class),
+                        rs.getBoolean("is_offer")
+                ),
+                email,
+                email
+        );
+    }
+
+    private List<AgreementMember> findOwner(String email) {
+        String sql = """
+            SELECT
+                email,
+                first_name,
+                COALESCE(last_name, '') AS last_name
+            FROM users
+            WHERE email = ?
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new AgreementMember(
+                        rs.getString("email"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name")
+                ),
+                email
+        );
+    }
+
     private List<AgreementMember> findMembers(
             long agreementId,
             String role
@@ -255,7 +456,8 @@ public class RideAgreementSummaryRepositoryImpl
                 u.first_name,
                 COALESCE(u.last_name, '') AS last_name
             FROM ride_agreement_members ram
-            JOIN users u ON u.email = ram.user_email
+            JOIN users u
+                ON u.email = ram.user_email
             WHERE ram.agreement_id = ?
               AND ram.role = ?
             ORDER BY u.first_name, u.last_name
