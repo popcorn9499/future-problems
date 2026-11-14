@@ -10,6 +10,42 @@ import 'package:gobison/features/profile/profile_service.dart';
 
 void main() {
   group('ProfileService', () {
+    group('deleteAccount', () {
+      test('sends DELETE to the current account endpoint', () async {
+        late http.Request capturedRequest;
+        final client = MockClient((request) async {
+          capturedRequest = request;
+          return http.Response('', 204);
+        });
+
+        await ProfileService(client: client).deleteAccount();
+
+        expect(capturedRequest.method, 'DELETE');
+        expect(
+          capturedRequest.url,
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me'),
+        );
+        expect(capturedRequest.headers['accept'], 'application/json');
+      });
+
+      test('throws when account deletion fails', () async {
+        final client = MockClient(
+          (_) async => http.Response('{"message":"Unauthorized"}', 401),
+        );
+
+        expect(
+          () => ProfileService(client: client).deleteAccount(),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Account deletion failed (401)'),
+            ),
+          ),
+        );
+      });
+    });
+
     group('updateProfile', () {
       test(
         'sends the correct request and returns the updated profile',
