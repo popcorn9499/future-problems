@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gobison/core/theme/avatar_color_option.dart';
+import 'package:gobison/core/widgets/user_avatar.dart';
 import 'package:gobison/features/messages/messaging_controller.dart';
 import 'package:gobison/features/messages/presentation/chat_page.dart';
 import 'package:gobison/features/messages/presentation/inbox_page.dart';
@@ -18,6 +20,45 @@ void main() {
 
     tearDown(() => controller.dispose());
 
+    testWidgets('opens a chat from the default mock-backed inbox', (
+      tester,
+    ) async {
+      final mockBackedController = MessagingController();
+      addTearDown(mockBackedController.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: InboxPage(
+            currentUserId: 'current-user',
+            controller: mockBackedController,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Jane Doe'), findsOneWidget);
+      expect(
+        find.text(
+          'Preview messages · All messages are simulated and not sent to a real user.',
+        ),
+        findsOneWidget,
+      );
+      final avatar = tester.widget<UserAvatar>(find.byType(UserAvatar).first);
+      expect(
+        avatar.backgroundColor,
+        AvatarColorOption.getBackgroundColor('#D1C4E9'),
+      );
+
+      await tester.tap(find.text('Jane Doe'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatPage), findsOneWidget);
+      expect(
+        find.text('Hi! Are you still looking for a ride to campus?'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('shows conversation previews and unread count', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -33,6 +74,12 @@ void main() {
       expect(find.text('Jane Doe'), findsOneWidget);
       expect(find.text('See you soon'), findsOneWidget);
       expect(find.text('2'), findsOneWidget);
+      final avatar = tester.widget<UserAvatar>(find.byType(UserAvatar));
+      expect(
+        avatar.backgroundColor,
+        AvatarColorOption.getBackgroundColor('#D1C4E9'),
+      );
+      expect(avatar.textColor, AvatarColorOption.getTextColor('#D1C4E9'));
     });
 
     testWidgets('shows an empty inbox message', (tester) async {
@@ -70,6 +117,11 @@ void main() {
       expect(find.text('Hello there'), findsOneWidget);
       expect(service.requestedConversationId, 'conversation-1');
       expect(service.readCallCount, 1);
+      final chatAvatar = tester.widget<UserAvatar>(find.byType(UserAvatar));
+      expect(
+        chatAvatar.backgroundColor,
+        AvatarColorOption.getBackgroundColor('#D1C4E9'),
+      );
 
       await tester.enterText(find.byType(TextField), 'A new message');
       await tester.tap(find.byTooltip('Send message'));

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/features/messages/messaging_api_mock.dart';
+import 'package:gobison/features/messages/models/conversation.dart';
 import 'package:gobison/features/messages/messaging_service.dart';
 
 void main() {
@@ -20,6 +21,10 @@ void main() {
         expect(inbox.first.participant.displayName, isNotEmpty);
         expect(inbox.first.lastMessage, isNotEmpty);
         expect(inbox.first.lastMessageAt, isNotNull);
+        final janeConversation = inbox.firstWhere(
+          (item) => item.conversationId == 'conv_123',
+        );
+        expect(janeConversation.participant.avatarColor, '#D1C4E9');
 
         final messages = await service.getConversationMessages(
           'conv_123',
@@ -80,6 +85,15 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('uses the default avatar color when the participant has no color', () {
+      final participant = ConversationParticipant.fromJson({
+        'userId': 'rider-without-color',
+        'firstName': 'Rider',
+      });
+
+      expect(participant.avatarColor, '#E9DFD2');
     });
   });
 }
