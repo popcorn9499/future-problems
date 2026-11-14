@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../messaging_controller.dart';
@@ -138,6 +139,12 @@ class _InboxTile extends StatelessWidget {
         firstName: conversation.participant.firstName,
         lastName: conversation.participant.lastName,
         radius: 27,
+        backgroundColor: AvatarColorOption.getBackgroundColor(
+          conversation.participant.avatarColor,
+        ),
+        textColor: AvatarColorOption.getTextColor(
+          conversation.participant.avatarColor,
+        ),
       ),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Padding(

@@ -3,11 +3,13 @@ class ConversationParticipant {
     required this.userId,
     required this.firstName,
     this.lastName = '',
+    this.avatarColor = '#E9DFD2',
   });
 
   final String userId;
   final String firstName;
   final String lastName;
+  final String avatarColor;
 
   String get displayName =>
       [firstName, lastName].where((part) => part.trim().isNotEmpty).join(' ');
@@ -17,6 +19,7 @@ class ConversationParticipant {
       userId: json['userId'] as String,
       firstName: json['firstName'] as String? ?? 'GoBison rider',
       lastName: json['lastName'] as String? ?? '',
+      avatarColor: json['avatarColor'] as String? ?? '#E9DFD2',
     );
   }
 }

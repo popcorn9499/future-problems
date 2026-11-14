@@ -11,12 +11,14 @@ Conversation testConversation({
   String name = 'Jane Doe',
   String preview = 'See you soon',
   int unreadCount = 2,
+  String avatarColor = '#D1C4E9',
 }) => Conversation(
   conversationId: id,
   participant: ConversationParticipant(
     userId: 'rider-2',
     firstName: name.split(' ').first,
     lastName: name.split(' ').skip(1).join(' '),
+    avatarColor: avatarColor,
   ),
   lastMessage: preview,
   lastMessageAt: testSentAt,

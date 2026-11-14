@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../messaging_controller.dart';
@@ -97,6 +98,12 @@ class _ChatPageState extends State<ChatPage> {
                 firstName: participant.firstName,
                 lastName: participant.lastName,
                 radius: 20,
+                backgroundColor: AvatarColorOption.getBackgroundColor(
+                  participant.avatarColor,
+                ),
+                textColor: AvatarColorOption.getTextColor(
+                  participant.avatarColor,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
