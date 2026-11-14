@@ -10,7 +10,7 @@ import 'app_sidebar.dart';
 
 class AppShell extends StatefulWidget {
   final Widget dashboardPage;
-  final Widget messagesPage;
+  final Widget inboxPage;
   final Widget rideRequestPage;
   final Widget rideOfferPage;
   final User user;
@@ -20,7 +20,7 @@ class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
     required this.dashboardPage,
-    required this.messagesPage,
+    required this.inboxPage,
     required this.rideRequestPage,
     required this.rideOfferPage,
     required this.user,
@@ -84,7 +84,7 @@ class _AppShellState extends State<AppShell> {
 
     final pages = [
       widget.dashboardPage,
-      widget.messagesPage,
+      widget.inboxPage,
       widget.rideRequestPage,
       widget.rideOfferPage,
     ];
