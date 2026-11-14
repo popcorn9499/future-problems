@@ -5,6 +5,7 @@ import 'login_page.dart';
 import '../../home/presentation/home_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
+import '../../messages/presentation/inbox_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
 import '../../ride_request/presentation/ride_request_page.dart';
@@ -77,10 +78,11 @@ class _SessionGateState extends State<SessionGate> {
         }
         return AppShell(
           dashboardPage: HomePage(user: session.user, profile: session.profile),
-          messagesPage: const Placeholder(),
-          user: session.user, // Adjust to your actual profile field.
-          rideRequestPage: RideRequestPage(userId: session.user.id),
           rideOfferPage: RideOfferPage(userId: session.user.id),
+          inboxPage: InboxPage(currentUserId: session.user.id, showAppBar: false),
+          user: session.user,
+          rideRequestPage: RideRequestPage(userId: session.user.id),
+
           onProfileTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
