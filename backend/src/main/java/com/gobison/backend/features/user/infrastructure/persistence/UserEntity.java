@@ -27,6 +27,9 @@ public class UserEntity {
     @Column(name = "verified", nullable = false)
     private boolean verified;
 
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean deleted = false;
+
     @Column(name = "verification_code", length = 6)
     private String verificationCode;
 
@@ -67,6 +70,10 @@ public class UserEntity {
         return verified;
     }
 
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(deleted);
+    }
+
     public String getVerificationCode() {
         return verificationCode;
     }
@@ -85,5 +92,9 @@ public class UserEntity {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

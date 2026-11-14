@@ -79,6 +79,9 @@ public class EmailVerificationService {
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new EmailVerificationException(UNAUTHENTICATED));
+        if (user.isDeleted()) {
+            throw new EmailVerificationException(UNAUTHENTICATED);
+        }
         if (user.isVerified()) {
             throw new EmailVerificationException(ALREADY_VERIFIED);
         }

@@ -20,6 +20,7 @@ public class CurrentUserController {
     @GetMapping("/me")
     public AuthUserResponse currentUser(Authentication authentication) {
         return users.findByEmail(authentication.getName())
+                .filter(user -> !user.isDeleted())
                 .map(AuthUserResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }

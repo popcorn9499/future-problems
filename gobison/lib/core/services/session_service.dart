@@ -7,7 +7,11 @@ class SessionData {
   final User user;
   final UserProfile profile;
 
-  const SessionData({this.accessToken, required this.user, required this.profile});
+  const SessionData({
+    this.accessToken,
+    required this.user,
+    required this.profile,
+  });
 }
 
 class SessionService {
@@ -15,7 +19,8 @@ class SessionService {
   static User? _currentUser;
   static UserProfile? _currentProfile;
   final AuthService _authService;
-  SessionService({AuthService? authService}) : _authService = authService ?? AuthService();
+  SessionService({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
   // Toggle this to false when switching to your real backend
   static const bool useMock = false;
@@ -48,10 +53,14 @@ class SessionService {
         description: 'My car is quite messy, but I\'ll get you to campus safe!',
       );
 
-      return SessionData(accessToken: 'mock-jwt-token', user: _mockUser!, profile: _mockProfile!);
+      return SessionData(
+        accessToken: 'mock-jwt-token',
+        user: _mockUser!,
+        profile: _mockProfile!,
+      );
     } else {
       final data = await _authService.currentUser();
-      if (data == null) {
+      if (data == null || data['isDeleted'] == true) {
         await clearSession();
         return null;
       }
@@ -61,6 +70,7 @@ class SessionService {
         lastName: data['lastName'] as String?,
         email: data['email'] as String,
         verified: data['verified'] as bool,
+        isDeleted: data['isDeleted'] as bool? ?? false,
       );
       if (_currentUser?.id != user.id) _currentProfile = null;
       _currentUser = user;
@@ -84,7 +94,11 @@ class SessionService {
       user: user,
       profile:
           _currentProfile ??
-          UserProfile(userId: user.id, firstName: user.firstName, lastName: user.lastName),
+          UserProfile(
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          ),
     );
   }
 

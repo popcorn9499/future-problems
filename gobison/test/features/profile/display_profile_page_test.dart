@@ -51,6 +51,11 @@ void main() {
       expect(find.text('I enjoy building software.'), findsOneWidget);
       expect(find.text('Age'), findsOneWidget);
       expect(find.text('22'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Pronouns'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Pronouns'), findsOneWidget);
       expect(find.text('She/her'), findsOneWidget);
     });
@@ -88,6 +93,29 @@ void main() {
       await tester.pumpWidget(createTestWidget(currentUserId: '456'));
 
       expect(find.text('Edit Profile'), findsNothing);
+      expect(find.text('Delete Account'), findsNothing);
+    });
+
+    testWidgets('asks for confirmation before deleting the current account', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await tester.tap(find.text('Delete Account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete your account?'), findsOneWidget);
+      expect(
+        find.text(
+          'This action cannot be undone. You will be signed out and cannot sign in or register again with this email.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete your account?'), findsNothing);
     });
 
     testWidgets('hides optional details when they are missing', (
@@ -168,9 +196,7 @@ void main() {
       avatarColor: '#F8BBD0',
     );
 
-    await tester.pumpWidget(
-      createTestWidget(testProfile: pinkProfile),
-    );
+    await tester.pumpWidget(createTestWidget(testProfile: pinkProfile));
 
     final avatarFinder = find.byType(UserAvatar);
     expect(avatarFinder, findsOneWidget);
@@ -191,9 +217,7 @@ void main() {
       avatarColor: '#C2185B',
     );
 
-    await tester.pumpWidget(
-      createTestWidget(testProfile: darkPinkProfile),
-    );
+    await tester.pumpWidget(createTestWidget(testProfile: darkPinkProfile));
 
     avatar = tester.widget<UserAvatar>(avatarFinder);
 
