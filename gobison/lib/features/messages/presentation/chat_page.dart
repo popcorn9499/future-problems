@@ -29,7 +29,9 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
-    _loadConversationMessages();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadConversationMessages();
+    });
   }
 
   Future<void> _loadConversationMessages() async {
