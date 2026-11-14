@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.jdbc.Sql;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -23,8 +24,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Integration test against the real database, like UserRepositoryImplTest.
  * DashboardTestData seeds the rows and deletes them again after each test.
+ *
+ * The @Sql script creates the ride tables if they are missing (CI builds only
+ * the users table from JPA entities) and does nothing where they already exist.
  */
 @SpringBootTest
+@Sql("/ci_ride_agreements_schema.sql")
 class RideAgreementSummaryRepositoryImplTest {
 
     private static final String CAMPUS = "University of Manitoba";
@@ -331,7 +336,7 @@ class RideAgreementSummaryRepositoryImplTest {
     }
 
     // EXPECTED TO FAIL until findOwnListingsWithoutAgreement filters out archived listings, but maybe we dont want this
-    // When an owner deletes a listing nobody joined, it currently still shows up in their dashboard as ARCHIVED
+    // When an owner deletes a listing nobody joined, it still shows up on their dashboard currently
     // @Test
     // void shouldNotReturnOwnArchivedListingThatNobodyJoined() {
     //     String owner = data.createUser("Olive", "Owner");
