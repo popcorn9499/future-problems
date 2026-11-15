@@ -47,6 +47,12 @@ public class RegisterAccountService {
             throw new RegisterAccountException(INVALID_REQUEST);
         }
         if (userRepository.existsByEmail(normalizedEmail)) {
+            boolean deletedAccount = userRepository.findByEmail(normalizedEmail)
+                    .map(User::isDeleted)
+                    .orElse(false);
+            if (deletedAccount) {
+                throw new RegisterAccountException(DELETED_ACCOUNT);
+            }
             throw new RegisterAccountException(EMAIL_ALREADY_REGISTERED);
         }
         // TODO consider storing when accounts were created for record keeping purposes
@@ -59,6 +65,12 @@ public class RegisterAccountService {
         } catch (DataIntegrityViolationException exception) {
             // A concurrent registration can pass the existence checks; the database uniqueness constraint wins.
             if (userRepository.existsByEmail(normalizedEmail)) {
+                boolean deletedAccount = userRepository.findByEmail(normalizedEmail)
+                        .map(User::isDeleted)
+                        .orElse(false);
+                if (deletedAccount) {
+                    throw new RegisterAccountException(DELETED_ACCOUNT);
+                }
                 throw new RegisterAccountException(EMAIL_ALREADY_REGISTERED);
             }
             throw exception;

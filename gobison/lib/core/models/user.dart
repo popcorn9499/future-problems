@@ -4,6 +4,7 @@ class User {
   final String? lastName;
   final String email;
   final bool verified;
+  final bool isDeleted;
 
   const User({
     required this.id,
@@ -11,6 +12,7 @@ class User {
     this.lastName = '',
     required this.email,
     this.verified = false,
+    this.isDeleted = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class User {
       lastName: json['lastName'] as String?,
       verified: json['verified'] as bool? ?? false,
       email: json['email'] as String,
+      isDeleted: json['isDeleted'] as bool? ?? false,
     );
   }
 }

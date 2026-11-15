@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Instant;
 
 import static com.gobison.backend.features.auth.application.RegisterAccountException.Reason.EMAIL_ALREADY_REGISTERED;
+import static com.gobison.backend.features.auth.application.RegisterAccountException.Reason.DELETED_ACCOUNT;
 import static com.gobison.backend.features.auth.application.RegisterAccountException.Reason.INVALID_REQUEST;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,6 +75,21 @@ class RegisterAccountServiceTest {
         assertEquals(EMAIL_ALREADY_REGISTERED, exception.getReason());
         verify(userRepository, never()).create(any());
         verify(userRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder, sessionAuthenticationService);
+    }
+
+    @Test
+    void doesNotAllowDeletedAccountEmailToRegisterAgain() {
+        User deletedUser = new User("ada@example.com", "hashed", "Ada", "Lovelace", true);
+        deletedUser.setDeleted(true);
+        when(userRepository.existsByEmail("ada@example.com")).thenReturn(true);
+        when(userRepository.findByEmail("ada@example.com")).thenReturn(java.util.Optional.of(deletedUser));
+
+        RegisterAccountException exception = assertThrows(RegisterAccountException.class,
+                () -> register("ada@example.com"));
+
+        assertEquals(DELETED_ACCOUNT, exception.getReason());
+        verify(userRepository, never()).create(any());
         verifyNoInteractions(passwordEncoder, sessionAuthenticationService);
     }
 
