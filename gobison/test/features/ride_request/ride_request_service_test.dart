@@ -20,14 +20,17 @@ void main() {
 
             return http.Response(
               jsonEncode({
-                'id': 'request123',
+                'requestId': null,
+                'arrivalId': 'request123',
+                'departureId': 'request124',
+                'roundTripId': 'shared-id',
                 'userId': '123',
                 'rideType': 'roundTrip',
                 'city': 'Fargo',
                 'streetAddress': '123 Main Street',
                 'arrivalTime': '08:30',
                 'departureTime': '17:00',
-                'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
+                'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
                 'description': 'Looking for a morning ride',
               }),
               200,
@@ -66,18 +69,20 @@ void main() {
           );
 
           expect(jsonDecode(capturedRequest.body), {
-            'userId': '123',
             'rideType': 'roundTrip',
             'city': 'Fargo',
             'streetAddress': '123 Main Street',
             'arrivalTime': '08:30',
             'departureTime': '17:00',
-            'daysOfWeek': ['Monday', 'Wednesday', 'Friday'],
+            'daysOfWeek': ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
             'description': 'Looking for a morning ride',
           });
 
           expect(result, isA<Map<String, dynamic>>());
-          expect(result['id'], 'request123');
+          expect(result['requestId'], isNull);
+          expect(result['arrivalId'], 'request123');
+          expect(result['departureId'], 'request124');
+          expect(result['roundTripId'], 'shared-id');
           expect(result['userId'], '123');
           expect(result['rideType'], 'roundTrip');
           expect(result['city'], 'Fargo');
@@ -86,7 +91,7 @@ void main() {
           expect(result['departureTime'], '17:00');
           expect(
             result['daysOfWeek'],
-            ['Monday', 'Wednesday', 'Friday'],
+            ['MONDAY', 'WEDNESDAY', 'FRIDAY'],
           );
           expect(
             result['description'],
@@ -196,12 +201,12 @@ void main() {
           final requestBody = jsonDecode(capturedRequest.body);
 
           expect(requestBody['description'], isNull);
-          expect(requestBody['userId'], '123');
+          expect(requestBody.containsKey('userId'), isFalse);
           expect(requestBody['rideType'], 'arriving');
           expect(requestBody['arrivalTime'], '07:30');
           expect(requestBody['departureTime'], isNull);
           expect(requestBody['city'], 'Fargo');
-          expect(requestBody['daysOfWeek'], ['Monday']);
+          expect(requestBody['daysOfWeek'], ['MONDAY']);
         },
       );
 

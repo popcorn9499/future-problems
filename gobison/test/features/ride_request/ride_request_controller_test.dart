@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -365,12 +366,16 @@ void main() {
         expect(arrivalTime, '08:30');
         expect(departureTime, '17:30');
 
-        return {
+        return jsonDecode(jsonEncode({
           ...rideRequestJson,
+          'requestId': null,
+          'arrivalId': 'arrival-id',
+          'departureId': 'departure-id',
+          'roundTripId': 'shared-id',
           'rideType': 'roundTrip',
           'arrivalTime': '08:30',
           'departureTime': '17:30',
-        };
+        })) as Map<String, dynamic>;
       };
 
       await controller.createRideRequest(
@@ -384,6 +389,11 @@ void main() {
       );
 
       expect(controller.errorMessage, isNull);
+      expect(controller.createdRideRequest?.requestId, isNull);
+      expect(controller.createdRideRequest?.arrivalId, 'arrival-id');
+      expect(controller.createdRideRequest?.departureId, 'departure-id');
+      expect(controller.createdRideRequest?.roundTripId, 'shared-id');
+      expect(controller.createdRideRequest?.rideType, 'roundTrip');
       expect(controller.createdRideRequest?.arrivalTime, '08:30');
       expect(controller.createdRideRequest?.departureTime, '17:30');
     });
@@ -513,7 +523,7 @@ void main() {
 
       expect(
         controller.errorMessage,
-        'Unable to save your ride request. Please try again.',
+        'Your session has expired. Please sign in again.',
       );
       expect(controller.isLoading, isFalse);
     });
