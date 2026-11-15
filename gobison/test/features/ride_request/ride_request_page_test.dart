@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+import 'package:gobison/features/ride_request/ride_request_service.dart';
 import 'package:gobison/features/ride_request/presentation/ride_request_page.dart';
 
 void main() {
@@ -71,6 +77,42 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(resetButton);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> submitRideWithClient(
+    WidgetTester tester,
+    http.Client client,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RideRequestPage(
+          userId: testUserId,
+          service: RideRequestService(client: client),
+        ),
+      ),
+    );
+    await enterRequiredFields(tester);
+    await tester.ensureVisible(find.text('Select time'));
+    await tester.tap(find.text('Select time'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(TimePickerDialog),
+        matching: find.text('OK'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Mon'));
+    await tester.tap(find.text('Mon'));
+    final submitButton = find.text('Submit Ride Offer');
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
     await tester.pumpAndSettle();
   }
 
@@ -762,6 +804,111 @@ void main() {
         expect(
           find.text('Desired campus arrival time *'),
           findsNothing,
+        );
+      });
+    });
+
+    group('address lookup responses', () {
+      testWidgets('shows an invalid address popup and preserves form input', (
+        WidgetTester tester,
+      ) async {
+        var serviceCallCount = 0;
+        final client = MockClient((_) async {
+          serviceCallCount++;
+          return http.Response(jsonEncode({'code': 'INVALID_ADDRESS'}), 422);
+        });
+
+        await submitRideWithClient(tester, client);
+
+        expect(serviceCallCount, 1);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('We couldn’t locate that address in Canada. Check the street address and city and try again.'),
+          ),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+
+        final textFields = find.byType(TextFormField);
+        expect(
+          tester.widget<TextFormField>(textFields.at(0)).controller!.text,
+          'Toronto',
+        );
+        expect(
+          tester.widget<TextFormField>(textFields.at(1)).controller!.text,
+          '123 Main Street',
+        );
+      });
+
+      testWidgets('shows a temporary lookup error and preserves form input', (
+        WidgetTester tester,
+      ) async {
+        var serviceCallCount = 0;
+        final client = MockClient((_) async {
+          serviceCallCount++;
+          return http.Response(
+            jsonEncode({'code': 'GEOCODING_UNAVAILABLE'}),
+            503,
+          );
+        });
+
+        await submitRideWithClient(tester, client);
+
+        expect(serviceCallCount, 1);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(
+          find.text(
+            'Address lookup is temporarily unavailable. Please try again.',
+          ),
+          findsOneWidget,
+        );
+        final textFields = find.byType(TextFormField);
+        expect(
+          tester.widget<TextFormField>(textFields.at(0)).controller!.text,
+          'Toronto',
+        );
+        expect(
+          tester.widget<TextFormField>(textFields.at(1)).controller!.text,
+          '123 Main Street',
+        );
+      });
+
+      testWidgets('clears form input after a successful submission', (
+        WidgetTester tester,
+      ) async {
+        var serviceCallCount = 0;
+        final client = MockClient((_) async {
+          serviceCallCount++;
+          return http.Response(
+            jsonEncode({
+              'requestId': 'ride123',
+              'userId': testUserId,
+              'rideType': 'arriving',
+              'city': 'Toronto',
+              'streetAddress': '123 Main Street',
+              'arrivalTime': '07:15',
+              'daysOfWeek': ['MONDAY'],
+            }),
+            201,
+          );
+        });
+
+        await submitRideWithClient(tester, client);
+
+        expect(serviceCallCount, 1);
+        expect(find.byType(AlertDialog), findsNothing);
+        final textFields = find.byType(TextFormField);
+        expect(
+          tester.widget<TextFormField>(textFields.at(0)).controller!.text,
+          isEmpty,
+        );
+        expect(
+          tester.widget<TextFormField>(textFields.at(1)).controller!.text,
+          isEmpty,
         );
       });
     });
