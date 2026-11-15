@@ -35,7 +35,11 @@ void main() {
     WidgetTester tester,
     String rideType,
   ) async {
-    await tester.tap(find.byType(DropdownButton<String>));
+    final dropdown = find.byType(DropdownButton<String>);
+
+    await tester.ensureVisible(dropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(dropdown);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text(rideType).last);
