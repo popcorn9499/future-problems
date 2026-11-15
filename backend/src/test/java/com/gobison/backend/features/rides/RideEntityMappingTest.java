@@ -1,6 +1,7 @@
 package com.gobison.backend.features.rides;
 
 import com.gobison.backend.features.rides.domain.model.RideOffer;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
 import com.gobison.backend.features.rides.domain.model.RideRequest;
 import com.gobison.backend.features.rides.domain.model.RideType;
 import com.gobison.backend.features.rides.infrastructure.persistence.RideOfferEntity;
@@ -18,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class RideEntityMappingTest {
 
     @Test
-    void preservesRequestLegFieldsThroughEntityMapping() {
+    void preservesRequestLegFieldsThroughEntityMapping() throws Exception {
         for (RideType direction : new RideType[] {RideType.ARRIVAL, RideType.DEPARTURE}) {
             UUID requestId = UUID.randomUUID();
             UUID roundTripId = UUID.randomUUID();
@@ -29,7 +30,16 @@ class RideEntityMappingTest {
                     direction, departureTime, roundTripId, requestId, "ada@myumanitoba.ca",
                     "Winnipeg", "123 Main", arrivalTime, days, "Ride home", "OPEN");
 
-            var restored = new RideRequestEntity(request).toDomain();
+            request.setLocation(new GeoLocation(-97.138, 49.895));
+            var entity = new RideRequestEntity(request);
+            var field = RideRequestEntity.class.getDeclaredField("location");
+            field.setAccessible(true);
+            var point = (org.locationtech.jts.geom.Point) field.get(entity);
+            assertEquals(4326, point.getSRID());
+            assertEquals(-97.138, point.getX());
+            assertEquals(49.895, point.getY());
+            var restored = entity.toDomain();
+            assertEquals(request.getLocation(), restored.getLocation());
 
             assertAll(
                     () -> assertEquals(direction, restored.getRideType()),
@@ -57,7 +67,9 @@ class RideEntityMappingTest {
                     direction, departureTime, null, offerId, "ada@myumanitoba.ca",
                     "Winnipeg", "123 Main", arrivalTime, days, null, "OPEN", 3, true);
 
+            offer.setLocation(new GeoLocation(-97.138, 49.895));
             var restored = new RideOfferEntity(offer).toDomain();
+            assertEquals(offer.getLocation(), restored.getLocation());
 
             assertAll(
                     () -> assertEquals(direction, restored.getRideType()),
