@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/models/user_profile.dart';
+import '../../../core/services/session_service.dart';
 import 'profile_service.dart';
 
 class ProfileController extends ChangeNotifier {
@@ -11,6 +12,26 @@ class ProfileController extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   UserProfile? updatedProfile;
+
+  Future<bool> deleteAccount() async {
+    if (isLoading) return false;
+
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _profileService.deleteAccount();
+      await SessionService.clearSession();
+      return true;
+    } catch (error) {
+      errorMessage = _handleDeleteError(extractErrorCode(error));
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> saveProfile({
     required UserProfile currentProfile,
@@ -42,7 +63,7 @@ class ProfileController extends ChangeNotifier {
         age: ageText.isEmpty ? null : int.parse(ageText),
         pronouns: trimmedPronouns.isEmpty ? null : trimmedPronouns,
         description: trimmedDescription.isEmpty ? null : trimmedDescription,
-        avatarColor: avatarColor
+        avatarColor: avatarColor,
       );
 
       final changes = <String, dynamic>{};
@@ -95,6 +116,19 @@ class ProfileController extends ChangeNotifier {
         return 'Something went wrong. Please try again later.';
       default:
         return 'Unable to save your profile. Please try again.';
+    }
+  }
+
+  String _handleDeleteError(int code) {
+    switch (code) {
+      case 401:
+        return 'Your session has expired. Sign in again and retry.';
+      case 403:
+        return 'You are not allowed to delete this account.';
+      case 500:
+        return 'We could not delete your account right now. Please try again later.';
+      default:
+        return 'Unable to delete your account. Please try again.';
     }
   }
 }

@@ -8,7 +8,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   final scenarios = <String, String>{
-    'duplicate': 'An account with this email already exists.',
+    'duplicate': 'An account with this email already exists. If it was deleted, contact support for help.',
     'servererror': "It's not you, it's us. Please try again later.",
   };
 
