@@ -150,7 +150,7 @@ void main() {
       expect(find.text('Submit Ride Offer'), findsOneWidget);
 
       expect(
-        find.text('GoBison • Ride with the herd.'),
+        find.text('GoBison • Ride with the herd. © OpenStreetMap contributors'),
         findsOneWidget,
       );
     });

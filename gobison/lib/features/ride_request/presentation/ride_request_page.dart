@@ -678,16 +678,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
                           const SizedBox(height: 20),
 
                           const Text(
-                            'GoBison • Ride with the herd.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black38,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            '© OpenStreetMap contributors',
+                            'GoBison • Ride with the herd. © OpenStreetMap contributors',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
