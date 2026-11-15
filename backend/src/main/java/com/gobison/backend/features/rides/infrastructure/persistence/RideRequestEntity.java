@@ -2,6 +2,13 @@ package com.gobison.backend.features.rides.infrastructure.persistence;
 
 import com.gobison.backend.features.rides.domain.model.RideRequest;
 import com.gobison.backend.features.rides.domain.model.RideType;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -32,6 +39,10 @@ public class RideRequestEntity {
 
     @Column(name = "round_trip_id")
     private UUID roundTripId;
+
+    @JdbcTypeCode(SqlTypes.GEOGRAPHY)
+    @Column(name = "location", columnDefinition = "geography(Point,4326)")
+    private Point location;
 
     @Id
     @Column(name = "request_id", nullable = false)
@@ -68,6 +79,11 @@ public class RideRequestEntity {
     }
 
     public RideRequestEntity(RideRequest rideRequest) {
+        if (rideRequest.getLocation() != null) {
+            var coordinates = rideRequest.getLocation();
+            location = new GeometryFactory(new PrecisionModel(), 4326).createPoint(
+                    new Coordinate(coordinates.longitude(), coordinates.latitude()));
+        }
         rideType = rideRequest.getRideType();
         departureTime = rideRequest.getDepartureTime();
         roundTripId = rideRequest.getRoundTripId();
@@ -82,7 +98,7 @@ public class RideRequestEntity {
     }
 
     public RideRequest toDomain() {
-        return new RideRequest(
+        var ride = new RideRequest(
                 rideType,
                 departureTime,
                 roundTripId,
@@ -94,5 +110,7 @@ public class RideRequestEntity {
                 EnumSet.copyOf(daysOfWeek),
                 description,
                 status);
+        if (location != null) ride.setLocation(new GeoLocation(location.getX(), location.getY()));
+        return ride;
     }
 }

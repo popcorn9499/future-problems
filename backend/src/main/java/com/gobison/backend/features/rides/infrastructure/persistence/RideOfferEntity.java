@@ -2,6 +2,13 @@ package com.gobison.backend.features.rides.infrastructure.persistence;
 
 import com.gobison.backend.features.rides.domain.model.RideOffer;
 import com.gobison.backend.features.rides.domain.model.RideType;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.PrecisionModel;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -32,6 +39,10 @@ public class RideOfferEntity {
 
     @Column(name = "round_trip_id")
     private UUID roundTripId;
+
+    @JdbcTypeCode(SqlTypes.GEOGRAPHY)
+    @Column(name = "location", columnDefinition = "geography(Point,4326)")
+    private Point location;
 
     @Id
     @Column(name = "offer_id", nullable = false)
@@ -74,6 +85,11 @@ public class RideOfferEntity {
     }
 
     public RideOfferEntity(RideOffer rideOffer) {
+        if (rideOffer.getLocation() != null) {
+            var coordinates = rideOffer.getLocation();
+            location = new GeometryFactory(new PrecisionModel(), 4326).createPoint(
+                    new Coordinate(coordinates.longitude(), coordinates.latitude()));
+        }
         rideType = rideOffer.getRideType();
         departureTime = rideOffer.getDepartureTime();
         roundTripId = rideOffer.getRoundTripId();
@@ -90,7 +106,7 @@ public class RideOfferEntity {
     }
 
     public RideOffer toDomain() {
-        return new RideOffer(
+        var ride = new RideOffer(
                 rideType,
                 departureTime,
                 roundTripId,
@@ -104,5 +120,7 @@ public class RideOfferEntity {
                 status,
                 passengerNum,
                 askingForDrivers);
+        if (location != null) ride.setLocation(new GeoLocation(location.getX(), location.getY()));
+        return ride;
     }
 }

@@ -7,6 +7,12 @@ import java.util.UUID;
 
 public class RideOffer {
 
+    private GeoLocation location;
+
+    public GeoLocation getLocation() { return location; }
+
+    public void setLocation(GeoLocation location) { this.location = location; }
+
     private final RideType rideType;
     private final LocalTime departureTime;
     private final UUID roundTripId;
