@@ -55,4 +55,3 @@ Merge only after approval, all review comments are addressed, and required check
 After merging, delete the completed branch.
 Close the related issue if the task is finished.
 If you work locally, update your local `master` before starting your next task.
-
