@@ -27,7 +27,8 @@ class _SessionGateState extends State<SessionGate> {
   @override
   void initState() {
     super.initState();
-    _sessionFuture = (widget.sessionService ?? SessionService()).loadCurrentSession();
+    _sessionFuture = (widget.sessionService ?? SessionService())
+        .loadCurrentSession();
   }
 
   @override
@@ -36,7 +37,9 @@ class _SessionGateState extends State<SessionGate> {
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         if (snapshot.hasError) {
@@ -51,8 +54,9 @@ class _SessionGateState extends State<SessionGate> {
                     key: const Key('session-retry-button'),
                     onPressed: () {
                       setState(() {
-                        _sessionFuture = (widget.sessionService ?? SessionService())
-                            .loadCurrentSession();
+                        _sessionFuture =
+                            (widget.sessionService ?? SessionService())
+                                .loadCurrentSession();
                       });
                     },
                     child: const Text('Try again'),
@@ -89,11 +93,21 @@ class _SessionGateState extends State<SessionGate> {
                   user: session.user,
                   profile: session.profile,
                   currentUserId: session.user.id,
+                  onAccountDeleted: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const LoginPage(),
+                      ),
+                      (route) => false,
+                    );
+                  },
                   onEdit: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) =>
-                            EditProfilePage(user: session.user, profile: session.profile),
+                        builder: (_) => EditProfilePage(
+                          user: session.user,
+                          profile: session.profile,
+                        ),
                       ),
                     );
                   },

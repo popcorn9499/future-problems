@@ -3,17 +3,20 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../core/network/api_config.dart';
+import '../../core/network/auth_client.dart';
 
 class RideOfferService {
-  RideOfferService({http.Client? client}) : _client = client ?? http.Client();
+  RideOfferService({http.Client? client}) : _client = client ?? createAuthClient();
 
   final http.Client _client;
 
   Future<Map<String, dynamic>> createRideOffer({
     required String userId,
+    required String rideType,
     required String city,
     required String streetAddress,
-    required String arrivalTime,
+    required String? arrivalTime,
+    required String? departureTime,
     required int passengerNum,
     required List<String> daysOfWeek,
     String? description,
@@ -27,11 +30,12 @@ class RideOfferService {
         'Accept': 'application/json',
       },
       body: jsonEncode({
-        'userId': userId,
+        'rideType': rideType,
         'city': city,
         'streetAddress': streetAddress,
         'arrivalTime': arrivalTime,
-        'daysOfWeek': daysOfWeek,
+        'departureTime': departureTime,
+        'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),
         'passengerNum': passengerNum,
         'description': description,
         'askingForDrivers': askingForDrivers,

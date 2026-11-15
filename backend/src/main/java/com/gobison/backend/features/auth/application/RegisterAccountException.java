@@ -4,7 +4,8 @@ public class RegisterAccountException extends RuntimeException {
 
     public enum Reason {
         INVALID_REQUEST,
-        EMAIL_ALREADY_REGISTERED
+        EMAIL_ALREADY_REGISTERED,
+        DELETED_ACCOUNT
     }
 
     private final Reason reason;
