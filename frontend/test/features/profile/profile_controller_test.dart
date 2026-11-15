@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/models/user_profile.dart';
+import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/features/profile/profile_controller.dart';
 import 'package:gobison/features/profile/profile_service.dart';
 
@@ -18,6 +20,13 @@ class FakeProfileService extends ProfileService {
 
   Future<UserProfile> Function({required Map<String, dynamic> changes})?
   onUpdateProfile;
+  Future<void> Function()? onDeleteAccount;
+
+  @override
+  Future<void> deleteAccount() async {
+    final callback = onDeleteAccount;
+    if (callback != null) await callback();
+  }
 
   @override
   Future<UserProfile> updateProfile({required Map<String, dynamic> changes}) {
@@ -47,7 +56,60 @@ void main() {
 
     tearDown(() {
       controller.dispose();
+      SessionService.clearSession();
     });
+
+    test('deleteAccount clears the cached session after success', () async {
+      await SessionService.saveSession(
+        user: const User(
+          id: '123',
+          firstName: 'Rebekah',
+          email: 'r@example.com',
+        ),
+        profile: currentProfile,
+        accessToken: 'session-token',
+      );
+      var serviceCalled = false;
+      profileService.onDeleteAccount = () async {
+        serviceCalled = true;
+      };
+
+      expect(await controller.deleteAccount(), isTrue);
+
+      expect(serviceCalled, isTrue);
+      expect(SessionService.cachedSession, isNull);
+      expect(SessionService.accessToken, isNull);
+      expect(controller.isLoading, isFalse);
+      expect(controller.errorMessage, isNull);
+    });
+
+    test(
+      'deleteAccount reports an error and preserves session on failure',
+      () async {
+        await SessionService.saveSession(
+          user: const User(
+            id: '123',
+            firstName: 'Rebekah',
+            email: 'r@example.com',
+          ),
+          profile: currentProfile,
+          accessToken: 'session-token',
+        );
+        profileService.onDeleteAccount = () async {
+          throw Exception('Account deletion failed (401)');
+        };
+
+        expect(await controller.deleteAccount(), isFalse);
+
+        expect(
+          controller.errorMessage,
+          'Your session has expired. Sign in again and retry.',
+        );
+        expect(controller.isLoading, isFalse);
+        expect(SessionService.cachedSession, isNotNull);
+        expect(SessionService.accessToken, 'session-token');
+      },
+    );
 
     test('starts with the correct initial state', () {
       expect(controller.isLoading, isFalse);

@@ -88,7 +88,10 @@ public class SecurityConfiguration {
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/profile")
                                                 .authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
+                                                .authenticated()
 
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
                                                 .anyRequest().denyAll())
 
                                 .exceptionHandling(exceptions -> exceptions
@@ -104,7 +107,7 @@ public class SecurityConfiguration {
                         @Value("${gobison.auth.allowed-origins}") List<String> allowedOrigins) {
                 CorsConfiguration configuration = new CorsConfiguration();
                 configuration.setAllowedOrigins(allowedOrigins);
-                configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "OPTIONS"));
+                configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(List.of("Content-Type", "Accept"));
                 configuration.setAllowCredentials(true);
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

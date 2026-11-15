@@ -7,6 +7,8 @@ class AuthResponseHandler {
         return 'Please enter a valid email and password.';
       case 401:
         return 'Invalid email or password.';
+      case 403:
+        return 'This account has been deleted. Contact support to reactivate account.';
       case 429:
         return 'Too many login attempts. Please try again later.';
       case 500:
@@ -23,7 +25,7 @@ class AuthResponseHandler {
       case 400:
         return 'Please check your information and try again.';
       case 409:
-        return 'An account with this email already exists.';
+        return 'An account with this email already exists. If it was deleted, contact support for help.';
       case 429:
         return 'Too many registration attempts. Please try again later.';
       case 500:

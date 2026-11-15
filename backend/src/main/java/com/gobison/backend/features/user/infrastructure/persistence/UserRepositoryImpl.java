@@ -49,6 +49,7 @@ public class UserRepositoryImpl implements UserRepository {
                 user.isVerified()
         );
         entity.setVerificationCode(user.getVerificationCode());
+        entity.setDeleted(user.isDeleted());
 
         UserEntity saved = jpaRepository.save(entity);
 
@@ -75,6 +76,7 @@ public class UserRepositoryImpl implements UserRepository {
                 entity.isVerified()
         );
         user.setVerificationCode(entity.getVerificationCode());
+        user.setDeleted(entity.isDeleted());
         return user;
     }
 }

@@ -66,6 +66,9 @@ class AuthController extends ChangeNotifier {
         password: password,
       );
       final userMap = responseData['user'];
+      if (userMap['isDeleted'] == true) {
+        throw Exception('403: Account has been deleted.');
+      }
       // Map the JSON keys explicitly to your User model fields
       final user = User(
         id: userMap['userId'], // Maps 'userId' from JSON to 'id' in your User model
@@ -73,6 +76,7 @@ class AuthController extends ChangeNotifier {
         lastName: userMap['lastName'],
         email: userMap['email'],
         verified: userMap['verified'] ?? false,
+        isDeleted: userMap['isDeleted'] ?? false,
       );
 
       await SessionService.saveUser(user: user);
@@ -114,6 +118,9 @@ int extractErrorCode(Object e) {
   }
   if (message.contains('401')) {
     return 401;
+  }
+  if (message.contains('403')) {
+    return 403;
   }
   if (message.contains('409')) {
     return 409;
