@@ -33,6 +33,7 @@ class _DashboardPageState extends State<DashboardPage> {
   late final DashboardController _dashboardController;
 
   final Set<String> _selectedDays = {};
+  TicketFilter _kind = TicketFilter.all;
 
   @override
   void initState() {
@@ -78,8 +79,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildBody() {
     final controller = _dashboardController;
-    final filteredAgreements =
-        controller.getFilteredAgreements(_selectedDays);
+    final filteredAgreements = controller.getFilteredAgreements(_selectedDays, kind: _kind);
 
     if (controller.isLoading && controller.agreements.isEmpty) {
       return const Center(
@@ -99,14 +99,14 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    if (controller.agreements.isEmpty) {
+        if (controller.agreements.isEmpty) {
       return const _MessageState(
         icon: Icons.confirmation_number_outlined,
         iconColor: AppColors.primary,
-        title: 'No ride agreements yet',
+        title: 'Nothing here yet',
         message:
-            'Once you and other students agree on a ride, '
-            'it will show up here.',
+            "Rides you've agreed on, and the offers and requests you post, "
+            'will show up here.',
       );
     }
 
@@ -127,22 +127,32 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 16),
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _DayFilter(
-                  selectedDays: _selectedDays,
-                  onDaySelected: (day) {
-                    setState(() {
-                      if (_selectedDays.contains(day)) {
-                        _selectedDays.remove(day);
-                      } else {
-                        _selectedDays.add(day);
-                      }
-                    });
-                  },
-                  onClear: () {
-                    setState(() {
-                      _selectedDays.clear();
-                    });
-                  },
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _KindFilter(
+                      selected: _kind,
+                      onChanged: (kind) => setState(() => _kind = kind),
+                    ),
+                    const SizedBox(height: 16),
+                    _DayFilter(
+                      selectedDays: _selectedDays,
+                      onDaySelected: (day) {
+                        setState(() {
+                          if (_selectedDays.contains(day)) {
+                            _selectedDays.remove(day);
+                          } else {
+                            _selectedDays.add(day);
+                          }
+                        });
+                      },
+                      onClear: () {
+                        setState(() {
+                          _selectedDays.clear();
+                        });
+                      },
+                    ),
+                  ],
                 );
               }
 
@@ -152,9 +162,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: _MessageState(
                     icon: Icons.event_busy_outlined,
                     iconColor: AppColors.textSecondary,
-                    title: 'No rides on this day',
+                    title: 'No matching rides',
                     message:
-                        'You have no ride agreements scheduled for this day.',
+                        'Nothing matches your current filters. ',
                   ),
                 );
               }
@@ -284,13 +294,20 @@ class _TicketCard extends StatelessWidget {
     final hasDrivers = agreement.drivers.isNotEmpty;
     final hasPassengers = agreement.passengers.isNotEmpty;
     final hasMembers = hasDrivers || hasPassengers;
+    final isWaiting = agreement.id == null;
+    const waitingColor = Color(0xFFC77D1A);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isWaiting
+                  ? AppColors.border
+                  : AppColors.primary.withValues(alpha: 0.5),
+              width: isWaiting ? 1.5 : 1,
+            ),
+          ),
       child: Column(
         children: [
           Padding(
@@ -377,14 +394,17 @@ class _TicketHeader extends StatelessWidget {
         !_hasJoiners(agreement);
 
     String title = 'RIDE ARRANGEMENT';
+    IconData icon = Icons.handshake_outlined;
 
     if (isUnjoinedOwnListing) {
       if (agreement.drivers.isNotEmpty &&
           agreement.passengers.isEmpty) {
         title = 'YOUR RIDE OFFER';
+        icon = Icons.event_seat_outlined;
       } else if (agreement.passengers.isNotEmpty &&
           agreement.drivers.isEmpty) {
         title = 'YOUR RIDE REQUEST';
+        icon = Icons.hail;
       }
     }
 
@@ -393,6 +413,14 @@ class _TicketHeader extends StatelessWidget {
       children: [
         Row(
           children: [
+            Icon(
+              icon,
+              size: 17,
+              color: isUnjoinedOwnListing
+                  ? AppColors.textSecondary
+                  : AppColors.primary,
+            ),
+            const SizedBox(width: 7),
             Expanded(
               child: Text(
                 title,
@@ -969,6 +997,51 @@ class _MessageState extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _KindFilter extends StatelessWidget {
+  const _KindFilter({required this.selected, required this.onChanged});
+
+  final TicketFilter selected;
+  final ValueChanged<TicketFilter> onChanged;
+
+  static const _options = <(TicketFilter, String)>[
+    (TicketFilter.all, 'All'),
+    (TicketFilter.agreements, 'Agreements'),
+    (TicketFilter.waitingOffers, 'Seeking riders'),
+    (TicketFilter.waitingRequests, 'Seeking a driver'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'SHOW',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.2,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final (value, label) in _options)
+              ChoiceChip(
+                label: Text(label),
+                selected: selected == value,
+                onSelected: (_) => onChanged(value),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

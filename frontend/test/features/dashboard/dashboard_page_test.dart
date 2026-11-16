@@ -86,6 +86,35 @@ List<Map<String, dynamic>> _twoAgreements() => [
   ),
 ];
 
+// Each unjoined listing needs its own listingId. The page groups tickets by
+// listingId, so a shared one would merge them into a fake round-trip group.
+List<Map<String, dynamic>> _mixedAgreements() => [
+  _agreement(
+    id: 1,
+    listingId: 'joined-listing',
+    origin: 'Morris',
+    days: ['MONDAY'],
+  ),
+  _agreement(
+    id: null,
+    listingId: 'offer-listing',
+    origin: 'Winnipeg',
+    days: ['MONDAY'],
+    createdByCurrentUser: true,
+    drivers: [_member('jankek@myumanitoba.ca', 'Kamryn', 'Janke')],
+    passengers: [],
+  ),
+  _agreement(
+    id: null,
+    listingId: 'request-listing',
+    origin: 'Steinbach',
+    days: ['TUESDAY'],
+    createdByCurrentUser: true,
+    drivers: [],
+    passengers: [_member('jankek@myumanitoba.ca', 'Kamryn', 'Janke')],
+  ),
+];
+
 http.Response _ok(List<Map<String, dynamic>> body) =>
     http.Response(jsonEncode(body), 200);
 
@@ -136,6 +165,17 @@ Future<void> _tapChip(
   await tester.pumpAndSettle();
 }
 
+Finder _kindChip(String label) =>
+    find.widgetWithText(ChoiceChip, label);
+
+bool _isKindSelected(WidgetTester tester, String label) =>
+    tester.widget<ChoiceChip>(_kindChip(label)).selected;
+
+Future<void> _tapKind(WidgetTester tester, String label) async {
+  await tester.tap(_kindChip(label));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('loading, empty and error states', () {
     testWidgets(
@@ -175,10 +215,7 @@ void main() {
       (tester) async {
         await _pumpWith(tester, []);
 
-        expect(
-          find.text('No ride agreements yet'),
-          findsOneWidget,
-        );
+        expect(find.text('Nothing here yet'), findsOneWidget);
         expect(find.byType(FilterChip), findsNothing);
       },
     );
@@ -699,14 +736,127 @@ void main() {
 
         await _tapChip(tester, 'Friday');
 
-        expect(
-          find.text('No rides on this day'),
-          findsOneWidget,
-        );
+        expect(find.text('No matching rides'), findsOneWidget);
         expect(find.text('Morris'), findsNothing);
         expect(find.text('Osborne Village'), findsNothing);
         expect(find.text('FILTER BY DAY'), findsOneWidget);
       },
     );
+  });
+
+  group('ticket kind filter', () {
+    testWidgets('shows the four kind chips', (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      expect(find.text('SHOW'), findsOneWidget);
+      expect(find.byType(ChoiceChip), findsNWidgets(4));
+
+      for (final label in [
+        'All',
+        'Agreements',
+        'Seeking riders',
+        'Seeking a driver',
+      ]) {
+        expect(_kindChip(label), findsOneWidget, reason: label);
+      }
+    });
+
+    testWidgets('starts with All selected and shows every ticket',
+        (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      expect(_isKindSelected(tester, 'All'), isTrue);
+      expect(_isKindSelected(tester, 'Agreements'), isFalse);
+      expect(find.text('Morris'), findsOneWidget);
+      expect(find.text('Winnipeg'), findsOneWidget);
+      expect(find.text('Steinbach'), findsOneWidget);
+    });
+
+    testWidgets('Agreements shows only tickets someone has joined',
+        (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      await _tapKind(tester, 'Agreements');
+
+      expect(_isKindSelected(tester, 'Agreements'), isTrue);
+      expect(_isKindSelected(tester, 'All'), isFalse);
+      expect(find.text('Morris'), findsOneWidget);
+      expect(find.text('Winnipeg'), findsNothing);
+      expect(find.text('Steinbach'), findsNothing);
+    });
+
+    testWidgets('Seeking riders shows only your unjoined offers',
+        (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      await _tapKind(tester, 'Seeking riders');
+
+      expect(find.text('Winnipeg'), findsOneWidget);
+      expect(find.text('YOUR RIDE OFFER'), findsOneWidget);
+      expect(find.text('Morris'), findsNothing);
+      expect(find.text('Steinbach'), findsNothing);
+    });
+
+    testWidgets('Seeking a driver shows only your unjoined requests',
+        (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      await _tapKind(tester, 'Seeking a driver');
+
+      expect(find.text('Steinbach'), findsOneWidget);
+      expect(find.text('YOUR RIDE REQUEST'), findsOneWidget);
+      expect(find.text('Morris'), findsNothing);
+      expect(find.text('Winnipeg'), findsNothing);
+    });
+
+    testWidgets('tapping All again shows every ticket', (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      await _tapKind(tester, 'Agreements');
+      await _tapKind(tester, 'All');
+
+      expect(_isKindSelected(tester, 'All'), isTrue);
+      expect(find.text('Morris'), findsOneWidget);
+      expect(find.text('Winnipeg'), findsOneWidget);
+      expect(find.text('Steinbach'), findsOneWidget);
+    });
+
+    testWidgets('combines with the day filter', (tester) async {
+      await _pumpWith(tester, _mixedAgreements());
+
+      await _tapChip(tester, 'Tuesday');
+
+      // All + Tuesday: only the request runs on Tuesday.
+      expect(find.text('Steinbach'), findsOneWidget);
+      expect(find.text('Morris'), findsNothing);
+      expect(find.text('Winnipeg'), findsNothing);
+
+      await _tapKind(tester, 'Seeking riders');
+
+      // The offer runs on Monday only, so nothing matches.
+      expect(find.text('No matching rides'), findsOneWidget);
+    });
+
+    testWidgets(
+      'shows a message and keeps the filters when the kind has no matches',
+      (tester) async {
+        await _pumpWith(tester, [_agreement()]);
+
+        await _tapKind(tester, 'Seeking riders');
+
+        expect(find.text('No matching rides'), findsOneWidget);
+        expect(find.text('Morris'), findsNothing);
+        expect(find.text('SHOW'), findsOneWidget);
+        expect(find.byType(ChoiceChip), findsNWidgets(4));
+      },
+    );
+
+    testWidgets('does not show the kind filter in the empty state',
+        (tester) async {
+      await _pumpWith(tester, []);
+
+      expect(find.text('Nothing here yet'), findsOneWidget);
+      expect(find.byType(ChoiceChip), findsNothing);
+    });
   });
 }

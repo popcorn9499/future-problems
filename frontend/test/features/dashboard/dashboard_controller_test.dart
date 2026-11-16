@@ -25,7 +25,7 @@ class FakeDashboardService extends DashboardService {
 }
 
 Map<String, dynamic> agreementJson({
-  int id = 1,
+  int? id = 1,
   String? listingId,
   String? roundTripId,
   String rideType = 'ARRIVAL',
@@ -39,7 +39,7 @@ Map<String, dynamic> agreementJson({
 }) {
   return {
     'id': id,
-    'listingId': listingId ?? 'listing-$id',
+    'listingId': listingId ?? (id == null ? 'unjoined-listing' : 'listing-$id'),
     'roundTripId': roundTripId,
     'rideType': rideType,
     'origin': 'Steinbach',
@@ -589,6 +589,102 @@ void main() {
 
     test('does not modify the underlying agreements list', () {
       idsFor({'MONDAY'});
+
+      expect(controller.agreements, hasLength(3));
+    });
+  });
+    group('getFilteredAgreements by kind', () {
+    late DashboardController controller;
+
+    final owner = {'id': 'me', 'firstName': 'Me', 'lastName': 'Owner'};
+
+    setUp(() async {
+      final service = FakeDashboardService()
+        ..onFetchAgreements = () async => [
+              agreementJson(
+                id: 1,
+                listingId: 'joined',
+                days: ['MONDAY'],
+              ),
+              agreementJson(
+                id: null,
+                listingId: 'offer',
+                createdByCurrentUser: true,
+                days: ['MONDAY', 'TUESDAY'],
+                drivers: [owner],
+                passengers: [],
+              ),
+              agreementJson(
+                id: null,
+                listingId: 'request',
+                createdByCurrentUser: true,
+                days: ['TUESDAY'],
+                drivers: [],
+                passengers: [owner],
+              ),
+            ];
+
+      controller = DashboardController(service);
+      await controller.loadAgreements();
+    });
+
+    tearDown(() {
+      controller.dispose();
+    });
+
+    List<String> listingsFor({
+      Set<String> days = const {},
+      TicketFilter kind = TicketFilter.all,
+    }) =>
+        controller
+            .getFilteredAgreements(days, kind: kind)
+            .map((a) => a.listingId)
+            .toList();
+
+    test('all returns every ticket', () {
+      expect(listingsFor(), ['joined', 'offer', 'request']);
+    });
+
+    test('the kind defaults to all', () {
+      expect(controller.getFilteredAgreements({}), hasLength(3));
+    });
+
+    test('agreements returns only tickets someone has joined', () {
+      expect(listingsFor(kind: TicketFilter.agreements), ['joined']);
+    });
+
+    test('waitingOffers returns only unjoined offers', () {
+      expect(listingsFor(kind: TicketFilter.waitingOffers), ['offer']);
+    });
+
+    test('waitingRequests returns only unjoined requests', () {
+      expect(listingsFor(kind: TicketFilter.waitingRequests), ['request']);
+    });
+
+    test('combines the kind with the selected days', () {
+      expect(
+        listingsFor(days: {'TUESDAY'}),
+        ['offer', 'request'],
+      );
+      expect(
+        listingsFor(days: {'TUESDAY'}, kind: TicketFilter.waitingOffers),
+        ['offer'],
+      );
+      expect(
+        listingsFor(days: {'TUESDAY'}, kind: TicketFilter.agreements),
+        isEmpty,
+      );
+    });
+
+    test('returns empty when nothing matches the kind and day', () {
+      expect(
+        listingsFor(days: {'FRIDAY'}, kind: TicketFilter.waitingRequests),
+        isEmpty,
+      );
+    });
+
+    test('does not modify the underlying agreements list', () {
+      listingsFor(kind: TicketFilter.agreements);
 
       expect(controller.agreements, hasLength(3));
     });
