@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat.domain.repository;
 
 import com.gobison.backend.features.livechat.domain.model.Conversation;
+import java.util.List;
 
 public interface ConversationRepository {
 
@@ -10,4 +11,6 @@ public interface ConversationRepository {
     }
 
     Conversation create(Conversation conversation);
+
+    List<Conversation> findConversations(String participantID);
 }

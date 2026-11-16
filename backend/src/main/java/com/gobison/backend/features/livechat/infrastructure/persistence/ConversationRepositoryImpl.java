@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.List;
 
 @Repository
 public class ConversationRepositoryImpl implements ConversationRepository {
@@ -54,5 +55,22 @@ public class ConversationRepositoryImpl implements ConversationRepository {
 
         var entity = entityManager.find(ConversationEntity.class, conversationId);
         return new CreateResult(entity.toDomain(), candidateId.equals(conversationId));
+    }
+
+    @Override
+    public List<Conversation> findConversations(String participantId) {
+        String jpql = """
+            SELECT c FROM ConversationEntity c 
+            WHERE c.directParticipantOneId = :userId 
+               OR c.directParticipantTwoId = :userId
+        """;
+
+        List<ConversationEntity> entities = entityManager.createQuery(jpql, ConversationEntity.class)
+                .setParameter("userId", participantId)
+                .getResultList();
+
+        return entities.stream()
+                .map(ConversationEntity::toDomain)
+                .toList();
     }
 }
