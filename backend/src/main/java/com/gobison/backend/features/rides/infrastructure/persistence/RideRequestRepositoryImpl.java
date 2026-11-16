@@ -7,6 +7,9 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+import java.util.UUID;
+
 @Repository
 public class RideRequestRepositoryImpl implements RideRequestRepository {
 
@@ -20,5 +23,12 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
         entityManager.persist(entity);
         entityManager.flush();
         return entity.toDomain();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<RideRequest> findById(UUID requestId) {
+        var entity = entityManager.find(RideRequestEntity.class, requestId);
+        return Optional.ofNullable(entity).map(RideRequestEntity::toDomain);
     }
 }
