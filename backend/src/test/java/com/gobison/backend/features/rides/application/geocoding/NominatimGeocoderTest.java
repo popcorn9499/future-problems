@@ -27,6 +27,12 @@ class NominatimGeocoderTest {
             [{"place_rank":30,"lat":"49.895","lon":"-97.138",
             "address":{"country_code":"ca","house_number":"123","road":"Main Street"}}]
             """;
+    private static final String STREET_MATCH = """
+            [{"place_rank":26,"lat":"49.5262101","lon":"-96.6781914",
+            "category":"highway","type":"residential","name":"Hanover Street",
+            "address":{"country_code":"ca","road":"Hanover Street",
+            "city":"Steinbach","state":"Manitoba","postcode":"R5G 0G9"}}]
+            """;
 
     @BeforeEach
     void setup() throws Exception {
@@ -52,10 +58,26 @@ class NominatimGeocoderTest {
     }
 
     @Test
+    void acceptsAndCachesStreetCoordinatesWhenHouseNumberIsUnavailable() throws Exception {
+        when(response.body()).thenReturn(STREET_MATCH);
+        var point = geocoder.locate("438 Hanover St", "Steinbach");
+        assertEquals(-96.6781914, point.longitude());
+        assertEquals(49.5262101, point.latitude());
+        assertEquals(point, geocoder.locate("438 Hanover St", "Steinbach"));
+        verify(client, times(1)).send(any(), any());
+    }
+
+    @Test
     void rejectsUncertainOrNonCanadianMatches() {
         for (String body : new String[] {"[]", "[{},{}]", MATCH.replace("30", "26"),
                 MATCH.replace("\"ca\"", "\"us\""), MATCH.replace("\"123\"", "\"124\""),
-                MATCH.replace("Main Street", "")}) {
+                MATCH.replace("Main Street", ""),
+                STREET_MATCH.replace("\"ca\"", "\"us\""),
+                STREET_MATCH.replace("Hanover Street", ""),
+                STREET_MATCH.replace("\"place_rank\":26", "\"place_rank\":16"),
+                STREET_MATCH.replace("\"place_rank\":26", "\"place_rank\":30"),
+                STREET_MATCH.replace("\"road\":", "\"house_number\":\"124\",\"road\":"),
+                STREET_MATCH.replace("}]", "},{}]")}) {
             assertTrue(assertThrows(GeocodingException.class, () -> geocoder.parse(body, "123")).isInvalidAddress());
         }
     }

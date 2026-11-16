@@ -145,10 +145,14 @@ public class NominatimGeocoder implements Geocoder {
             if (results.size() != 1) throw new GeocodingException(true);
             var result = results.get(0);
             var address = result.path("address");
+            int rank = result.path("place_rank").asInt();
+            String returnedHouseNumber = address.path("house_number").asText();
+            boolean exactAddress = rank == 30
+                    && normalize(houseNumber).equals(normalize(returnedHouseNumber));
+            boolean streetMatch = rank == 26 && returnedHouseNumber.isBlank();
             if (!"ca".equals(address.path("country_code").asText())
-                    || !normalize(houseNumber).equals(normalize(address.path("house_number").asText()))
                     || address.path("road").asText().isBlank()
-                    || result.path("place_rank").asInt() != 30) {
+                    || !(exactAddress || streetMatch)) {
                 throw new GeocodingException(true);
             }
             return new GeoLocation(Double.parseDouble(result.path("lon").asText()),
