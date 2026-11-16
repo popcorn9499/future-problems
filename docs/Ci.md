@@ -4,7 +4,7 @@
 
 The workflow is defined in [flutter-ci.yml](../.github/workflows/flutter-ci.yml).
 
-It checks the Flutter application in `gobison/`.
+It checks the Flutter application in `frontend/`.
 
 ## Triggers
 
