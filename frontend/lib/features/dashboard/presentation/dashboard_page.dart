@@ -295,7 +295,6 @@ class _TicketCard extends StatelessWidget {
     final hasPassengers = agreement.passengers.isNotEmpty;
     final hasMembers = hasDrivers || hasPassengers;
     final isWaiting = agreement.id == null;
-    const waitingColor = Color(0xFFC77D1A);
 
         return Container(
           decoration: BoxDecoration(
