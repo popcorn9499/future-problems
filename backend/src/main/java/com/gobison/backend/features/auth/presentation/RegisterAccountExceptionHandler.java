@@ -13,7 +13,7 @@ public class RegisterAccountExceptionHandler {
     public ResponseEntity<Void> handleRegistration(RegisterAccountException exception) {
         HttpStatus status = switch (exception.getReason()) {
             case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
-            case EMAIL_ALREADY_REGISTERED -> HttpStatus.CONFLICT;
+            case EMAIL_ALREADY_REGISTERED, DELETED_ACCOUNT -> HttpStatus.CONFLICT;
         };
         return ResponseEntity.status(status).build();
     }

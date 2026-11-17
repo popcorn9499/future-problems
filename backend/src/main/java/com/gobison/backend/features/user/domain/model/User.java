@@ -8,6 +8,7 @@ public class User {
     private boolean verified;
     private String verificationCode; 
     private String password;
+    private boolean deleted;
 
     public User(String email, String password, String firstName, String lastName, boolean verified) {
         this.email = email;
@@ -37,6 +38,10 @@ public class User {
         return verified;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
     public String getVerificationCode() {
         return verificationCode;
     }
@@ -55,5 +60,9 @@ public class User {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

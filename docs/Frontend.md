@@ -13,26 +13,33 @@
 1. Install the Flutter SDK by following the [official Flutter installation guide](https://docs.flutter.dev/get-started/install).
 
 2. Verify that Flutter is installed and configured correctly:
+
    ```bash
    flutter doctor
    ```
 
 3. Navigate to the frontend project directory:
+
    ```bash
-   cd gobison
+   cd frontend
    ```
+
 4. Install the project dependencies:
+
    ```bash
    flutter pub get
    ```
+
 5. Ensure the backend is running. See backend.md
 
 6. Run the application:
+
    ```bash
    flutter run -d chrome --web-port=3000 --dart-define=API_BASE_URL=http://localhost:8080
    ```
 
    alternatively, something like the following, where the port is defined as an allowed origin in application.properties:
+
    ```bash
    flutter run -d edge --web-port=64636
    ```
@@ -44,8 +51,8 @@ For local development, run the backend on port 8080 and keep Flutter on port
 an HTTP-only session cookie, not a bearer token. Configure the backend database
 and SMTP credentials before registering. If verification email delivery fails,
 the account remains saved; log in to retry sending a code. Unverified users go
-to verification, and verified users go to the home screen. Refreshing the page
-requires logging in again because frontend session restoration is not implemented.
+to verification, and verified users go to the home screen. On startup, including
+reloads and new tabs, the app checks the existing session which restores the user without another login, or brings the user to the login screen.
 
 ## Configuration
 
@@ -86,7 +93,6 @@ The frontend is organized into separate components to keep UI code, application 
 - **Core:** Contains shared configuration, theme definitions, colors, and reusable widgets.
 - **Tests:** Contain automated Flutter tests.
 
-
 ## Core Features
 
 ### Authentication
@@ -125,7 +131,7 @@ Handles displaying and editing the authenticated user's profile information.
 
 #### Edit Profile
 
-- Allows users to update their first name, last name, age, gender, and description.
+- Allows users to update their first name, last name, age, pronouns, and description.
 - Validates profile input before submitting changes.
 - Sends updates to the backend using the profile API.
 - Submits only fields that have changed.

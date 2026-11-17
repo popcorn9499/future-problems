@@ -1,0 +1,77 @@
+
+import 'package:flutter/material.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/models/user.dart';
+import '../../../core/models/user_profile.dart';
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key, required this.user, required this.profile});
+
+  final User user;
+  final UserProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 580),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Your next ride starts here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      height: 1.25,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  const Text(
+                    'Whether you need a ride or have room to offer one, '
+                    'GoBison makes getting to campus easier.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, height: 1.6, color: AppColors.textSecondary),
+                  ),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.construction_outlined, color: AppColors.primary, size: 20),
+                        SizedBox(width: 10),
+                        Text(
+                          'Feature coming soon',
+                          style: TextStyle(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

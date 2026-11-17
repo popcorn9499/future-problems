@@ -3,6 +3,7 @@ package com.gobison.backend.features.auth.presentation;
 import com.gobison.backend.features.auth.application.EmailVerificationService;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
+import com.gobison.backend.features.user.presentation.UserAccountController;
 import com.gobison.backend.security.SecurityConfiguration;
 import com.gobison.backend.security.SessionAuthenticationService;
 import org.junit.jupiter.api.Test;
@@ -21,9 +22,11 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = {LoginController.class, EmailVerificationController.class},
+@WebMvcTest(controllers = {LoginController.class, EmailVerificationController.class, CurrentUserController.class,
+        UserAccountController.class},
         properties = "spring.config.import=")
 @Import({SecurityConfiguration.class, SessionAuthenticationService.class, MailDeliveryExceptionHandler.class})
 class LoginControllerTest {
@@ -57,12 +60,116 @@ class LoginControllerTest {
     }
 
     @Test
+    void currentUserRequiresAndRestoresSession() throws Exception {
+        mvc.perform(get("/api/v1/auth/me")).andExpect(status().isUnauthorized());
+        account(true);
+        var login = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"ada@myumanitoba.ca\",\"password\":\"password\"}"))
+                .andExpect(status().isOk()).andReturn();
+        var session = (MockHttpSession) login.getRequest().getSession(false);
+        assertNotNull(session);
+        mvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value("ada@myumanitoba.ca"))
+                .andExpect(jsonPath("$.firstName").value("Ada"))
+                .andExpect(jsonPath("$.email").value("ada@myumanitoba.ca"))
+                .andExpect(jsonPath("$.verified").value(true))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    void logoutInvalidatesAuthenticatedSession() throws Exception {
+        // Spring's logout filter also accepts unauthenticated requests and clears any stale cookie.
+        mvc.perform(post("/api/v1/auth/logout")).andExpect(status().isNoContent());
+
+        account(true);
+        var session = loginSession();
+        mvc.perform(post("/api/v1/auth/logout").session(session))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void verifiedLoginSkipsEmail() throws Exception {
         account(true);
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"ada@myumanitoba.ca\",\"password\":\"password\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.user.verified").value(true));
         verifyNoInteractions(verification);
+    }
+
+    @Test
+    void deletedAccountCannotLogInEvenWithCorrectPassword() throws Exception {
+        var deleted = account(true);
+        deleted.setDeleted(true);
+
+        var result = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"ada@myumanitoba.ca\",\"password\":\"password\"}"))
+                .andExpect(status().isForbidden()).andReturn();
+
+        assertNull(result.getRequest().getSession(false));
+        verifyNoInteractions(verification);
+    }
+
+    @Test
+    void deletingAccountMarksItDeletedAndInvalidatesCurrentSession() throws Exception {
+        var user = account(true);
+        var session = loginSession();
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .delete("/api/v1/users/me").session(session))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().maxAge("JSESSIONID", 0));
+
+        assertTrue(user.isDeleted());
+        verify(users).save(argThat(User::isDeleted));
+        mvc.perform(get("/api/v1/auth/me").session(session)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void currentUserRejectsDeletedAccount() throws Exception {
+        account(true);
+        var session = loginSession();
+        when(users.findByEmail("ada@myumanitoba.ca")).thenReturn(Optional.empty());
+        mvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void currentUserReturnsUnverifiedAccountWithoutSendingAnotherCode() throws Exception {
+        account(false);
+        var session = loginSession();
+        clearInvocations(verification);
+        mvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("ada@myumanitoba.ca"))
+                .andExpect(jsonPath("$.verified").value(false));
+        verifyNoInteractions(verification);
+    }
+
+    @Test
+    void currentUserReadsUpdatedAccountDetailsAfterLogin() throws Exception {
+        account(false);
+        var session = loginSession();
+        var updated = new User("ada@myumanitoba.ca", "secret", "Updated", "Name", true);
+        when(users.findByEmail(updated.getEmail())).thenReturn(Optional.of(updated));
+        mvc.perform(get("/api/v1/auth/me").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(updated.getEmail()))
+                .andExpect(jsonPath("$.firstName").value("Updated"))
+                .andExpect(jsonPath("$.lastName").value("Name"))
+                .andExpect(jsonPath("$.verified").value(true))
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    private MockHttpSession loginSession() throws Exception {
+        var result = mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"ada@myumanitoba.ca\",\"password\":\"password\"}"))
+                .andExpect(status().isOk()).andReturn();
+        var session = (MockHttpSession) result.getRequest().getSession(false);
+        assertNotNull(session);
+        return session;
     }
 
     @Test
@@ -89,3 +196,4 @@ class LoginControllerTest {
         verify(users, never()).deleteByEmail(anyString());
     }
 }
+
