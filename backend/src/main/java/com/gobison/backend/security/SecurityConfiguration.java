@@ -90,6 +90,8 @@ public class SecurityConfiguration {
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
                                                 .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/agreements")
+                                                .authenticated()
 
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
                                                 .anyRequest().denyAll())

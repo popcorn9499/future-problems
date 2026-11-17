@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 
 import 'login_page.dart';
-import '../../home/presentation/home_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
+import '../../dashboard/presentation/dashboard_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
 import '../../ride_request/presentation/ride_request_page.dart';
@@ -51,6 +51,7 @@ class _SessionGateState extends State<SessionGate> {
                   const Text('Unable to load your account.'),
                   const SizedBox(height: 12),
                   ElevatedButton(
+                    key: const Key('session-retry-button'),
                     onPressed: () {
                       setState(() {
                         _sessionFuture =
@@ -80,7 +81,7 @@ class _SessionGateState extends State<SessionGate> {
           );
         }
         return AppShell(
-          dashboardPage: HomePage(user: session.user, profile: session.profile),
+          dashboardPage: DashboardPage(user: session.user),
           messagesPage: const Placeholder(),
           user: session.user, // Adjust to your actual profile field.
           rideRequestPage: RideRequestPage(userId: session.user.id),
@@ -114,6 +115,7 @@ class _SessionGateState extends State<SessionGate> {
               ),
             );
           },
+          
         );
       },
     );
