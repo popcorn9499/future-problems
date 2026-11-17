@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+import 'package:gobison/features/ride_offer/ride_offer_service.dart';
 import 'package:gobison/features/ride_offer/presentation/ride_offer_page.dart';
 
 void main() {
@@ -48,6 +54,43 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Future<void> submitRideWithClient(
+    WidgetTester tester,
+    http.Client client,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RideOfferPage(
+          userId: testUserId,
+          service: RideOfferService(client: client),
+        ),
+      ),
+    );
+    await enterRequiredFields(tester);
+    await tester.ensureVisible(find.text('Select time'));
+    await tester.tap(find.text('Select time'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byType(TimePickerDialog),
+        matching: find.text('OK'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await selectPassengerCount(tester, 2);
+    await tester.ensureVisible(find.text('Mon'));
+    await tester.tap(find.text('Mon'));
+    final submitButton = find.text('Submit Ride Offer');
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+  }
+
   group('RideOfferPage', () {
 
     testWidgets('displays the ride offer page and form fields', (
@@ -90,7 +133,7 @@ void main() {
       expect(find.text('Submit Ride Offer'), findsOneWidget);
 
       expect(
-        find.text('GoBison • Ride with the herd.'),
+        find.text('GoBison • Ride with the herd. © OpenStreetMap contributors'),
         findsOneWidget,
       );
     });

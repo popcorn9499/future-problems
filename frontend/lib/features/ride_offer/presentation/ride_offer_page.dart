@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/invalid_address_dialog.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ride_form_widgets.dart';
 import '../ride_offer_controller.dart';
@@ -9,9 +10,11 @@ class RideOfferPage extends StatefulWidget {
   const RideOfferPage({
     super.key,
     required this.userId,
+    this.service,
   });
 
   final String userId;
+  final RideOfferService? service;
 
   @override
   State<RideOfferPage> createState() =>
@@ -43,7 +46,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
   void initState() {
     super.initState();
 
-    _rideOfferService = RideOfferService();
+    _rideOfferService = widget.service ?? RideOfferService();
     _rideOfferController =
         RideOfferController(_rideOfferService);
   }
@@ -143,6 +146,14 @@ class _RideOfferPageState extends State<RideOfferPage> {
     );
 
     if (!mounted) return;
+
+    if (_rideOfferController.invalidAddress) {
+      await showInvalidAddressDialog(
+        context,
+        _rideOfferController.errorMessage!,
+      );
+      return;
+    }
 
     if (_rideOfferController.createdRideOffer != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -524,7 +535,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
                           const SizedBox(height: 20),
 
                           const Text(
-                            'GoBison • Ride with the herd.',
+                            'GoBison • Ride with the herd. © OpenStreetMap contributors',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,

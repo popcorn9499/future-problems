@@ -46,7 +46,7 @@ jobs:
           if-no-files-found: error
 
       - name: Build web release
-        working-directory: gobison
+        working-directory: frontend
         run: flutter build web --release --dart-define=API_BASE_URL="https://gobison.popicraft.net"
 
       - name: Upload web build artifact
@@ -62,5 +62,5 @@ jobs:
         run: |
           echo "$SSH_KEY" > private_key
           chmod 600 private_key
-          rsync -avz -e "ssh -p2525 -i private_key -o StrictHostKeyChecking=no" gobison/build/web/ deploybot@popicraft.net:/var/www/gobison/
+          rsync -avz -e "ssh -p2525 -i private_key -o StrictHostKeyChecking=no" frontend/build/web/ deploybot@popicraft.net:/var/www/gobison/
           rm private_key
