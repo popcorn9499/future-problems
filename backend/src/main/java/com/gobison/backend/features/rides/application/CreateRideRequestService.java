@@ -2,12 +2,12 @@ package com.gobison.backend.features.rides.application;
 
 import com.gobison.backend.features.rides.domain.model.RideRequest;
 import com.gobison.backend.features.rides.domain.model.RideType;
-import com.gobison.backend.features.rides.domain.repository.RideRequestRepository;
+
 import com.gobison.backend.features.rides.presentation.CreateRideRequestRequest;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.gobison.backend.features.rides.application.geocoding.Geocoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalTime;
@@ -19,17 +19,18 @@ import java.util.UUID;
 @Service
 public class CreateRideRequestService {
 
+    private final Geocoder geocoder;
+    private final RideWriter writer;
     private final UserRepository userRepository;
-    private final RideRequestRepository rideRequestRepository;
 
     public CreateRideRequestService(
             UserRepository userRepository,
-            RideRequestRepository rideRequestRepository) {
+            Geocoder geocoder, RideWriter writer) {
+        this.geocoder = geocoder;
+        this.writer = writer;
         this.userRepository = userRepository;
-        this.rideRequestRepository = rideRequestRepository;
     }
 
-    @Transactional
     public List<RideRequest> create(String email, CreateRideRequestRequest request) {
         var user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
@@ -66,11 +67,13 @@ public class CreateRideRequestService {
                     HttpStatus.BAD_REQUEST, "departureTime must be later than arrivalTime");
         }
 
+        var location = geocoder.locate(request.streetAddress().trim(), request.city().trim());
+
         UUID roundTripId = roundTrip ? UUID.randomUUID() : null;
         List<RideRequest> createdRides = new ArrayList<>();
 
         if (includesArrival) {
-            createdRides.add(rideRequestRepository.create(new RideRequest(
+            createdRides.add(new RideRequest(
                     RideType.ARRIVAL,
                     null,
                     roundTripId,
@@ -81,11 +84,11 @@ public class CreateRideRequestService {
                     arrivalTime,
                     EnumSet.copyOf(request.daysOfWeek()),
                     description,
-                    "OPEN")));
+                    "OPEN"));
         }
 
         if (includesDeparture) {
-            createdRides.add(rideRequestRepository.create(new RideRequest(
+            createdRides.add(new RideRequest(
                     RideType.DEPARTURE,
                     departureTime,
                     roundTripId,
@@ -96,9 +99,10 @@ public class CreateRideRequestService {
                     null,
                     EnumSet.copyOf(request.daysOfWeek()),
                     description,
-                    "OPEN")));
+                    "OPEN"));
         }
 
-        return createdRides;
+        createdRides.forEach(ride -> ride.setLocation(location));
+        return writer.saveRequests(createdRides);
     }
 }

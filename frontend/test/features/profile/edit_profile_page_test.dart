@@ -177,6 +177,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, 'Age'), '');
 
     await tester.ensureVisible(find.text('Save Changes'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save Changes'));
     await tester.pump();
 

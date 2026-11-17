@@ -570,7 +570,7 @@ void main() {
         required daysOfWeek,
         description,
       }) async {
-        throw Exception('Request failed (503)');
+        throw Exception('Request failed (418)');
       };
 
       await controller.createRideRequest(
@@ -607,6 +607,7 @@ void main() {
         return completer.future;
       };
 
+      controller.invalidAddress = true;
       final future = controller.createRideRequest(
         userId: '123',
         rideType: 'roundTrip',
@@ -618,6 +619,7 @@ void main() {
       );
 
       expect(controller.isLoading, isTrue);
+      expect(controller.invalidAddress, isFalse);
 
       completer.complete(rideRequestJson);
 
@@ -707,6 +709,79 @@ void main() {
       expect(controller.isLoading, isFalse);
       expect(controller.createdRideRequest, isNotNull);
     });
+
+    test('reports an invalid address without creating a ride', () async {
+      rideRequestService.onCreateRideRequest =
+          ({
+            required userId,
+            required rideType,
+            required city,
+            required streetAddress,
+            required arrivalTime,
+            required departureTime,
+            required daysOfWeek,
+            description,
+          }) async {
+            throw Exception('Ride request creation failed (422): invalid address');
+          };
+
+      await controller.createRideRequest(
+        userId: '123',
+        rideType: 'arriving',
+        city: 'Winnipeg',
+        streetAddress: '123 Main Street',
+        arrivalTime: '08:30',
+        departureTime: null,
+        daysOfWeek: ['Monday'],
+      );
+
+      expect(controller.invalidAddress, isTrue);
+      expect(
+        controller.errorMessage,
+        'We couldn’t locate that address in Canada. Check the street address and city and try again.',
+      );
+      expect(controller.createdRideRequest, isNull);
+      expect(controller.isLoading, isFalse);
+    });
+
+    test(
+      'reports a temporary address lookup failure without creating a ride',
+      () async {
+        rideRequestService.onCreateRideRequest =
+            ({
+              required userId,
+              required rideType,
+              required city,
+              required streetAddress,
+              required arrivalTime,
+              required departureTime,
+              required daysOfWeek,
+              description,
+            }) async {
+              throw Exception(
+                'Ride request creation failed (503): lookup unavailable',
+              );
+            };
+
+        await controller.createRideRequest(
+          userId: '123',
+          rideType: 'arriving',
+          city: 'Winnipeg',
+          streetAddress: '123 Main Street',
+          arrivalTime: '08:30',
+          departureTime: null,
+          daysOfWeek: ['Monday'],
+        );
+
+        expect(controller.invalidAddress, isFalse);
+        expect(
+          controller.errorMessage,
+          'Address lookup is temporarily unavailable. Please try again.',
+        );
+        expect(controller.createdRideRequest, isNull);
+        expect(controller.isLoading, isFalse);
+      },
+    );
   });
 
   group('extractErrorCode', () {
