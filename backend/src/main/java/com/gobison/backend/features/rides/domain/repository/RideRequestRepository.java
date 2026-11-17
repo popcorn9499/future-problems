@@ -10,4 +10,5 @@ public interface RideRequestRepository {
     RideRequest create(RideRequest rideRequest);
 
     Optional<RideRequest> findById(UUID requestId);
+    boolean hasOtherParticipants(UUID requestId);
 }
