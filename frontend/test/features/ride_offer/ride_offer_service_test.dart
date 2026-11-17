@@ -295,6 +295,70 @@ void main() {
           ),
         );
       });
+
+      test('throws an exception with status 422 and the response body', () async {
+        final client = MockClient(
+          (_) async =>
+              http.Response(jsonEncode({'code': 'INVALID_ADDRESS'}), 422),
+        );
+        final service = RideOfferService(client: client);
+
+        await expectLater(
+          service.createRideOffer(
+            userId: '123',
+            rideType: 'arriving',
+            city: 'Winnipeg',
+            streetAddress: '123 Main Street',
+            arrivalTime: '08:30',
+            departureTime: null,
+            daysOfWeek: ['Monday'],
+            passengerNum: 2,
+            askingForDrivers: false,
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              allOf(
+                contains('Ride offer creation failed (422)'),
+                contains('INVALID_ADDRESS'),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test('throws an exception with status 503 and the response body', () async {
+        final client = MockClient(
+          (_) async =>
+              http.Response(jsonEncode({'code': 'GEOCODING_UNAVAILABLE'}), 503),
+        );
+        final service = RideOfferService(client: client);
+
+        await expectLater(
+          service.createRideOffer(
+            userId: '123',
+            rideType: 'arriving',
+            city: 'Winnipeg',
+            streetAddress: '123 Main Street',
+            arrivalTime: '08:30',
+            departureTime: null,
+            daysOfWeek: ['Monday'],
+            passengerNum: 2,
+            askingForDrivers: false,
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              allOf(
+                contains('Ride offer creation failed (503)'),
+                contains('GEOCODING_UNAVAILABLE'),
+              ),
+            ),
+          ),
+        );
+      });
     });
   });
 }

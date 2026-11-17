@@ -1,6 +1,10 @@
 package com.gobison.backend.features.rides;
 
 import com.gobison.backend.features.rides.application.CreateRideOfferService;
+import com.gobison.backend.features.rides.application.RideWriter;
+import com.gobison.backend.features.rides.application.geocoding.Geocoder;
+import com.gobison.backend.features.rides.application.geocoding.GeocodingException;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
 import com.gobison.backend.features.rides.application.CreateRideRequestService;
 import com.gobison.backend.features.rides.domain.repository.RideOfferRepository;
 import com.gobison.backend.features.rides.domain.repository.RideRequestRepository;
@@ -40,7 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(
         controllers = {RideRequestController.class, RideOfferController.class},
         properties = "spring.config.import=")
-@Import({SecurityConfiguration.class, CreateRideRequestService.class, CreateRideOfferService.class})
+@Import({SecurityConfiguration.class, CreateRideRequestService.class, CreateRideOfferService.class, RideWriter.class})
 class RideCreationTest {
 
     @Autowired
@@ -55,6 +59,9 @@ class RideCreationTest {
     @MockitoBean
     RideOfferRepository rideOfferRepository;
 
+    @MockitoBean
+    Geocoder geocoder;
+
     private final String email = "ada@myumanitoba.ca";
 
     private final String body = """
@@ -64,6 +71,7 @@ class RideCreationTest {
         """;
 
     private void account(boolean verified) {
+        when(geocoder.locate(any(), any())).thenReturn(new GeoLocation(-97.138, 49.895));
         when(userRepository.findByEmail(email))
                 .thenReturn(Optional.of(new User(email, "secret", "Ada", "Lovelace", verified)));
         when(rideRequestRepository.create(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -114,7 +122,7 @@ class RideCreationTest {
                         .content(body.replace("\"status\":\"CLOSED\"", "\"passengerNum\":3")))
                 .andExpect(status().isForbidden());
         }
-        verifyNoInteractions(rideRequestRepository, rideOfferRepository);
+        verifyNoInteractions(rideRequestRepository, rideOfferRepository, geocoder);
     }
 
     @Test
@@ -154,7 +162,7 @@ class RideCreationTest {
                         .content(body.replace("\"status\":\"CLOSED\"", "\"passengerNum\":" + seats)))
                 .andExpect(status().isBadRequest());
         }
-        verifyNoInteractions(rideRequestRepository, rideOfferRepository);
+        verifyNoInteractions(rideRequestRepository, rideOfferRepository, geocoder);
     }
 
     @Test
@@ -174,7 +182,7 @@ class RideCreationTest {
         account(true);
 
         for (String endpoint : new String[] {"requests", "offers"}) {
-            clearInvocations(rideRequestRepository, rideOfferRepository);
+            clearInvocations(rideRequestRepository, rideOfferRepository, geocoder);
             String roundTripBody = body.replace("\"arriving\"", "\"roundTrip\"")
                     .replace("\"status\":\"CLOSED\"", "\"passengerNum\":3,\"departureTime\":\"16:30\"");
             String idField = endpoint.equals("requests") ? "requestId" : "offerId";
@@ -196,6 +204,7 @@ class RideCreationTest {
                     .andExpect(jsonPath("$.status").value("OPEN"))
                     .andReturn();
 
+            verify(geocoder, times(1)).locate("123 Main", "Winnipeg");
             var json = new ObjectMapper().readTree(result.getResponse().getContentAsString());
             assertNotEquals(json.get("arrivalId").asText(), json.get("departureId").asText());
             if (endpoint.equals("requests")) {
@@ -208,6 +217,8 @@ class RideCreationTest {
                 assertEquals(departure.getRequestId().toString(), json.get("departureId").asText());
                 assertEquals(arrival.getRoundTripId(), departure.getRoundTripId());
                 assertEquals(arrival.getRoundTripId().toString(), json.get("roundTripId").asText());
+                assertEquals(new GeoLocation(-97.138, 49.895), arrival.getLocation());
+                assertEquals(arrival.getLocation(), departure.getLocation());
                 assertEquals(arrival.getUserId(), departure.getUserId());
                 assertEquals(arrival.getDaysOfWeek(), departure.getDaysOfWeek());
             } else {
@@ -256,7 +267,7 @@ class RideCreationTest {
             }
         }
 
-        verifyNoInteractions(rideRequestRepository, rideOfferRepository);
+        verifyNoInteractions(rideRequestRepository, rideOfferRepository, geocoder);
     }
 
     @Test
@@ -265,7 +276,7 @@ class RideCreationTest {
 
         for (String endpoint : new String[] {"requests", "offers"}) {
             String idField = endpoint.equals("requests") ? "requestId" : "offerId";
-            clearInvocations(rideRequestRepository, rideOfferRepository);
+            clearInvocations(rideRequestRepository, rideOfferRepository, geocoder);
             String oneWayBody = body.replace(
                     "\"status\":\"CLOSED\"", "\"passengerNum\":3,\"departureTime\":\"16:30\"");
 
@@ -293,4 +304,18 @@ class RideCreationTest {
                     .andExpect(jsonPath("$.roundTripId").isEmpty());
         }
     }
-}
+    @Test
+    void returnsStructuredGeocodingErrorsWithoutSaving() throws Exception {
+        account(true);
+        for (boolean invalid : new boolean[] {true, false}) {
+            org.mockito.Mockito.doThrow(new GeocodingException(invalid)).when(geocoder).locate(any(), any());
+            for (String endpoint : new String[] {"requests", "offers"}) {
+                mvc.perform(post("/api/v1/rides/" + endpoint).with(user(email))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body.replace("\"status\":\"CLOSED\"", "\"passengerNum\":3")))
+                        .andExpect(status().is(invalid ? 422 : 503))
+                        .andExpect(jsonPath("$.code").value(invalid ? "INVALID_ADDRESS" : "GEOCODING_UNAVAILABLE"));
+            }
+        }
+        verifyNoInteractions(rideRequestRepository, rideOfferRepository);
+    }}
