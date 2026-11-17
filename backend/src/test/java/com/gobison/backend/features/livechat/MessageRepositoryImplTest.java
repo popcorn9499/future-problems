@@ -4,15 +4,19 @@ import com.gobison.backend.features.livechat.domain.model.Message;
 import com.gobison.backend.features.livechat.infrastructure.persistence.MessageEntity;
 import com.gobison.backend.features.livechat.infrastructure.persistence.MessageRepositoryImpl;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,14 +80,38 @@ class MessageRepositoryImplTest {
     }
 
     @Test
-    void savesMessageEntity() {
+    void insertsMessageAndFindsItByIdReturnedFromDatabase() {
         var entityManager = mock(EntityManager.class);
+        var insertQuery = mock(Query.class);
+        var savedMessageId = new AtomicReference<String>();
+        when(entityManager.createNativeQuery(anyString())).thenReturn(insertQuery);
+        when(insertQuery.setParameter(anyString(), any())).thenAnswer(invocation -> {
+            if (invocation.<String>getArgument(0).equals("messageId")) {
+                savedMessageId.set(invocation.getArgument(1));
+            }
+            return insertQuery;
+        });
+        when(insertQuery.getSingleResult()).thenAnswer(invocation -> savedMessageId.get());
+        when(entityManager.find(eq(MessageEntity.class), anyString())).thenAnswer(invocation ->
+                new MessageEntity(Message.restore(
+                        invocation.getArgument(1), "conv_123", "usr_123", "Hello",
+                        Instant.parse("2026-11-10T14:40:00Z"), null)));
         var repository = repositoryWith(entityManager);
-        var message = new Message("msg_123", "conv_123", "usr_123", "Hello");
 
-        repository.saveMsg(message);
+        var result = repository.saveMsg("Hello", "conv_123", "usr_123");
 
-        verify(entityManager).persist(any(MessageEntity.class));
+        assertTrue(savedMessageId.get().matches("msg_[0-9a-f]{32}"));
+        assertEquals(savedMessageId.get(), result.message().getMsgId());
+        assertEquals("conv_123", result.message().getConversationId());
+        assertEquals("usr_123", result.message().getSenderId());
+        assertEquals("Hello", result.message().getContent());
+        assertNotNull(result.message().getSentAt());
+        assertTrue(result.created());
+        verify(insertQuery).setParameter("conversationId", "conv_123");
+        verify(insertQuery).setParameter("senderId", "usr_123");
+        verify(insertQuery).setParameter("content", "Hello");
+        verify(insertQuery).getSingleResult();
+        verify(entityManager).find(MessageEntity.class, savedMessageId.get());
     }
 
     private MessageRepositoryImpl repositoryWith(EntityManager entityManager) {

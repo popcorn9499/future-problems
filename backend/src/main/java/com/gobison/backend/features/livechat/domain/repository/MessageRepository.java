@@ -1,5 +1,6 @@
 package com.gobison.backend.features.livechat.domain.repository;
 
+import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.domain.model.Message;
 
 import java.util.List;
@@ -7,7 +8,10 @@ import java.util.List;
 public interface MessageRepository {
     public Message retrieveLatestMsg(String conversationId);
 
+    record CreateResult(Message message, boolean created) {
+    }
+
     public List<Message> retrieveMsgs(String conversationId);
 
-    public void saveMsg(Message msg);
+    public CreateResult saveMsg(String content, String conversationId, String senderId);
 }

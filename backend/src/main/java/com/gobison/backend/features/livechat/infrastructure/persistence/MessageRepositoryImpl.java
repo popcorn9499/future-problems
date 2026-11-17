@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public class MessageRepositoryImpl implements MessageRepository {
@@ -45,7 +46,29 @@ public class MessageRepositoryImpl implements MessageRepository {
 
     @Override
     @Transactional
-    public void saveMsg(Message msg) {
-        entityManager.persist(new MessageEntity(msg));
+    public CreateResult saveMsg(String content, String conversationId, String senderId) {
+        String candidateId = "msg_" + UUID.randomUUID().toString().replace("-", "");
+
+        Message message = new Message(candidateId, conversationId, senderId, content);
+        String messageId = (String) entityManager.createNativeQuery("""
+                        INSERT INTO messages (
+                            message_id,
+                            conversation_id,
+                            sender_id,
+                            content,
+                            sent_at
+                        )
+                        VALUES (:messageId, :conversationId, :senderId, :content, :sentAt)
+                        RETURNING message_id
+                        """)
+                .setParameter("messageId", candidateId)
+                .setParameter("conversationId", conversationId)
+                .setParameter("senderId", senderId)
+                .setParameter("content", content)
+                .setParameter("sentAt", message.getSentAt())
+                .getSingleResult();
+
+        var entity = entityManager.find(MessageEntity.class, messageId);
+        return new CreateResult(entity.toDomain(), true);
     }
 }
