@@ -24,6 +24,9 @@ import java.util.UUID;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -119,6 +122,35 @@ class ManageRideRequestControllerTest {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(userRepository, rideRequestRepository);
+    }
+
+    @Test
+    void ownerCanUpdateArrivalTime() throws Exception {
+        account(OWNER, true);
+        when(rideRequestRepository.findById(REQUEST_ID))
+                .thenReturn(Optional.of(ownedRequest()));
+        when(rideRequestRepository.hasOtherParticipants(REQUEST_ID))
+                .thenReturn(false);
+        when(rideRequestRepository.update(any(RideRequest.class)))
+                .thenAnswer(call -> Optional.of(call.getArgument(0, RideRequest.class)));
+
+        mvc.perform(patch(URL + REQUEST_ID)
+                .with(user(OWNER))
+                .contentType("application/json")
+                .content("""
+                        {
+                          "city": "Winnipeg",
+                          "streetAddress": "123 Main Street",
+                          "arrivalTime": "08:30",
+                          "daysOfWeek": ["MONDAY", "FRIDAY"],
+                          "description": "Test ride"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestId").value(REQUEST_ID.toString()))
+                .andExpect(jsonPath("$.arrivalTime").value("08:30"));
+
+        verify(rideRequestRepository).update(any(RideRequest.class));
     }
 
     private void account(String email, boolean verified) {

@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +29,18 @@ public class ManageRideRequestController {
 
         var rideRequest = service.getForOwner(
                 authentication.getName(), requestId);
+
+        return RideRequestDetailsResponse.from(rideRequest);
+    }
+
+    @PatchMapping("/{requestId}")
+    public RideRequestDetailsResponse update(
+            Authentication authentication,
+            @PathVariable("requestId") UUID requestId,
+            @Valid @RequestBody UpdateRideRequestRequest form) {
+
+        var rideRequest = service.updateOneWay(
+                authentication.getName(), requestId, form);
 
         return RideRequestDetailsResponse.from(rideRequest);
     }
