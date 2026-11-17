@@ -1,5 +1,7 @@
 package com.gobison.backend.features.rides.infrastructure.persistence;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import com.gobison.backend.features.dashboard.DashboardTestData;
 import com.gobison.backend.features.rides.domain.repository.RideRequestRepository;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
@@ -32,6 +34,9 @@ class RideRequestParticipantsTest {
     @Autowired
     private UserRepository users;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private DashboardTestData data;
 
     @BeforeEach
@@ -42,6 +47,7 @@ class RideRequestParticipantsTest {
     @Test
     void ownerAloneDoesNotCountAsAnotherParticipant() {
         String owner = data.createUser("Ride", "Owner");
+        entityManager.flush();
         UUID requestId = data.insertRequest(
                 owner, "Winnipeg", "ARRIVAL", LocalTime.of(8, 0), null,
                 "OPEN", null, DayOfWeek.MONDAY);
@@ -58,6 +64,7 @@ class RideRequestParticipantsTest {
     void memberOnReturnLegIsDetectedFromEitherLeg() {
         String owner = data.createUser("Ride", "Owner");
         String driver = data.createUser("Other", "Driver");
+        entityManager.flush();
         UUID roundTripId = UUID.randomUUID();
 
         UUID arrivalId = data.insertRequest(
