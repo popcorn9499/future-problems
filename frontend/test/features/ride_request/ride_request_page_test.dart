@@ -613,6 +613,58 @@ void main() {
           findsOneWidget,
         );
       });
+
+      testWidgets('validates departure time must be after arrival time', (
+        WidgetTester tester
+      ) async {
+        await tester.pumpWidget(createTestWidget());
+        await selectRideType(tester, 'Round Trip');
+        await enterRequiredFields(tester);
+        final mondayChip = find.widgetWithText(FilterChip, 'Mon');
+
+        await tester.ensureVisible(mondayChip);
+        await tester.tap(mondayChip);
+        await tester.pumpAndSettle();
+        await selectTime(tester, index: 0);
+
+        final arrivalFields = find.descendant(
+          of: find.byType(TimePickerDialog),
+          matching: find.byType(TextField),
+        );
+
+        await tester.enterText(arrivalFields.first, '10');
+        await tester.enterText(arrivalFields.last, '00');
+        await confirmTimePicker(tester);
+        await selectTime(tester, index: 0);
+
+        final departureFields = find.descendant(
+          of: find.byType(TimePickerDialog),
+          matching: find.byType(TextField),
+        );
+
+        await tester.enterText(departureFields.first, '08');
+        await tester.enterText(departureFields.last, '00');
+        final amButton = find.text('AM');
+
+        if (amButton.evaluate().isNotEmpty) {
+          await tester.tap(amButton);
+          await tester.pumpAndSettle();
+        }
+
+        await confirmTimePicker(tester);
+        final submitButton = find.text('Submit Ride Offer');
+
+        await tester.ensureVisible(submitButton);
+        await tester.tap(submitButton);
+        await tester.pump();
+
+        await tester.pump(const Duration(seconds: 1));
+
+        expect(
+          find.text('Departure time must be after arrival time.'),
+          findsOneWidget,
+        );
+      },);
     });
     testWidgets('reset clears selected arrival time', (
       WidgetTester tester,
