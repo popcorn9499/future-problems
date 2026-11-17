@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -26,7 +27,7 @@ public class CreateConversationController {
     public record CreateConversationRequest(@NotBlank String participantId) {
     }
 
-    public record CreateConversationResponse(String conversationId, List<String> participants) {
+    public record CreateConversationResponse(String conversationId, List<String> participants, Instant createdAt) {
     }
 
     @PostMapping
@@ -39,7 +40,8 @@ public class CreateConversationController {
         }
 
         var conversation = result.conversation();
-        var response = new CreateConversationResponse(conversation.getId(), conversation.getParticipants());
+        var response = new CreateConversationResponse(
+                conversation.getId(), conversation.getParticipants(), conversation.getCreatedAt());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

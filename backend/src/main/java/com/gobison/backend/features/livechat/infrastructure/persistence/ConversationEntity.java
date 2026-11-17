@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.time.Instant;
 import java.util.List;
 
 @Entity
@@ -27,6 +28,9 @@ public class ConversationEntity {
     @Column(name = "direct_participant_two_id", nullable = false, length = 254)
     private String directParticipantTwoId;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
     protected ConversationEntity() {
     }
 
@@ -35,9 +39,10 @@ public class ConversationEntity {
         var participants = conversation.getParticipants();
         directParticipantOneId = participants.get(0);
         directParticipantTwoId = participants.get(1);
+        createdAt = conversation.getCreatedAt();
     }
 
     public Conversation toDomain() {
-        return new Conversation(id, List.of(directParticipantOneId, directParticipantTwoId));
+        return new Conversation(id, List.of(directParticipantOneId, directParticipantTwoId), createdAt);
     }
 }

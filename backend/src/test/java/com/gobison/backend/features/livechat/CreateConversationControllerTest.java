@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -50,5 +51,7 @@ class CreateConversationControllerTest {
 
         assertEquals(201, response.getStatusCode().value());
         assertEquals("conv_123", response.getBody().conversationId());
+        assertEquals(List.of("first@example.com", "second@example.com"), response.getBody().participants());
+        assertNotNull(response.getBody().createdAt());
     }
 }
