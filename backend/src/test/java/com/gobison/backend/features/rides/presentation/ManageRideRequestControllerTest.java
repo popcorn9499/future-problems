@@ -13,6 +13,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import com.gobison.backend.features.rides.application.geocoding.Geocoder;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -28,13 +29,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(
-        controllers = ManageRideRequestController.class,
-        properties = {
-                "spring.config.import=",
-                "gobison.auth.allowed-origins=http://localhost:3000"
-        })
-@Import({SecurityConfiguration.class, ManageRideRequestService.class})
+@WebMvcTest(controllers = ManageRideRequestController.class, properties = {
+        "spring.config.import=",
+        "gobison.auth.allowed-origins=http://localhost:3000"
+})
+@Import({ SecurityConfiguration.class, ManageRideRequestService.class })
 class ManageRideRequestControllerTest {
 
     private static final String OWNER = "owner@myumanitoba.ca";
@@ -50,6 +49,9 @@ class ManageRideRequestControllerTest {
 
     @MockitoBean
     private RideRequestRepository rideRequestRepository;
+
+    @MockitoBean
+    private Geocoder geocoder;
 
     @Test
     void ownerCanReadOwnRequest() throws Exception {
@@ -122,8 +124,7 @@ class ManageRideRequestControllerTest {
     private void account(String email, boolean verified) {
         when(userRepository.findByEmail(email))
                 .thenReturn(Optional.of(
-                        new User(email, "test-password", "Test", "User", verified)
-                ));
+                        new User(email, "test-password", "Test", "User", verified)));
     }
 
     private RideRequest ownedRequest() {
@@ -138,7 +139,6 @@ class ManageRideRequestControllerTest {
                 LocalTime.of(8, 0),
                 Set.of(DayOfWeek.FRIDAY, DayOfWeek.MONDAY),
                 "Test ride",
-                "OPEN"
-        );
+                "OPEN");
     }
 }

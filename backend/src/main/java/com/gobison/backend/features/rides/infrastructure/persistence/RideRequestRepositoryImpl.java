@@ -55,4 +55,20 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
                 .setParameter(1, requestId)
                 .getSingleResult();
     }
+
+    @Override
+    @Transactional
+    public Optional<RideRequest> update(RideRequest updatedRequest) {
+        var entity = entityManager.find(
+                RideRequestEntity.class, updatedRequest.getRequestId());
+
+        if (entity == null) {
+            return Optional.empty();
+        }
+
+        entity.updateDetails(updatedRequest);
+        entityManager.flush();
+
+        return Optional.of(entity.toDomain());
+    }
 }

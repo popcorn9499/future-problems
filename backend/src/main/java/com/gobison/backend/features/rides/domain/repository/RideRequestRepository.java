@@ -11,4 +11,5 @@ public interface RideRequestRepository {
 
     Optional<RideRequest> findById(UUID requestId);
     boolean hasOtherParticipants(UUID requestId);
+    Optional<RideRequest> update(RideRequest updatedRequest);
 }
