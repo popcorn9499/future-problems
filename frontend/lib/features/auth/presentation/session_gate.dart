@@ -4,7 +4,7 @@ import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'login_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
-import '../../dashboard/presentation/dashboard_page.dart';
+import '../../home/presentation/home_page.dart';
 import '../../messages/presentation/inbox_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
