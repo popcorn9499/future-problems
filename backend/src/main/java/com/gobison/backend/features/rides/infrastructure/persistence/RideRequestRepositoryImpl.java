@@ -6,7 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +30,22 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
     public Optional<RideRequest> findById(UUID requestId) {
         var entity = entityManager.find(RideRequestEntity.class, requestId);
         return Optional.ofNullable(entity).map(RideRequestEntity::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RideRequest> findRoundTripLegs(UUID roundTripId, String ownerEmail) {
+        return entityManager.createQuery("""
+                select ride from RideRequestEntity ride
+                where ride.roundTripId = :roundTripId
+                  and ride.userEmail = :ownerEmail
+                """, RideRequestEntity.class)
+                .setParameter("roundTripId", roundTripId)
+                .setParameter("ownerEmail", ownerEmail)
+                .getResultList()
+                .stream()
+                .map(RideRequestEntity::toDomain)
+                .toList();
     }
 
     @Override

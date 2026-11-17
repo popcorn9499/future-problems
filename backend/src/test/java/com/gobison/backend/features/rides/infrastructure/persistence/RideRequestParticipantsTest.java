@@ -17,6 +17,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -79,5 +80,30 @@ class RideRequestParticipantsTest {
 
         assertTrue(requests.hasOtherParticipants(arrivalId));
         assertTrue(requests.hasOtherParticipants(departureId));
+    }
+
+    @Test
+    void findsOnlyTheOwnersRequestsForTheSelectedRoundTrip() {
+        String owner = data.createUser("Ride", "Owner");
+        String other = data.createUser("Other", "User");
+        entityManager.flush();
+
+        UUID roundTripId = UUID.randomUUID();
+        UUID arrivalId = data.insertRequest(
+                owner, "Winnipeg", "ARRIVAL", LocalTime.of(8, 0), null,
+                "OPEN", roundTripId, DayOfWeek.MONDAY);
+        UUID departureId = data.insertRequest(
+                owner, "Winnipeg", "DEPARTURE", null, LocalTime.of(17, 0),
+                "OPEN", roundTripId, DayOfWeek.MONDAY);
+        data.insertRequest(
+                owner, "Winnipeg", "ARRIVAL", LocalTime.of(9, 0), null,
+                "OPEN", UUID.randomUUID(), DayOfWeek.FRIDAY);
+
+        var legs = requests.findRoundTripLegs(roundTripId, owner);
+
+        assertThat(legs)
+                .extracting(ride -> ride.getRequestId())
+                .containsExactlyInAnyOrder(arrivalId, departureId);
+        assertThat(requests.findRoundTripLegs(roundTripId, other)).isEmpty();
     }
 }
