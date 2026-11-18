@@ -1,17 +1,59 @@
 name: Flutter Deploy Web
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Backend CI
+      - Flutter CI
+      - Flutter Integration Tests
+      - Lint Markdown
+    types:
+      - completed
     branches:
       - master
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
+  ci-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check required CI workflows
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$HEAD_SHA&per_page=100")"
+          ready=true
+
+          for workflow in "Backend CI" "Flutter CI" "Flutter Integration Tests" "Lint Markdown"; do
+            run="$(jq -c --arg name "$workflow" '[.workflow_runs[] | select(.name == $name and .head_branch == "master")] | sort_by(.run_number, .run_attempt) | last // {}' <<< "$runs")"
+            status="$(jq -r '.status // "missing"' <<< "$run")"
+            conclusion="$(jq -r '.conclusion // "none"' <<< "$run")"
+
+            if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+              echo "$workflow has not succeeded (status: $status, conclusion: $conclusion)"
+              ready=false
+            fi
+          done
+
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+
   flutter-deploy:
+    needs: ci-gate
+    if: ${{ needs.ci-gate.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Download project code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -22,28 +64,6 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: flutter pub get
-
-      - name: Analyze code
-        working-directory: frontend
-        run: flutter analyze --no-fatal-infos
-
-      - name: Run tests & generate coverage
-        working-directory: frontend
-        run: flutter test --coverage
-
-      - name: Generate HTML coverage report
-        working-directory: frontend
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov
-          genhtml coverage/lcov.info --output-directory coverage/html
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-coverage
-          path: frontend/coverage/
-          if-no-files-found: error
 
       - name: Build web release
         working-directory: frontend

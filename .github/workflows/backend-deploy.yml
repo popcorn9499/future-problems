@@ -1,12 +1,52 @@
 name: Backend Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - Backend CI
+      - Flutter CI
+      - Flutter Integration Tests
+      - Lint Markdown
+    types:
+      - completed
     branches:
       - master
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
+  ci-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check required CI workflows
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$HEAD_SHA&per_page=100")"
+          ready=true
+
+          for workflow in "Backend CI" "Flutter CI" "Flutter Integration Tests" "Lint Markdown"; do
+            run="$(jq -c --arg name "$workflow" '[.workflow_runs[] | select(.name == $name and .head_branch == "master")] | sort_by(.run_number, .run_attempt) | last // {}' <<< "$runs")"
+            status="$(jq -r '.status // "missing"' <<< "$run")"
+            conclusion="$(jq -r '.conclusion // "none"' <<< "$run")"
+
+            if [[ "$status" != "completed" || "$conclusion" != "success" ]]; then
+              echo "$workflow has not succeeded (status: $status, conclusion: $conclusion)"
+              ready=false
+            fi
+          done
+
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+
   backend-deploy:
+    needs: ci-gate
+    if: ${{ needs.ci-gate.outputs.ready == 'true' }}
     runs-on: ubuntu-latest
 
     env:
@@ -33,6 +73,8 @@ jobs:
     steps:
       - name: Download project code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
