@@ -32,6 +32,20 @@ public class MessageRepositoryImpl implements MessageRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public long countUnreadMessages(String conversationId, String userId) {
+        return entityManager.createQuery("""
+                        SELECT COUNT(m) FROM MessageEntity m
+                        WHERE m.conversationId = :conversationId
+                          AND m.senderId <> :userId
+                          AND m.readAt IS NULL
+                        """, Long.class)
+                .setParameter("conversationId", conversationId)
+                .setParameter("userId", userId)
+                .getSingleResult();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Message> retrieveMsgs(String conversationId) {
         return entityManager.createQuery(
                         "SELECT m FROM MessageEntity m WHERE m.conversationId = :conversationId "

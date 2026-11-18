@@ -8,6 +8,8 @@ import java.util.List;
 public interface MessageRepository {
     public Message retrieveLatestMsg(String conversationId);
 
+    long countUnreadMessages(String conversationId, String userId);
+
     record CreateResult(Message message, boolean created) {
     }
 

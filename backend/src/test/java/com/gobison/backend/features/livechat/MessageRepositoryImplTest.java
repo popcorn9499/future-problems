@@ -19,12 +19,36 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MessageRepositoryImplTest {
+
+    @Test
+    void countsUnreadMessagesReceivedByUserInConversation() {
+        var entityManager = mock(EntityManager.class);
+        @SuppressWarnings("unchecked")
+        TypedQuery<Long> query = mock(TypedQuery.class);
+        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(query);
+        when(query.setParameter("conversationId", "conv_123")).thenReturn(query);
+        when(query.setParameter("userId", "alice@example.com")).thenReturn(query);
+        when(query.getSingleResult()).thenReturn(3L);
+        var repository = repositoryWith(entityManager);
+
+        long unreadCount = repository.countUnreadMessages("conv_123", "alice@example.com");
+
+        assertEquals(3L, unreadCount);
+        verify(entityManager).createQuery(
+                argThat(jpql -> jpql.contains("m.conversationId = :conversationId")
+                        && jpql.contains("m.senderId <> :userId")
+                        && jpql.contains("m.readAt IS NULL")),
+                eq(Long.class));
+        verify(query).setParameter("conversationId", "conv_123");
+        verify(query).setParameter("userId", "alice@example.com");
+    }
 
     @Test
     void retrievesMessagesInSentOrderForConversation() {
