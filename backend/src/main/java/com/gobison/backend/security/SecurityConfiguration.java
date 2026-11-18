@@ -96,7 +96,8 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests",
                                                                 "/api/v1/rides/offers")
                                                 .authenticated()
-                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests/*")
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/offers/*")
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/rides/requests/*",
                                                                 "/api/v1/rides/requests/*/round-trip")

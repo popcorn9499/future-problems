@@ -7,6 +7,10 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 @Repository
 public class RideOfferRepositoryImpl implements RideOfferRepository {
 
@@ -20,5 +24,27 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
         entityManager.persist(entity);
         entityManager.flush();
         return entity.toDomain();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<RideOffer> findById(UUID offerId) {
+        var entity = entityManager.find(RideOfferEntity.class, offerId);
+        return Optional.ofNullable(entity).map(RideOfferEntity::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RideOffer> findRoundTripLegs(UUID roundTripId, String ownerEmail) {
+        return entityManager.createQuery("""
+                select leg from RideOfferEntity leg
+                where leg.roundTripId = :roundTripId and leg.userEmail = :ownerEmail
+                """, RideOfferEntity.class)
+                .setParameter("roundTripId", roundTripId)
+                .setParameter("ownerEmail", ownerEmail)
+                .getResultList()
+                .stream()
+                .map(RideOfferEntity::toDomain)
+                .toList();
     }
 }
