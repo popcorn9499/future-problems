@@ -19,7 +19,7 @@ public class MessageEntity {
     @Column(name = "conversation_id", nullable = false, length = 41)
     private String conversationId;
 
-    @Column(name = "sender_id", nullable = false, length = 40)
+    @Column(name = "sender_id", nullable = false, length = 254)
     private String senderId;
 
     @Column(name = "content", nullable = false, columnDefinition = "text")

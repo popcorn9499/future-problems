@@ -94,21 +94,21 @@ class MessageRepositoryImplTest {
         when(insertQuery.getSingleResult()).thenAnswer(invocation -> savedMessageId.get());
         when(entityManager.find(eq(MessageEntity.class), anyString())).thenAnswer(invocation ->
                 new MessageEntity(Message.restore(
-                        invocation.getArgument(1), "conv_123", "usr_123", "Hello",
+                        invocation.getArgument(1), "conv_123", "sender@example.com", "Hello",
                         Instant.parse("2026-11-10T14:40:00Z"), null)));
         var repository = repositoryWith(entityManager);
 
-        var result = repository.saveMsg("Hello", "conv_123", "usr_123");
+        var result = repository.saveMsg("Hello", "conv_123", "sender@example.com");
 
         assertTrue(savedMessageId.get().matches("msg_[0-9a-f]{32}"));
         assertEquals(savedMessageId.get(), result.message().getMsgId());
         assertEquals("conv_123", result.message().getConversationId());
-        assertEquals("usr_123", result.message().getSenderId());
+        assertEquals("sender@example.com", result.message().getSenderId());
         assertEquals("Hello", result.message().getContent());
         assertNotNull(result.message().getSentAt());
         assertTrue(result.created());
         verify(insertQuery).setParameter("conversationId", "conv_123");
-        verify(insertQuery).setParameter("senderId", "usr_123");
+        verify(insertQuery).setParameter("senderId", "sender@example.com");
         verify(insertQuery).setParameter("content", "Hello");
         verify(insertQuery).getSingleResult();
         verify(entityManager).find(MessageEntity.class, savedMessageId.get());

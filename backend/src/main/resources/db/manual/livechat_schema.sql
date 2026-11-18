@@ -15,7 +15,7 @@ ALTER TABLE conversations
 CREATE TABLE IF NOT EXISTS messages (
     message_id varchar(41) PRIMARY KEY,
     conversation_id varchar(41) NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
-    sender_id varchar(40) NOT NULL REFERENCES users(user_id),
+    sender_id varchar(254) NOT NULL REFERENCES users(email),
     content text NOT NULL,
     sent_at timestamp with time zone NOT NULL,
     read_at timestamp with time zone
