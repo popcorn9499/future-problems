@@ -8,8 +8,6 @@ import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
-import 'package:gobison/features/home/presentation/home_page.dart';
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
