@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/models/user_profile.dart';
@@ -90,7 +91,7 @@ void main() {
 
     expect(error, findsOneWidget);
     expect(find.byType(VerificationPage), findsOneWidget);
-    expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(DashboardPage), findsNothing);
 
     expect(SessionService.cachedSession!.user.verified, isFalse);
     final session = await SessionService().loadCurrentSession();
@@ -148,7 +149,7 @@ void main() {
     }
 
     expect(appShell, findsOneWidget);
-    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(DashboardPage), findsOneWidget);
     expect(find.byType(VerificationPage), findsNothing);
 
     expect(SessionService.cachedSession!.user.verified, isTrue);
