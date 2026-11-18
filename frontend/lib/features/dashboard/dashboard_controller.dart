@@ -22,15 +22,16 @@ class DashboardController extends ChangeNotifier {
     TicketFilter kind = TicketFilter.all,
   }) {
     return agreements.where((agreement) {
+      final waiting = agreement.id == null && agreement.status.toUpperCase() != 'CANCELLED';
       final matchesKind = switch (kind) {
         TicketFilter.all => true,
         TicketFilter.agreements => agreement.id != null,
         // An unjoined offer has only its owner as a driver; an unjoined request has
         // only its owner as a passenger.
         TicketFilter.waitingOffers =>
-            agreement.id == null && agreement.drivers.isNotEmpty,
+            waiting && agreement.drivers.isNotEmpty,
         TicketFilter.waitingRequests =>
-            agreement.id == null && agreement.passengers.isNotEmpty,
+            waiting && agreement.passengers.isNotEmpty,
       };
       final matchesDays = selectedDays.isEmpty ||
           agreement.daysOfWeek.any(selectedDays.contains);

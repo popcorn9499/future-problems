@@ -649,6 +649,22 @@ void main() {
             .map((a) => a.listingId)
             .toList();
 
+    test('cancelled rides remain in All and are hidden from both seeking filters', () {
+      for (final offer in [true, false]) {
+        controller.agreements.add(RideAgreement.fromJson(agreementJson(
+          id: null,
+          listingId: offer ? 'cancelled-offer' : 'cancelled-request',
+          createdByCurrentUser: true,
+          status: 'CANCELLED',
+          drivers: offer ? [owner] : [],
+          passengers: offer ? [] : [owner],
+        )));
+      }
+      expect(listingsFor(), containsAll(['cancelled-offer', 'cancelled-request']));
+      expect(listingsFor(kind: TicketFilter.waitingOffers), ['offer']);
+      expect(listingsFor(kind: TicketFilter.waitingRequests), ['request']);
+    });
+
     test('all returns every ticket', () {
       expect(listingsFor(), ['joined', 'offer', 'request']);
     });

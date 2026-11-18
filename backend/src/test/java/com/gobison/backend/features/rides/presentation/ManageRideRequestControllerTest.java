@@ -7,7 +7,10 @@ import com.gobison.backend.features.rides.domain.repository.RideRequestRepositor
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.security.SecurityConfiguration;
+import com.gobison.backend.features.rides.application.geocoding.GeocodingException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -22,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
@@ -151,6 +155,23 @@ class ManageRideRequestControllerTest {
                 .andExpect(jsonPath("$.arrivalTime").value("08:30"));
 
         verify(rideRequestRepository).update(any(RideRequest.class));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,422,INVALID_ADDRESS", "false,503,GEOCODING_UNAVAILABLE"})
+    void addressLookupFailurePreventsEdit(boolean invalid, int statusCode, String code) throws Exception {
+        account(OWNER, true);
+        when(rideRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(ownedRequest()));
+        when(geocoder.locate("456 Main Street", "Winnipeg")).thenThrow(new GeocodingException(invalid));
+
+        mvc.perform(patch(URL + REQUEST_ID).with(user(OWNER)).contentType("application/json")
+                .content("""
+                        {"city":"Winnipeg","streetAddress":"456 Main Street",
+                         "arrivalTime":"08:30","daysOfWeek":["MONDAY"]}
+                        """))
+                .andExpect(status().is(statusCode))
+                .andExpect(jsonPath("$.code").value(code));
+        verify(rideRequestRepository, never()).update(any(RideRequest.class));
     }
 
     private void account(String email, boolean verified) {
