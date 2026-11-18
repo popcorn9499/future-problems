@@ -1,15 +1,16 @@
 package com.gobison.backend.features.rides.presentation;
 
 import com.gobison.backend.features.rides.application.ManageRideRequestService;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -43,5 +44,19 @@ public class ManageRideRequestController {
                 authentication.getName(), requestId, form);
 
         return RideRequestDetailsResponse.from(rideRequest);
+    }
+
+    @PatchMapping("/{requestId}/round-trip")
+    public List<RideRequestDetailsResponse> updateRoundTrip(
+            Authentication authentication,
+            @PathVariable("requestId") UUID requestId,
+            @Valid @RequestBody UpdateRideRequestRequest form) {
+
+        var legs = service.updateRoundTrip(
+                authentication.getName(), requestId, form);
+
+        return legs.stream()
+                .map(RideRequestDetailsResponse::from)
+                .toList();
     }
 }

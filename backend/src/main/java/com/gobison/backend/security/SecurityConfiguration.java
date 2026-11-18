@@ -98,7 +98,8 @@ public class SecurityConfiguration {
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests/*")
                                                 .authenticated()
-                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/rides/requests/*")
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/requests/*/round-trip")
                                                 .authenticated()
                                                 .anyRequest().denyAll())
 
