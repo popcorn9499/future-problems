@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
+import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 
 import 'login_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
-import '../../home/presentation/home_page.dart';
 import '../../messages/presentation/inbox_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
@@ -78,7 +78,7 @@ class _SessionGateState extends State<SessionGate> {
           );
         }
         return AppShell(
-          dashboardPage: HomePage(user: session.user, profile: session.profile),
+          dashboardPage: DashboardPage(user: session.user),
           rideOfferPage: RideOfferPage(userId: session.user.id),
           inboxPage: InboxPage(currentUserId: session.user.id, showAppBar: false),
           user: session.user,
