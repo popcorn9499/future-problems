@@ -15,10 +15,17 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ManageRideRequestService {
+
+    public enum CancellationResult {
+        CANCELLED,
+        CONFIRMATION_REQUIRED
+    }
 
     private final UserRepository userRepository;
     private final RideRequestRepository rideRequestRepository;
@@ -62,13 +69,24 @@ public class ManageRideRequestService {
     RideRequest getForEdit(String email, UUID requestId) {
         var rideRequest = getForOwner(email, requestId);
 
+        requireEditable(List.of(rideRequest), requestId);
+        return rideRequest;
+    }
+
+    private void requireEditable(List<RideRequest> legs, UUID requestId) {
+        if (legs.stream().anyMatch(this::isCancelled)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "Cancelled ride requests cannot be edited");
+        }
         if (rideRequestRepository.hasOtherParticipants(requestId)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "This ride request cannot be edited after another user has joined");
         }
+    }
 
-        return rideRequest;
+    private boolean isCancelled(RideRequest ride) {
+        return "CANCELLED".equals(ride.getStatus());
     }
 
     @Transactional
@@ -100,7 +118,9 @@ public class ManageRideRequestService {
     @Transactional
     public List<RideRequest> updateRoundTrip(
             String email, UUID requestId, UpdateRideRequestRequest form) {
-        var legs = getRoundTripForEdit(email, requestId);
+        var current = getForOwner(email, requestId);
+        var legs = getRoundTripLegs(current);
+        requireEditable(legs, requestId);
 
         if (form.arrivalTime() == null || form.departureTime() == null) {
             throw new ResponseStatusException(
@@ -116,8 +136,28 @@ public class ManageRideRequestService {
         return saveEditedLegs(legs, form, arrivalTime, departureTime);
     }
 
-    private List<RideRequest> getRoundTripForEdit(String email, UUID requestId) {
-        var current = getForEdit(email, requestId);
+    @Transactional
+    public CancellationResult cancel(String email, UUID requestId, boolean confirmParticipants) {
+        var current = getForOwner(email, requestId);
+        boolean oneWay = current.getRoundTripId() == null && current.getRideType() != RideType.ROUND_TRIP;
+        var legs = oneWay ? List.of(current) : getRoundTripLegs(current);
+
+        if (legs.stream().allMatch(this::isCancelled)) {
+            return CancellationResult.CANCELLED;
+        }
+        if (!confirmParticipants && rideRequestRepository.hasOtherParticipants(requestId)) {
+            return CancellationResult.CONFIRMATION_REQUIRED;
+        }
+
+        Set<UUID> ids = legs.stream().map(RideRequest::getRequestId).collect(Collectors.toSet());
+        if (!rideRequestRepository.cancelForOwner(current.getUserId(), ids)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "The ride request changed before it could be cancelled");
+        }
+        return CancellationResult.CANCELLED;
+    }
+
+    private List<RideRequest> getRoundTripLegs(RideRequest current) {
         if (current.getRoundTripId() == null) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "This request is not part of a round trip");
@@ -125,7 +165,7 @@ public class ManageRideRequestService {
 
         var legs = rideRequestRepository.findRoundTripLegs(
                 current.getRoundTripId(), current.getUserId());
-        if (legs.size() != 2 || legs.stream().noneMatch(leg -> requestId.equals(leg.getRequestId()))) {
+        if (legs.size() != 2 || legs.stream().noneMatch(leg -> current.getRequestId().equals(leg.getRequestId()))) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "The round trip does not have a complete pair of requests");
         }

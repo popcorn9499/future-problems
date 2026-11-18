@@ -106,6 +106,10 @@ public class RideRequestEntity {
                                 coordinates.latitude()));
     }
 
+    void cancel() {
+        status = "CANCELLED";
+    }
+
     public RideRequest toDomain() {
         var ride = new RideRequest(
                 rideType,

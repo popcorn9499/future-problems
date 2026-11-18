@@ -3,11 +3,13 @@ package com.gobison.backend.features.rides.infrastructure.persistence;
 import com.gobison.backend.features.rides.domain.model.RideRequest;
 import com.gobison.backend.features.rides.domain.repository.RideRequestRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -86,5 +88,32 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
         entityManager.flush();
 
         return Optional.of(entity.toDomain());
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelForOwner(String ownerEmail, Set<UUID> requestIds) {
+        if (requestIds.isEmpty() || requestIds.size() > 2) {
+            return false;
+        }
+
+        var rides = entityManager.createQuery("""
+                select ride from RideRequestEntity ride
+                where ride.userEmail = :ownerEmail
+                  and ride.id in (:requestIds)
+                order by ride.id
+                """, RideRequestEntity.class)
+                .setParameter("ownerEmail", ownerEmail)
+                .setParameter("requestIds", requestIds)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultList();
+
+        if (rides.size() != requestIds.size()) {
+            return false;
+        }
+
+        rides.forEach(RideRequestEntity::cancel);
+        entityManager.flush();
+        return true;
     }
 }
