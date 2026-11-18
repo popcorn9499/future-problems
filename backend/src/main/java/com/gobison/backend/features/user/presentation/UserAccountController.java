@@ -39,7 +39,7 @@ public class UserAccountController {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getAge(),
-                user.getGender(),
+                user.getPronouns(),
                 user.getDescription(),
                 user.getAvatarColor()
         );
@@ -56,7 +56,7 @@ public class UserAccountController {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getAge(),
-                user.getGender(),
+                user.getPronouns(),
                 user.getDescription(),
                 user.getAvatarColor()
         );

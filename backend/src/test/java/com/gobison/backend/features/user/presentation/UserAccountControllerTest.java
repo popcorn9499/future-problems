@@ -56,7 +56,7 @@ class UserAccountControllerTest {
     void returnsAuthenticatedUsersProfile() throws Exception {
         User user = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
         user.setAge(36);
-        user.setGender("Female");
+        user.setPronouns("Female");
         user.setDescription("Mathematician");
         user.setAvatarColor("#123ABC");
         when(users.findByEmail(EMAIL)).thenReturn(Optional.of(user));
@@ -102,7 +102,7 @@ class UserAccountControllerTest {
 
         User updated = new User(EMAIL, "password-hash", "Augusta", "Byron", true);
         updated.setAge(36);
-        updated.setGender("Female");
+        updated.setPronouns("Female");
         updated.setDescription("Mathematician");
         updated.setAvatarColor("#123ABC");
         when(updateProfileService.updateProfile(

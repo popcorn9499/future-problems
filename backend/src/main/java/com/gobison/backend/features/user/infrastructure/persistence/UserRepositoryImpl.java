@@ -52,7 +52,7 @@ public class UserRepositoryImpl implements UserRepository {
         );
         entity.setVerificationCode(user.getVerificationCode());
         entity.setDeleted(user.isDeleted());
-        entity.setGender(user.getGender());
+        entity.setPronouns(user.getPronouns());
         entity.setAge(user.getAge());
         entity.setDescription(user.getDescription());
         entity.setAvatarColor(user.getAvatarColor());
@@ -80,7 +80,7 @@ public class UserRepositoryImpl implements UserRepository {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "User not found: " + user.getEmail()));
 
-        entity.setGender(user.getGender());
+        entity.setPronouns(user.getPronouns());
         entity.setAge(user.getAge());
         entity.setDescription(user.getDescription());
         entity.setAvatarColor(user.getAvatarColor());
@@ -98,7 +98,7 @@ public class UserRepositoryImpl implements UserRepository {
         );
         user.setVerificationCode(entity.getVerificationCode());
         user.setDeleted(entity.isDeleted());
-        user.setGender(entity.getGender());
+        user.setPronouns(entity.getPronouns());
         user.setAge(entity.getAge());
         user.setDescription(entity.getDescription());
         user.setAvatarColor(entity.getAvatarColor());
