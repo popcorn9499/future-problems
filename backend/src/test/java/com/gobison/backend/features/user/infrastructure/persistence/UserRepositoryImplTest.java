@@ -220,7 +220,7 @@ class UserRepositoryImplTest {
                 "Name",
                 false
         );
-        profileUpdate.setGender("Other");
+        profileUpdate.setPronouns("Other");
         profileUpdate.setAge(25);
         profileUpdate.setDescription("A short profile");
         profileUpdate.setAvatarColor("#123ABC");
@@ -231,7 +231,7 @@ class UserRepositoryImplTest {
                 () -> assertEquals(original.getPassword(), updated.getPassword()),
                 () -> assertEquals(original.getFirstName(), updated.getFirstName()),
                 () -> assertTrue(updated.isVerified()),
-                () -> assertEquals("Other", updated.getGender()),
+                () -> assertEquals("Other", updated.getPronouns()),
                 () -> assertEquals(25, updated.getAge()),
                 () -> assertEquals("A short profile", updated.getDescription()),
                 () -> assertEquals("#123ABC", updated.getAvatarColor())

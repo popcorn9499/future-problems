@@ -23,14 +23,14 @@ public class UpdateProfileService {
         requireNotBlank(request.hasDescription(), request.getDescription(), "description");
         requireNotBlank(request.hasFirstName(), request.getFirstName(), "firstName");
         requireNotBlank(request.hasLastName(), request.getLastName(), "lastName");
-        requireNotBlank(request.hasGender(), request.getGender(), "gender");
+        requireNotBlank(request.hasPronouns(), request.getPronouns(), "pronouns");
 
         if (request.hasAge()) user.setAge(request.getAge());
         if (request.hasAvatarColor()) user.setAvatarColor(request.getAvatarColor());
         if (request.hasDescription()) user.setDescription(request.getDescription());
         if (request.hasFirstName()) user.setFirstName(request.getFirstName());
         if (request.hasLastName()) user.setLastName(request.getLastName());
-        if (request.hasGender()) user.setGender(request.getGender());
+        if (request.hasPronouns()) user.setPronouns(request.getPronouns());
 
         return userRepository.update(user);
     }

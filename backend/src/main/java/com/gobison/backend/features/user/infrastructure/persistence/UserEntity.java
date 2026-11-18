@@ -34,8 +34,8 @@ public class UserEntity {
     @Column(name = "verification_code", length = 6)
     private String verificationCode;
 
-    @Column(name = "gender", nullable = true)
-    private String gender;
+    @Column(name = "pronouns", nullable = true)
+    private String pronouns;
 
     @Column(name = "age", nullable = true)
     private Integer age;
@@ -111,9 +111,9 @@ public class UserEntity {
         this.deleted = deleted;
     }
 
-    public void setGender(String gender) { this.gender = gender; }
+    public void setPronouns(String pronouns) { this.pronouns = pronouns; }
 
-    public String getGender() { return gender; }
+    public String getPronouns() { return pronouns; }
 
     public void setAge(Integer age) { this.age = age; }
 

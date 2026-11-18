@@ -7,13 +7,13 @@ public class UpdateProfileRequest {
     private String firstName;
     private String lastName;
     private Integer age;
-    private String gender;
+    private String pronouns;
     private String description;
     private String avatarColor;
     private boolean firstNameProvided;
     private boolean lastNameProvided;
     private boolean ageProvided;
-    private boolean genderProvided;
+    private boolean pronounsProvided;
     private boolean descriptionProvided;
     private boolean avatarColorProvided;
 
@@ -59,18 +59,18 @@ public class UpdateProfileRequest {
         return ageProvided;
     }
 
-    public String getGender() {
-        return gender;
+    public String getPronouns() {
+        return pronouns;
     }
 
-    @JsonSetter("gender")
-    public void setGender(String gender) {
-        this.gender = gender;
-        this.genderProvided = true;
+    @JsonSetter("pronouns")
+    public void setPronouns(String pronouns) {
+        this.pronouns = pronouns;
+        this.pronounsProvided = true;
     }
 
-    public boolean hasGender() {
-        return genderProvided;
+    public boolean hasPronouns() {
+        return pronounsProvided;
     }
 
     public String getDescription() {

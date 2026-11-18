@@ -12,7 +12,7 @@ public class User {
     private String password;
     private boolean deleted;
 
-    private String gender;
+    private String pronouns;
     private Integer age;
     private String description;
     private String avatarColor = DEFAULT_AVATAR_COLOR;
@@ -73,9 +73,9 @@ public class User {
         this.deleted = deleted;
     }
 
-    public void setGender(String gender) { this.gender = gender; }
+    public void setPronouns(String pronouns) { this.pronouns = pronouns; }
 
-    public String getGender() { return gender; }
+    public String getPronouns() { return pronouns; }
 
     public void setAge(Integer age) { this.age = age; }
 

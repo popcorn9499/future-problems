@@ -30,7 +30,7 @@ class UpdateProfileServiceTest {
     void updatesOnlyProvidedFieldsAndReturnsSavedUser() {
         User user = new User("ada@myumanitoba.ca", "hash", "Ada", "Lovelace", true);
         user.setAge(36);
-        user.setGender("Female");
+        user.setPronouns("Female");
         user.setDescription("Original description");
         user.setAvatarColor("#E9DFD2");
         UpdateProfileRequest request = new UpdateProfileRequest();
@@ -45,7 +45,7 @@ class UpdateProfileServiceTest {
                 () -> assertEquals("Augusta", updated.getFirstName()),
                 () -> assertEquals("Lovelace", updated.getLastName()),
                 () -> assertEquals(36, updated.getAge()),
-                () -> assertEquals("Female", updated.getGender()),
+                () -> assertEquals("Female", updated.getPronouns()),
                 () -> assertEquals("Original description", updated.getDescription()),
                 () -> assertEquals("#123ABC", updated.getAvatarColor())
         );
@@ -104,9 +104,9 @@ class UpdateProfileServiceTest {
                 Arguments.of(
                         "lastName", (Consumer<UpdateProfileRequest>) request -> request.setLastName("  ")),
                 Arguments.of(
-                        "gender", (Consumer<UpdateProfileRequest>) request -> request.setGender(null)),
+                        "pronouns", (Consumer<UpdateProfileRequest>) request -> request.setPronouns(null)),
                 Arguments.of(
-                        "gender", (Consumer<UpdateProfileRequest>) request -> request.setGender("  "))
+                        "pronouns", (Consumer<UpdateProfileRequest>) request -> request.setPronouns("  "))
         );
     }
 }
