@@ -9,11 +9,13 @@ public class UpdateProfileRequest {
     private Integer age;
     private String gender;
     private String description;
+    private String avatarColor;
     private boolean firstNameProvided;
     private boolean lastNameProvided;
     private boolean ageProvided;
     private boolean genderProvided;
     private boolean descriptionProvided;
+    private boolean avatarColorProvided;
 
     public String getFirstName() {
         return firstName;
@@ -83,5 +85,19 @@ public class UpdateProfileRequest {
 
     public boolean hasDescription() {
         return descriptionProvided;
+    }
+
+    public String getAvatarColor() {
+        return avatarColor;
+    }
+
+    @JsonSetter("avatarColor")
+    public void setAvatarColor(String avatarColor) {
+        this.avatarColor = avatarColor;
+        this.avatarColorProvided = true;
+    }
+
+    public boolean hasAvatarColor() {
+        return avatarColorProvided;
     }
 }

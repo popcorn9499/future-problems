@@ -8,6 +8,7 @@ public record GetProfileResponse(
         String lastName,
         Integer age,
         String gender,
-        String description
+        String description,
+        String avatarColor
 ) {
 }

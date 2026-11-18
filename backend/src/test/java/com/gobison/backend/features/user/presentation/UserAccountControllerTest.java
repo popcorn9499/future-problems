@@ -47,6 +47,7 @@ class UserAccountControllerTest {
         user.setAge(36);
         user.setGender("Female");
         user.setDescription("Mathematician");
+        user.setAvatarColor("#123ABC");
         when(users.findByEmail(EMAIL)).thenReturn(Optional.of(user));
 
         mvc.perform(get(ENDPOINT).with(user(EMAIL)))
@@ -57,6 +58,7 @@ class UserAccountControllerTest {
                 .andExpect(jsonPath("$.age").value(36))
                 .andExpect(jsonPath("$.gender").value("Female"))
                 .andExpect(jsonPath("$.description").value("Mathematician"))
+                .andExpect(jsonPath("$.avatarColor").value("#123ABC"))
                 .andExpect(jsonPath("$.password").doesNotExist());
 
         verify(users).findByEmail(EMAIL);

@@ -31,7 +31,8 @@ public class UserAccountController {
                 user.getLastName(),
                 user.getAge(),
                 user.getGender(),
-                user.getDescription()
+                user.getDescription(),
+                user.getAvatarColor()
         );
 
         return ResponseEntity.ok(response);

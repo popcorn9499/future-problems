@@ -223,6 +223,7 @@ class UserRepositoryImplTest {
         profileUpdate.setGender("Other");
         profileUpdate.setAge(25);
         profileUpdate.setDescription("A short profile");
+        profileUpdate.setAvatarColor("#123ABC");
 
         User updated = userRepository.update(profileUpdate);
 
@@ -232,7 +233,17 @@ class UserRepositoryImplTest {
                 () -> assertTrue(updated.isVerified()),
                 () -> assertEquals("Other", updated.getGender()),
                 () -> assertEquals(25, updated.getAge()),
-                () -> assertEquals("A short profile", updated.getDescription())
+                () -> assertEquals("A short profile", updated.getDescription()),
+                () -> assertEquals("#123ABC", updated.getAvatarColor())
         );
+    }
+
+    @Test
+    void newUsersReceiveDefaultAvatarColor() {
+        User user = createTestUser("Default", "Avatar", false);
+
+        User saved = userRepository.create(user);
+
+        assertEquals(User.DEFAULT_AVATAR_COLOR, saved.getAvatarColor());
     }
 }

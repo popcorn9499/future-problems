@@ -23,6 +23,7 @@ public class UserRepositoryImpl implements UserRepository {
     public User create(User user) {
         UserEntity entity = new UserEntity(user.getEmail(), user.getPassword(),
                 user.getFirstName(), user.getLastName(), user.isVerified());
+        entity.setAvatarColor(user.getAvatarColor());
         entityManager.persist(entity);
         entityManager.flush();
         return toDomain(entity);
@@ -51,6 +52,10 @@ public class UserRepositoryImpl implements UserRepository {
         );
         entity.setVerificationCode(user.getVerificationCode());
         entity.setDeleted(user.isDeleted());
+        entity.setGender(user.getGender());
+        entity.setAge(user.getAge());
+        entity.setDescription(user.getDescription());
+        entity.setAvatarColor(user.getAvatarColor());
 
         UserEntity saved = jpaRepository.save(entity);
 
@@ -78,6 +83,7 @@ public class UserRepositoryImpl implements UserRepository {
         entity.setGender(user.getGender());
         entity.setAge(user.getAge());
         entity.setDescription(user.getDescription());
+        entity.setAvatarColor(user.getAvatarColor());
 
         return toDomain(jpaRepository.save(entity));
     }
@@ -95,6 +101,7 @@ public class UserRepositoryImpl implements UserRepository {
         user.setGender(entity.getGender());
         user.setAge(entity.getAge());
         user.setDescription(entity.getDescription());
+        user.setAvatarColor(entity.getAvatarColor());
         return user;
     }
 }
