@@ -1,6 +1,7 @@
 package com.gobison.backend.features.rides.presentation;
 
 import com.gobison.backend.features.rides.application.ManageRideOfferService;
+import com.gobison.backend.features.rides.application.geocoding.Geocoder;
 import com.gobison.backend.features.rides.domain.model.RideOffer;
 import com.gobison.backend.features.rides.domain.model.RideType;
 import com.gobison.backend.features.rides.domain.repository.RideOfferRepository;
@@ -13,17 +14,25 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -40,6 +49,7 @@ class ManageRideOfferControllerTest {
     private final UUID roundTripId = UUID.randomUUID();
 
     @Autowired private MockMvc mvc;
+    @MockitoBean private Geocoder geocoder;
     @MockitoBean private UserRepository users;
     @MockitoBean private RideOfferRepository offers;
 
@@ -92,15 +102,82 @@ class ManageRideOfferControllerTest {
         verifyNoInteractions(offers);
     }
 
+    @Test
+    void ownerEditsBothLegsFromDepartureId() throws Exception {
+        account(OWNER, true);
+        var departure = givenOffer();
+        var arrivalId = UUID.randomUUID();
+        var arrival = new RideOffer(RideType.ARRIVAL, null, roundTripId, arrivalId, OWNER,
+                "Winnipeg", "123 Main Street", LocalTime.of(8, 0), Set.of(DayOfWeek.MONDAY),
+                null, "OPEN", 3, true);
+        when(offers.findRoundTripLegs(roundTripId, OWNER)).thenReturn(List.of(departure, arrival));
+        when(offers.updateIfEditable(eq(OWNER), anyList()))
+                .thenAnswer(call -> Optional.of(call.<List<RideOffer>>getArgument(1)));
+
+        patchOffer(OWNER, true)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.arrivalId").value(arrivalId.toString()))
+                .andExpect(jsonPath("$.departureId").value(offerId.toString()))
+                .andExpect(jsonPath("$.arrivalTime").value("08:30"))
+                .andExpect(jsonPath("$.departureTime").value("18:00"))
+                .andExpect(jsonPath("$.passengerNum").value(4))
+                .andExpect(jsonPath("$.askingForDrivers").value(false));
+        verifyNoInteractions(geocoder);
+    }
+
+    @Test
+    void ownerEditsOneWayOffer() throws Exception {
+        account(OWNER, true);
+        givenOffer(null);
+        when(offers.updateIfEditable(eq(OWNER), anyList()))
+                .thenAnswer(call -> Optional.of(call.<List<RideOffer>>getArgument(1)));
+
+        patchOffer(OWNER, false).andExpect(status().isOk())
+                .andExpect(jsonPath("$.offerId").value(offerId.toString()))
+                .andExpect(jsonPath("$.departureTime").value("18:00"));
+    }
+
+    @Test
+    void otherUserCannotEditOffer() throws Exception {
+        account(OTHER, true);
+        givenOffer();
+        patchOffer(OTHER, true).andExpect(status().isForbidden());
+        verify(offers, never()).updateIfEditable(anyString(), anyList());
+        verifyNoInteractions(geocoder);
+    }
+
+    @Test
+    void editConflictReturns409() throws Exception {
+        account(OWNER, true);
+        givenOffer(null);
+        when(offers.updateIfEditable(eq(OWNER), anyList())).thenReturn(Optional.empty());
+        patchOffer(OWNER, false).andExpect(status().isConflict());
+        verify(offers).updateIfEditable(eq(OWNER), anyList());
+    }
+
+    private ResultActions patchOffer(String email, boolean roundTrip) throws Exception {
+        var body = """
+                {"city":"Winnipeg","streetAddress":"123 Main Street","departureTime":"18:00",
+                 "arrivalTime":%s,"daysOfWeek":["FRIDAY"],"description":"Updated",
+                 "passengerNum":4,"askingForDrivers":false}
+                """.formatted(roundTrip ? "\"08:30\"" : "null");
+        return mvc.perform(patch(URL, offerId).with(user(email)).contentType("application/json").content(body));
+    }
+
     private void account(String email, boolean verified) {
         when(users.findByEmail(email)).thenReturn(Optional.of(
                 new User(email, "test-password", "Test", "User", verified)));
     }
 
-    private void givenOffer() {
-        var offer = new RideOffer(RideType.DEPARTURE, LocalTime.of(17, 30), roundTripId,
+    private RideOffer givenOffer() {
+        return givenOffer(roundTripId);
+    }
+
+    private RideOffer givenOffer(UUID tripId) {
+        var offer = new RideOffer(RideType.DEPARTURE, LocalTime.of(17, 30), tripId,
                 offerId, OWNER, "Winnipeg", "123 Main Street", null, Set.of(DayOfWeek.MONDAY),
                 "Test ride", "OPEN", 3, true);
         when(offers.findById(offerId)).thenReturn(Optional.of(offer));
+        return offer;
     }
 }

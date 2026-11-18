@@ -7,6 +7,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,5 +47,50 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
                 .stream()
                 .map(RideOfferEntity::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public Optional<List<RideOffer>> updateIfEditable(String ownerEmail, List<RideOffer> editedLegs) {
+        var ids = editedLegs.stream().map(RideOffer::getOfferId).toList();
+        var statuses = entityManager.createNativeQuery("""
+                SELECT status FROM ride_offers
+                WHERE user_email = :owner AND offer_id IN (:ids)
+                ORDER BY offer_id FOR UPDATE
+                """).setParameter("owner", ownerEmail).setParameter("ids", ids).getResultList();
+        if (statuses.size() != ids.size() || statuses.contains("CANCELLED")) {
+            return Optional.empty();
+        }
+
+        entityManager.createNativeQuery("""
+                SELECT agreement_id FROM ride_agreements
+                WHERE offer_id IN (:ids) ORDER BY agreement_id FOR UPDATE
+                """).setParameter("ids", ids).getResultList();
+        var joined = entityManager.createNativeQuery("""
+                SELECT EXISTS (
+                    SELECT 1 FROM ride_agreements a
+                    JOIN ride_agreement_members m ON m.agreement_id = a.agreement_id
+                    WHERE a.offer_id IN (:ids) AND m.user_email <> :owner
+                )
+                """).setParameter("ids", ids).setParameter("owner", ownerEmail).getSingleResult();
+        return Boolean.TRUE.equals(joined) ? Optional.empty() : updateAll(editedLegs);
+    }
+
+    Optional<List<RideOffer>> updateAll(List<RideOffer> editedLegs) {
+        var entities = new ArrayList<RideOfferEntity>(editedLegs.size());
+        for (var leg : editedLegs) {
+            var entity = entityManager.find(RideOfferEntity.class, leg.getOfferId());
+            if (entity == null) {
+                return Optional.empty();
+            }
+            entityManager.refresh(entity);
+            entities.add(entity);
+        }
+
+        for (int i = 0; i < editedLegs.size(); i++) {
+            entities.get(i).updateDetails(editedLegs.get(i));
+        }
+        entityManager.flush();
+        return Optional.of(entities.stream().map(RideOfferEntity::toDomain).toList());
     }
 }

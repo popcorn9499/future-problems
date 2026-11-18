@@ -13,4 +13,6 @@ public interface RideOfferRepository {
     Optional<RideOffer> findById(UUID offerId);
 
     List<RideOffer> findRoundTripLegs(UUID roundTripId, String ownerEmail);
+
+    Optional<List<RideOffer>> updateIfEditable(String ownerEmail, List<RideOffer> editedLegs);
 }
