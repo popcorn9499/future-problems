@@ -45,4 +45,7 @@ public class ConversationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+
+    @GetMapping
+    public ResponseEntity<List<T>> getConversations
 }
