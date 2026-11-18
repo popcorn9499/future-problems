@@ -17,7 +17,7 @@ void main() {
     return MaterialApp(
       home: AppShell(
         dashboardPage: const Text('Dashboard content'),
-        messagesPage: const Text('Messages content'),
+        inboxPage: const Text('Messages content'),
         rideRequestPage: const Text('Ride Request content'),
         rideOfferPage: const Text('Ride Offer content'),
         user: user,
