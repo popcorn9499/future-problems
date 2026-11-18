@@ -145,11 +145,19 @@ public class ManageRideRequestService {
         if (legs.stream().allMatch(this::isCancelled)) {
             return CancellationResult.CANCELLED;
         }
+        Set<UUID> ids = legs.stream().map(RideRequest::getRequestId).collect(Collectors.toSet());
+        var conflict = rideRequestRepository.lockForManagement(current.getUserId(), ids).orElse(null);
+        if (conflict == RideRequestRepository.ManagementConflict.CANCELLED) {
+            return CancellationResult.CANCELLED;
+        }
+        if (conflict == RideRequestRepository.ManagementConflict.CHANGED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "The ride request changed before it could be cancelled");
+        }
         if (!confirmParticipants && rideRequestRepository.hasOtherParticipants(requestId)) {
             return CancellationResult.CONFIRMATION_REQUIRED;
         }
 
-        Set<UUID> ids = legs.stream().map(RideRequest::getRequestId).collect(Collectors.toSet());
         if (!rideRequestRepository.cancelForOwner(current.getUserId(), ids)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "The ride request changed before it could be cancelled");
@@ -191,6 +199,13 @@ public class ManageRideRequestService {
         boolean addressChanged = legs.stream().anyMatch(
                 leg -> !city.equals(leg.getCity()) || !street.equals(leg.getStreetAddress()));
         var newLocation = addressChanged ? geocoder.locate(street, city) : null;
+
+        var firstLeg = legs.getFirst();
+        var ids = legs.stream().map(RideRequest::getRequestId).collect(Collectors.toSet());
+        if (rideRequestRepository.lockForManagement(firstLeg.getUserId(), ids).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This ride request can no longer be edited");
+        }
+        requireEditable(legs, firstLeg.getRequestId());
 
         List<RideRequest> saved = new ArrayList<>(legs.size());
         for (var leg : legs) {

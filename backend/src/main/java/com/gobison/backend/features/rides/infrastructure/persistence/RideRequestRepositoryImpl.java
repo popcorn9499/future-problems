@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
@@ -72,6 +73,32 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
         return (Boolean) entityManager.createNativeQuery(sql)
                 .setParameter(1, requestId)
                 .getSingleResult();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Optional<ManagementConflict> lockForManagement(String ownerEmail, Set<UUID> ids) {
+        if (ids.isEmpty() || ids.size() > 2) {
+            return Optional.of(ManagementConflict.CHANGED);
+        }
+        List<?> statuses = entityManager.createNativeQuery("""
+                SELECT status FROM ride_requests
+                WHERE user_email = :owner AND request_id IN (:ids)
+                ORDER BY request_id FOR UPDATE
+                """).setParameter("owner", ownerEmail).setParameter("ids", ids).getResultList();
+        if (statuses.size() != ids.size()) {
+            return Optional.of(ManagementConflict.CHANGED);
+        }
+        entityManager.createNativeQuery("""
+                SELECT agreement_id FROM ride_agreements
+                WHERE request_id IN (:ids) ORDER BY agreement_id FOR UPDATE
+                """).setParameter("ids", ids).getResultList();
+        ids.forEach(id -> entityManager.refresh(entityManager.find(RideRequestEntity.class, id)));
+        if (statuses.contains("CANCELLED")) {
+            return Optional.of(statuses.stream().allMatch("CANCELLED"::equals)
+                    ? ManagementConflict.CANCELLED : ManagementConflict.PARTLY_CANCELLED);
+        }
+        return Optional.empty();
     }
 
     @Override

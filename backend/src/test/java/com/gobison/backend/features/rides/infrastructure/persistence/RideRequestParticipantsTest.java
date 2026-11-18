@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,6 +81,27 @@ class RideRequestParticipantsTest {
 
         assertTrue(requests.hasOtherParticipants(arrivalId));
         assertTrue(requests.hasOtherParticipants(departureId));
+    }
+
+    @Test
+    void managementLockSeesCancelledPairAfterOpenLegsWereLoaded() {
+        String owner = data.createUser("Ride", "Owner");
+        entityManager.flush();
+        UUID trip = UUID.randomUUID();
+        UUID arrival = data.insertRequest(owner, "Winnipeg", "ARRIVAL", LocalTime.of(8, 0), null,
+                "OPEN", trip, DayOfWeek.MONDAY);
+        UUID departure = data.insertRequest(owner, "Winnipeg", "DEPARTURE", null, LocalTime.of(17, 0),
+                "OPEN", trip, DayOfWeek.MONDAY);
+        var ids = Set.of(arrival, departure);
+
+        var legs = requests.findRoundTripLegs(trip, owner);
+        assertThat(legs).extracting(leg -> leg.getStatus()).containsExactly("OPEN", "OPEN");
+        assertThat(requests.lockForManagement(owner, ids)).isEmpty();
+        assertThat(jdbc.update("UPDATE ride_requests SET status = 'CANCELLED' WHERE round_trip_id = ?", trip))
+                .isEqualTo(2);
+
+        assertThat(requests.lockForManagement(owner, ids))
+                .contains(RideRequestRepository.ManagementConflict.CANCELLED);
     }
 
     @Test

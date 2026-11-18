@@ -8,6 +8,12 @@ import java.util.UUID;
 
 public interface RideRequestRepository {
 
+    enum ManagementConflict {
+        CHANGED, CANCELLED, PARTLY_CANCELLED
+    }
+
+    Optional<ManagementConflict> lockForManagement(String ownerEmail, Set<UUID> ids);
+
     RideRequest create(RideRequest rideRequest);
 
     Optional<RideRequest> findById(UUID requestId);

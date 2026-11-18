@@ -22,6 +22,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import com.gobison.backend.features.rides.domain.model.GeoLocation;
@@ -179,6 +181,46 @@ class ManageRideRequestServiceTest {
         assertEquals(REQUEST_ID, sentToRepository.getRequestId());
         assertEquals(originalLocation, sentToRepository.getLocation());
         verifyNoInteractions(geocoder);
+    }
+
+    @Test
+    void cancellationDuringAddressLookupPreventsSavingTheEdit() {
+        givenUser(OWNER, true);
+        var current = ownerRequest();
+        when(rideRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(current));
+        when(rideRequestRepository.lockForManagement(OWNER, Set.of(REQUEST_ID)))
+                .thenReturn(Optional.of(RideRequestRepository.ManagementConflict.CANCELLED));
+        var form = new UpdateRideRequestRequest(
+                current.getCity(), "456 Main Street", "08:30", null,
+                List.copyOf(current.getDaysOfWeek()), current.getDescription());
+
+        var error = assertThrows(ResponseStatusException.class, () -> service.updateOneWay(OWNER, REQUEST_ID, form));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        var order = inOrder(geocoder, rideRequestRepository);
+        order.verify(geocoder).locate("456 Main Street", current.getCity());
+        order.verify(rideRequestRepository).lockForManagement(OWNER, Set.of(REQUEST_ID));
+        verify(rideRequestRepository, never()).update(any(RideRequest.class));
+    }
+
+    @Test
+    void participantJoiningBetweenChecksPreventsSavingTheEdit() {
+        givenUser(OWNER, true);
+        var current = ownerRequest();
+        when(rideRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(current));
+        when(rideRequestRepository.hasOtherParticipants(REQUEST_ID)).thenReturn(false, true);
+        var form = new UpdateRideRequestRequest(
+                current.getCity(), current.getStreetAddress(), "08:30", null,
+                List.copyOf(current.getDaysOfWeek()), current.getDescription());
+
+        var error = assertThrows(ResponseStatusException.class, () -> service.updateOneWay(OWNER, REQUEST_ID, form));
+
+        assertEquals(HttpStatus.CONFLICT, error.getStatusCode());
+        var order = inOrder(rideRequestRepository);
+        order.verify(rideRequestRepository).hasOtherParticipants(REQUEST_ID);
+        order.verify(rideRequestRepository).lockForManagement(OWNER, Set.of(REQUEST_ID));
+        order.verify(rideRequestRepository).hasOtherParticipants(REQUEST_ID);
+        verify(rideRequestRepository, never()).update(any(RideRequest.class));
     }
 
     private void givenUser(String email, boolean verified) {
