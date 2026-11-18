@@ -7,7 +7,7 @@ import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
-import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
+import 'package:gobison/features/home/presentation/home_page.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -90,7 +90,7 @@ void main() {
 
     expect(error, findsOneWidget);
     expect(find.byType(VerificationPage), findsOneWidget);
-    expect(find.byType(DashboardPage), findsNothing);
+    expect(find.byType(HomePage), findsNothing);
 
     expect(SessionService.cachedSession!.user.verified, isFalse);
     final session = await SessionService().loadCurrentSession();
@@ -148,7 +148,7 @@ void main() {
     }
 
     expect(appShell, findsOneWidget);
-    expect(find.byType(DashboardPage), findsOneWidget);
+    expect(find.byType(HomePage), findsOneWidget);
     expect(find.byType(VerificationPage), findsNothing);
 
     expect(SessionService.cachedSession!.user.verified, isTrue);
