@@ -4,7 +4,8 @@ import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'login_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
-import '../../dashboard/presentation/dashboard_page.dart';
+import '../../home/presentation/home_page.dart';
+import '../../messages/presentation/inbox_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
 import '../../ride_request/presentation/ride_request_page.dart';
@@ -27,8 +28,7 @@ class _SessionGateState extends State<SessionGate> {
   @override
   void initState() {
     super.initState();
-    _sessionFuture = (widget.sessionService ?? SessionService())
-        .loadCurrentSession();
+    _sessionFuture = (widget.sessionService ?? SessionService()).loadCurrentSession();
   }
 
   @override
@@ -37,9 +37,7 @@ class _SessionGateState extends State<SessionGate> {
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         if (snapshot.hasError) {
@@ -54,9 +52,8 @@ class _SessionGateState extends State<SessionGate> {
                     key: const Key('session-retry-button'),
                     onPressed: () {
                       setState(() {
-                        _sessionFuture =
-                            (widget.sessionService ?? SessionService())
-                                .loadCurrentSession();
+                        _sessionFuture = (widget.sessionService ?? SessionService())
+                            .loadCurrentSession();
                       });
                     },
                     child: const Text('Try again'),
@@ -81,11 +78,12 @@ class _SessionGateState extends State<SessionGate> {
           );
         }
         return AppShell(
-          dashboardPage: DashboardPage(user: session.user),
-          messagesPage: const Placeholder(),
-          user: session.user, // Adjust to your actual profile field.
-          rideRequestPage: RideRequestPage(userId: session.user.id),
+          dashboardPage: HomePage(user: session.user, profile: session.profile),
           rideOfferPage: RideOfferPage(userId: session.user.id),
+          inboxPage: InboxPage(currentUserId: session.user.id, showAppBar: false),
+          user: session.user,
+          rideRequestPage: RideRequestPage(userId: session.user.id),
+
           onProfileTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -95,19 +93,15 @@ class _SessionGateState extends State<SessionGate> {
                   currentUserId: session.user.id,
                   onAccountDeleted: () {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LoginPage(),
-                      ),
+                      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
                       (route) => false,
                     );
                   },
                   onEdit: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => EditProfilePage(
-                          user: session.user,
-                          profile: session.profile,
-                        ),
+                        builder: (_) =>
+                            EditProfilePage(user: session.user, profile: session.profile),
                       ),
                     );
                   },
@@ -115,7 +109,6 @@ class _SessionGateState extends State<SessionGate> {
               ),
             );
           },
-          
         );
       },
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/widgets/invalid_address_dialog.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ride_form_widgets.dart';
@@ -6,19 +7,13 @@ import '../ride_request_controller.dart';
 import '../ride_request_service.dart';
 
 class RideRequestPage extends StatefulWidget {
-
-  const RideRequestPage({
-    super.key,
-    required this.userId,
-    this.service,
-  });
+  const RideRequestPage({super.key, required this.userId, this.service});
 
   final String userId;
   final RideRequestService? service;
 
   @override
-  State<RideRequestPage> createState() =>
-      _RideRequestPageState();
+  State<RideRequestPage> createState() => _RideRequestPageState();
 }
 
 class _RideRequestPageState extends State<RideRequestPage> {
@@ -41,8 +36,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
     super.initState();
 
     _rideRequestService = widget.service ?? RideRequestService();
-    _rideRequestController =
-        RideRequestController(_rideRequestService);
+    _rideRequestController = RideRequestController(_rideRequestService);
   }
 
   @override
@@ -61,22 +55,16 @@ class _RideRequestPageState extends State<RideRequestPage> {
 
     if (_rideType == 'arriving' || _rideType == 'roundTrip') {
       if (_arrivalTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select an arrival time.'),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Please select an arrival time.')));
         return;
       }
     }
 
     if (_rideType == 'departing' || _rideType == 'roundTrip') {
       if (_departureTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a departure time.'),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Please select a departure time.')));
         return;
       }
     }
@@ -103,11 +91,8 @@ class _RideRequestPageState extends State<RideRequestPage> {
     }
 
     if (_selectedDays.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one day.'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Please select at least one day.')));
       return;
     }
 
@@ -134,19 +119,13 @@ class _RideRequestPageState extends State<RideRequestPage> {
     if (!mounted) return;
 
     if (_rideRequestController.invalidAddress) {
-      await showInvalidAddressDialog(
-        context,
-        _rideRequestController.errorMessage!,
-      );
+      await showInvalidAddressDialog(context, _rideRequestController.errorMessage!);
       return;
     }
 
     if (_rideRequestController.createdRideRequest != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ride request created successfully!'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Ride request created successfully!')));
 
       _resetForm();
     }
@@ -189,9 +168,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: const Color(0xFFEAE6DF),
-                        ),
+                        border: Border.all(color: const Color(0xFFEAE6DF)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -209,12 +186,9 @@ class _RideRequestPageState extends State<RideRequestPage> {
                           const SizedBox(height: 8),
 
                           const Text(
-                            'Let fellow Bisons when and where you need a ride.',
+                            'Let fellow Bisons know when and where you need a ride.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
                           ),
 
                           const SizedBox(height: 32),
@@ -301,16 +275,11 @@ class _RideRequestPageState extends State<RideRequestPage> {
                               decoration: BoxDecoration(
                                 color: AppColors.error.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.error.withValues(alpha: 0.4),
-                                ),
+                                border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                               ),
                               child: Text(
                                 _rideRequestController.errorMessage!,
-                                style: const TextStyle(
-                                  color: AppColors.error,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: AppColors.error, fontSize: 13),
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -328,24 +297,17 @@ class _RideRequestPageState extends State<RideRequestPage> {
                                             _resetForm();
 
                                             ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Form has been reset.'),
-                                              ),
+                                              const SnackBar(content: Text('Form has been reset.')),
                                             );
                                           },
                                     icon: const Icon(Icons.refresh),
                                     label: const Text(
                                       'Reset',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                                     ),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: AppColors.primary,
-                                      side: const BorderSide(
-                                        color: AppColors.primary,
-                                      ),
+                                      side: const BorderSide(color: AppColors.primary),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -399,10 +361,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
                           const Text(
                             'GoBison • Ride with the herd. © OpenStreetMap contributors',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black38,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.black38),
                           ),
                         ],
                       ),
@@ -415,5 +374,5 @@ class _RideRequestPageState extends State<RideRequestPage> {
         ),
       ),
     );
-   }
+  }
 }

@@ -12,14 +12,10 @@ void main() {
   const testUserId = '123';
 
   Widget createTestWidget() {
-    return const MaterialApp(
-      home: RideRequestPage(userId: testUserId),
-    );
+    return const MaterialApp(home: RideRequestPage(userId: testUserId));
   }
 
-  Future<void> enterRequiredFields(
-    WidgetTester tester,
-  ) async {
+  Future<void> enterRequiredFields(WidgetTester tester) async {
     final textFields = find.byType(TextFormField);
 
     await tester.ensureVisible(textFields.at(0));
@@ -31,10 +27,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> selectRideType(
-    WidgetTester tester,
-    String rideType,
-  ) async {
+  Future<void> selectRideType(WidgetTester tester, String rideType) async {
     final dropdown = find.byType(DropdownButton<String>);
 
     await tester.ensureVisible(dropdown);
@@ -46,26 +39,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> selectTime(
-      WidgetTester tester, {
-      int index = 0,
-    }) async {
-      final timeSelector = find.text('Select time').at(index);
+  Future<void> selectTime(WidgetTester tester, {int index = 0}) async {
+    final timeSelector = find.text('Select time').at(index);
 
-      await tester.ensureVisible(timeSelector);
-      await tester.tap(timeSelector);
-      await tester.pumpAndSettle();
+    await tester.ensureVisible(timeSelector);
+    await tester.tap(timeSelector);
+    await tester.pumpAndSettle();
 
-      expect(find.byType(TimePickerDialog), findsOneWidget);
-    }
+    expect(find.byType(TimePickerDialog), findsOneWidget);
+  }
 
-  Future<void> confirmTimePicker(
-    WidgetTester tester,
-  ) async {
-    final okButton = find.descendant(
-      of: find.byType(TimePickerDialog),
-      matching: find.text('OK'),
-    );
+  Future<void> confirmTimePicker(WidgetTester tester) async {
+    final okButton = find.descendant(of: find.byType(TimePickerDialog), matching: find.text('OK'));
 
     await tester.tap(okButton);
     await tester.pumpAndSettle();
@@ -84,10 +69,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> submitRideWithClient(
-    WidgetTester tester,
-    http.Client client,
-  ) async {
+  Future<void> submitRideWithClient(WidgetTester tester, http.Client client) async {
     tester.view.physicalSize = const Size(1400, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -105,12 +87,7 @@ void main() {
     await tester.ensureVisible(find.text('Select time'));
     await tester.tap(find.text('Select time'));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(
-        of: find.byType(TimePickerDialog),
-        matching: find.text('OK'),
-      ),
-    );
+    await tester.tap(find.descendant(of: find.byType(TimePickerDialog), matching: find.text('OK')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Mon'));
     await tester.tap(find.text('Mon'));
@@ -121,27 +98,18 @@ void main() {
   }
 
   group('RideRequestPage', () {
-
-    testWidgets('displays the ride request page and form fields', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('displays the ride request page and form fields', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
-      
+
       expect(find.text('Request a Ride'), findsOneWidget);
 
-      expect(
-        find.text('Let fellow Bisons when and where you need a ride.'),
-        findsOneWidget,
-      );
+      expect(find.text('Let fellow Bisons know when and where you need a ride.'), findsOneWidget);
 
       expect(find.text('City *'), findsOneWidget);
       expect(find.text('Street Address *'), findsOneWidget);
       expect(find.text('Ride Type *'), findsOneWidget);
       expect(find.text('Arriving at Campus'), findsOneWidget);
-      expect(
-        find.text('Desired campus arrival time *'),
-        findsOneWidget,
-      );
+      expect(find.text('Desired campus arrival time *'), findsOneWidget);
       expect(find.text('Select time'), findsOneWidget);
       expect(find.text('Days of the week *'), findsOneWidget);
       expect(find.text('Additional Description'), findsOneWidget);
@@ -155,25 +123,15 @@ void main() {
       );
     });
 
-    testWidgets('displays the correct text field hints', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('displays the correct text field hints', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('Enter your city'), findsOneWidget);
-      expect(
-        find.text('Enter your address'),
-        findsOneWidget,
-      );
-      expect(
-        find.text('Enter any additional details'),
-        findsOneWidget,
-      );
+      expect(find.text('Enter your address'), findsOneWidget);
+      expect(find.text('Enter any additional details'), findsOneWidget);
     });
 
-    testWidgets('displays all weekdays as selectable chips', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('displays all weekdays as selectable chips', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('Mon'), findsOneWidget);
@@ -183,9 +141,7 @@ void main() {
       expect(find.text('Fri'), findsOneWidget);
     });
 
-    testWidgets('allows selecting a weekday', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('allows selecting a weekday', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
@@ -194,15 +150,10 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      expect(
-        tester.widget<FilterChip>(mondayChip).selected,
-        isTrue,
-      );
+      expect(tester.widget<FilterChip>(mondayChip).selected, isTrue);
     });
 
-    testWidgets('allows deselecting a previously selected weekday', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('allows deselecting a previously selected weekday', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
@@ -211,23 +162,15 @@ void main() {
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      expect(
-        tester.widget<FilterChip>(mondayChip).selected,
-        isTrue,
-      );
+      expect(tester.widget<FilterChip>(mondayChip).selected, isTrue);
 
       await tester.tap(mondayChip);
       await tester.pumpAndSettle();
 
-      expect(
-        tester.widget<FilterChip>(mondayChip).selected,
-        isFalse,
-      );
+      expect(tester.widget<FilterChip>(mondayChip).selected, isFalse);
     });
 
-    testWidgets('allows selecting multiple weekdays', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('allows selecting multiple weekdays', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
@@ -241,20 +184,12 @@ void main() {
       await tester.tap(wednesdayChip);
       await tester.pumpAndSettle();
 
-      expect(
-        tester.widget<FilterChip>(mondayChip).selected,
-        isTrue,
-      );
+      expect(tester.widget<FilterChip>(mondayChip).selected, isTrue);
 
-      expect(
-        tester.widget<FilterChip>(wednesdayChip).selected,
-        isTrue,
-      );
+      expect(tester.widget<FilterChip>(wednesdayChip).selected, isTrue);
     });
 
-    testWidgets('shows validation errors when city is empty', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('shows validation errors when city is empty', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final submitButton = find.text('Submit Ride Offer');
@@ -271,10 +206,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        'Toronto',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Enter your city'), 'Toronto');
 
       final submitButton = find.text('Submit Ride Offer');
 
@@ -282,10 +214,7 @@ void main() {
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Please enter Street Address'),
-        findsOneWidget,
-      );
+      expect(find.text('Please enter Street Address'), findsOneWidget);
     });
 
     testWidgets('shows validation errors when city contains only whitespace', (
@@ -293,10 +222,7 @@ void main() {
     ) async {
       await tester.pumpWidget(createTestWidget());
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Enter your city'),
-        '   ',
-      );
+      await tester.enterText(find.widgetWithText(TextFormField, 'Enter your city'), '   ');
 
       final submitButton = find.text('Submit Ride Offer');
 
@@ -307,57 +233,36 @@ void main() {
       expect(find.text('Please enter City'), findsOneWidget);
     });
 
-    testWidgets(
-      'shows validation errors when street address contains only whitespace',
-      (WidgetTester tester) async {
-        await tester.pumpWidget(createTestWidget());
-
-        await tester.enterText(
-          find.widgetWithText(TextFormField, 'Enter your city'),
-          'Toronto',
-        );
-
-        await tester.enterText(
-          find.widgetWithText(
-            TextFormField,
-            'Enter your address',
-          ),
-          '   ',
-        );
-
-        final submitButton = find.text('Submit Ride Offer');
-
-        await tester.ensureVisible(submitButton);
-        await tester.tap(submitButton);
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text('Please enter Street Address'),
-          findsOneWidget,
-        );
-      },
-    );
-
-    testWidgets('allows entering an optional description', (
+    testWidgets('shows validation errors when street address contains only whitespace', (
       WidgetTester tester,
     ) async {
+      await tester.pumpWidget(createTestWidget());
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Enter your city'), 'Toronto');
+
+      await tester.enterText(find.widgetWithText(TextFormField, 'Enter your address'), '   ');
+
+      final submitButton = find.text('Submit Ride Offer');
+
+      await tester.ensureVisible(submitButton);
+      await tester.tap(submitButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Please enter Street Address'), findsOneWidget);
+    });
+
+    testWidgets('allows entering an optional description', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final descriptionField = find.byType(TextFormField).last;
 
       await tester.ensureVisible(descriptionField);
 
-      await tester.enterText(
-        descriptionField,
-        'I need a ride every weekday.',
-      );
+      await tester.enterText(descriptionField, 'I need a ride every weekday.');
 
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('I need a ride every weekday.'),
-        findsOneWidget,
-      );
+      expect(find.text('I need a ride every weekday.'), findsOneWidget);
     });
 
     testWidgets('does not show validation error for empty optional description', (
@@ -372,65 +277,43 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Please enter Additional Description'),
-        findsNothing,
-      );
+      expect(find.text('Please enter Additional Description'), findsNothing);
     });
 
-    testWidgets('submit button is initially enabled', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('submit button is initially enabled', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final button = tester.widget<ElevatedButton>(
-        find.widgetWithText(
-          ElevatedButton,
-          'Submit Ride Offer',
-        ),
+        find.widgetWithText(ElevatedButton, 'Submit Ride Offer'),
       );
 
       expect(button.onPressed, isNotNull);
     });
 
-    testWidgets('reset button is initially enabled', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset button is initially enabled', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
-      final button = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, 'Reset'),
-      );
+      final button = tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Reset'));
 
       expect(button.onPressed, isNotNull);
     });
 
-    testWidgets('reset displays confirmation message', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset displays confirmation message', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       await tapReset(tester);
 
-      expect(
-        find.text('Form has been reset.'),
-        findsOneWidget,
-      );
+      expect(find.text('Form has been reset.'), findsOneWidget);
     });
 
-    testWidgets('reset clears all text fields', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset clears all text fields', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       await enterRequiredFields(tester);
 
       final descriptionField = find.byType(TextFormField).last;
 
-      await tester.enterText(
-        descriptionField,
-        'Test description',
-      );
+      await tester.enterText(descriptionField, 'Test description');
 
       await tester.pumpAndSettle();
 
@@ -441,19 +324,11 @@ void main() {
       expect(find.text('Test description'), findsNothing);
 
       expect(find.text('Enter your city'), findsOneWidget);
-      expect(
-        find.text('Enter your address'),
-        findsOneWidget,
-      );
-      expect(
-        find.text('Enter any additional details'),
-        findsOneWidget,
-      );
+      expect(find.text('Enter your address'), findsOneWidget);
+      expect(find.text('Enter any additional details'), findsOneWidget);
     });
 
-    testWidgets('reset deselects all weekdays', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset deselects all weekdays', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final mondayChip = find.widgetWithText(FilterChip, 'Mon');
@@ -469,21 +344,13 @@ void main() {
 
       await tapReset(tester);
 
-      expect(
-        tester.widget<FilterChip>(mondayChip).selected,
-        isFalse,
-      );
+      expect(tester.widget<FilterChip>(mondayChip).selected, isFalse);
 
-      expect(
-        tester.widget<FilterChip>(wednesdayChip).selected,
-        isFalse,
-      );
+      expect(tester.widget<FilterChip>(wednesdayChip).selected, isFalse);
     });
 
     group('Time Selection', () {
-      testWidgets('displays time picker when arrival time is tapped', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('displays time picker when arrival time is tapped', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectTime(tester);
@@ -516,9 +383,7 @@ void main() {
         expect(find.text('Select time'), findsNothing);
       });
 
-      testWidgets('allows selecting a departure time', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('allows selecting a departure time', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectRideType(tester, 'Departing from Campus');
@@ -529,9 +394,7 @@ void main() {
         expect(find.text('Select time'), findsNothing);
       });
 
-      testWidgets('allows selecting both round trip times', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('allows selecting both round trip times', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectRideType(tester, 'Round Trip');
@@ -621,10 +484,7 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(
-          find.text('Please select an arrival time.'),
-          findsOneWidget,
-        );
+        expect(find.text('Please select an arrival time.'), findsOneWidget);
       });
 
       testWidgets('shows validation message when departure time is not selected', (
@@ -648,15 +508,10 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(
-          find.text('Please select a departure time.'),
-          findsOneWidget,
-        );
+        expect(find.text('Please select a departure time.'), findsOneWidget);
       });
 
-      testWidgets('requires both times for round trip', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('requires both times for round trip', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectRideType(tester, 'Round Trip');
@@ -675,10 +530,7 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(
-          find.text('Please select an arrival time.'),
-          findsOneWidget,
-        );
+        expect(find.text('Please select an arrival time.'), findsOneWidget);
       });
 
       testWidgets('validates departure time after arrival time is selected', (
@@ -705,15 +557,10 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(
-          find.text('Please select a departure time.'),
-          findsOneWidget,
-        );
+        expect(find.text('Please select a departure time.'), findsOneWidget);
       });
     });
-    testWidgets('reset clears selected arrival time', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset clears selected arrival time', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       await selectTime(tester);
@@ -727,9 +574,7 @@ void main() {
       expect(find.text('Arriving at Campus'), findsOneWidget);
     });
 
-    testWidgets('reset clears both round trip times and ride type', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset clears both round trip times and ride type', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       await selectRideType(tester, 'Round Trip');
@@ -748,9 +593,7 @@ void main() {
       expect(find.text('Campus departure time *'), findsNothing);
     });
 
-    testWidgets('reset clears validation errors', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('reset clears validation errors', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
       final submitButton = find.text('Submit Ride Offer');
@@ -768,18 +611,13 @@ void main() {
     });
 
     group('Ride Type Selection', () {
-      testWidgets('defaults to arriving ride type', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('defaults to arriving ride type', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         expect(find.text('Desired campus arrival time *'), findsOneWidget);
         expect(find.text('Select time'), findsOneWidget);
 
-        expect(
-          find.text('Desired campus departure time *'),
-          findsNothing,
-        );
+        expect(find.text('Desired campus departure time *'), findsNothing);
       });
 
       testWidgets('displays departure time selector when departing is selected', (
@@ -789,22 +627,14 @@ void main() {
 
         await selectRideType(tester, 'Departing from Campus');
 
-        expect(
-          find.text('Desired campus departure time *'),
-          findsOneWidget,
-        );
+        expect(find.text('Desired campus departure time *'), findsOneWidget);
 
-        expect(
-          find.text('Desired campus arrival time *'),
-          findsNothing,
-        );
+        expect(find.text('Desired campus arrival time *'), findsNothing);
 
         expect(find.text('Select time'), findsOneWidget);
       });
 
-      testWidgets('displays both time selectors for round trip', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('displays both time selectors for round trip', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectRideType(tester, 'Round Trip');
@@ -815,9 +645,7 @@ void main() {
         expect(find.text('Select time'), findsNWidgets(2));
       });
 
-      testWidgets('clears departure time when switching to arriving', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('clears departure time when switching to arriving', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectRideType(tester, 'Departing from Campus');
@@ -827,21 +655,13 @@ void main() {
 
         await selectRideType(tester, 'Arriving at Campus');
 
-        expect(
-          find.text('Desired campus arrival time *'),
-          findsOneWidget,
-        );
+        expect(find.text('Desired campus arrival time *'), findsOneWidget);
 
         expect(find.text('Select time'), findsOneWidget);
-        expect(
-          find.text('Desired campus departure time *'),
-          findsNothing,
-        );
+        expect(find.text('Desired campus departure time *'), findsNothing);
       });
 
-      testWidgets('clears arrival time when switching to departing', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('clears arrival time when switching to departing', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
         await selectTime(tester);
@@ -849,17 +669,11 @@ void main() {
 
         await selectRideType(tester, 'Departing from Campus');
 
-        expect(
-          find.text('Desired campus departure time *'),
-          findsOneWidget,
-        );
+        expect(find.text('Desired campus departure time *'), findsOneWidget);
 
         expect(find.text('Select time'), findsOneWidget);
 
-        expect(
-          find.text('Desired campus arrival time *'),
-          findsNothing,
-        );
+        expect(find.text('Desired campus arrival time *'), findsNothing);
       });
     });
 
@@ -880,7 +694,9 @@ void main() {
         expect(
           find.descendant(
             of: find.byType(AlertDialog),
-            matching: find.text('We couldn’t locate that address in Canada. Check the street address and city and try again.'),
+            matching: find.text(
+              'We couldn’t locate that address in Canada. Check the street address and city and try again.',
+            ),
           ),
           findsOneWidget,
         );
@@ -889,14 +705,8 @@ void main() {
         await tester.pumpAndSettle();
 
         final textFields = find.byType(TextFormField);
-        expect(
-          tester.widget<TextFormField>(textFields.at(0)).controller!.text,
-          'Toronto',
-        );
-        expect(
-          tester.widget<TextFormField>(textFields.at(1)).controller!.text,
-          '123 Main Street',
-        );
+        expect(tester.widget<TextFormField>(textFields.at(0)).controller!.text, 'Toronto');
+        expect(tester.widget<TextFormField>(textFields.at(1)).controller!.text, '123 Main Street');
       });
 
       testWidgets('shows a temporary lookup error and preserves form input', (
@@ -905,10 +715,7 @@ void main() {
         var serviceCallCount = 0;
         final client = MockClient((_) async {
           serviceCallCount++;
-          return http.Response(
-            jsonEncode({'code': 'GEOCODING_UNAVAILABLE'}),
-            503,
-          );
+          return http.Response(jsonEncode({'code': 'GEOCODING_UNAVAILABLE'}), 503);
         });
 
         await submitRideWithClient(tester, client);
@@ -916,25 +723,15 @@ void main() {
         expect(serviceCallCount, 1);
         expect(find.byType(AlertDialog), findsNothing);
         expect(
-          find.text(
-            'Address lookup is temporarily unavailable. Please try again.',
-          ),
+          find.text('Address lookup is temporarily unavailable. Please try again.'),
           findsOneWidget,
         );
         final textFields = find.byType(TextFormField);
-        expect(
-          tester.widget<TextFormField>(textFields.at(0)).controller!.text,
-          'Toronto',
-        );
-        expect(
-          tester.widget<TextFormField>(textFields.at(1)).controller!.text,
-          '123 Main Street',
-        );
+        expect(tester.widget<TextFormField>(textFields.at(0)).controller!.text, 'Toronto');
+        expect(tester.widget<TextFormField>(textFields.at(1)).controller!.text, '123 Main Street');
       });
 
-      testWidgets('clears form input after a successful submission', (
-        WidgetTester tester,
-      ) async {
+      testWidgets('clears form input after a successful submission', (WidgetTester tester) async {
         var serviceCallCount = 0;
         final client = MockClient((_) async {
           serviceCallCount++;
@@ -957,14 +754,8 @@ void main() {
         expect(serviceCallCount, 1);
         expect(find.byType(AlertDialog), findsNothing);
         final textFields = find.byType(TextFormField);
-        expect(
-          tester.widget<TextFormField>(textFields.at(0)).controller!.text,
-          isEmpty,
-        );
-        expect(
-          tester.widget<TextFormField>(textFields.at(1)).controller!.text,
-          isEmpty,
-        );
+        expect(tester.widget<TextFormField>(textFields.at(0)).controller!.text, isEmpty);
+        expect(tester.widget<TextFormField>(textFields.at(1)).controller!.text, isEmpty);
       });
     });
   });
