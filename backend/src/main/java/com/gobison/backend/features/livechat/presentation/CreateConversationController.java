@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,7 @@ public class CreateConversationController {
         this.createConversationService = createConversationService;
     }
 
-    public record CreateConversationRequest(@NotBlank String participantId) {
+    public record CreateConversationRequest(@NotBlank @Email String participantId) {
     }
 
     public record CreateConversationResponse(String conversationId, List<String> participants, Instant createdAt) {

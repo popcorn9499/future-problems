@@ -22,9 +22,13 @@ public class CreateConversationService {
     }
 
     public ConversationRepository.CreateResult create(String currentUserId, String participantId) {
+        if (participantId == null || participantId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Participant ID is required");
+        }
+
         var currentUser = userRepository.findByEmail(currentUserId)
                 .filter(user -> !user.isDeleted())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         String normalizedParticipantId = participantId.trim().toLowerCase(Locale.ROOT);
         if (currentUser.getEmail().equalsIgnoreCase(normalizedParticipantId)) {
