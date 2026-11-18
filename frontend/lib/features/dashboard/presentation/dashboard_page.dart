@@ -141,7 +141,7 @@ class _DashboardPageState extends State<DashboardPage> {
         .where((leg) => leg.roundTripId == tripId).toList();
     final email = widget.user.email.toLowerCase();
     for (final leg in legs) {
-      if (!leg.createdByCurrentUser || leg.listingType != 'REQUEST' ||
+      if (!leg.createdByCurrentUser || leg.listingType != ride.listingType ||
           leg.status.toUpperCase() == 'CANCELLED' ||
           [...leg.drivers, ...leg.passengers].any((member) => member.id.toLowerCase() != email)) {
         return [];
@@ -156,38 +156,49 @@ class _DashboardPageState extends State<DashboardPage> {
     return unique;
   }
 
-  Future<void> _editRequest(List<RideAgreement> legs) async {
-    if (_busy || legs.isEmpty) return;
+  Future<void> _editRide(RideAgreement ride, List<RideAgreement> editable) async {
+    if (_busy || editable.isEmpty) return;
     setState(() => _busy = true);
+    final isOffer = ride.listingType == 'OFFER';
+    final kind = isOffer ? 'offer' : 'request';
     try {
-      final details = await Future.wait(
-        legs.map((leg) => _requests.getRideRequestDetails(leg.listingId)),
-      );
+      final legs = isOffer
+          ? [ride, ...editable.where((leg) => leg.listingId != ride.listingId)]
+          : editable;
+      final load = isOffer ? _offers.getRideOfferDetails : _requests.getRideRequestDetails;
+      final details = await Future.wait(legs.map((leg) => load(leg.listingId)));
       if (!mounted) return;
+
       for (var i = 0; i < legs.length; i++) {
         final detail = details[i];
         final type = legs[i].rideType == 'ARRIVAL' ? 'arriving' : 'departing';
-        if (detail['requestId'] != legs[i].listingId || detail['rideType'] != type ||
-            detail['roundTripId'] != legs[i].roundTripId || detail['status'] == 'CANCELLED') {
+        if (detail[isOffer ? 'offerId' : 'requestId'] != legs[i].listingId ||
+            detail['roundTripId'] != legs[i].roundTripId ||
+            detail['rideType'] != type || detail['status'] == 'CANCELLED') {
           throw StateError('Ride details changed');
         }
+        final seats = detail['passengerNum'];
+        if (isOffer && (seats is! int || seats < 1 || detail['askingForDrivers'] is! bool)) {
+          throw StateError('Incomplete offer details');
+        }
       }
+
       final saved = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => EditRideRequestDialog(legs: details, service: _requests),
+        builder: (_) => isOffer
+            ? EditRideRequestDialog.offer(legs: details, service: _offers)
+            : EditRideRequestDialog(legs: details, service: _requests),
       );
       if (!mounted || saved != true) return;
       await _dashboardController.loadAgreements();
       if (!mounted) return;
-      final message = _dashboardController.errorMessage == null
-          ? 'Ride request updated.'
-          : 'Ride request updated. Pull to refresh your dashboard.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      final suffix = _dashboardController.errorMessage == null ? '' : ' Pull to refresh your dashboard.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ride $kind updated.$suffix')));
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to open this request. Refresh and try again.')),
+          SnackBar(content: Text('Unable to open this $kind. Refresh and try again.')),
         );
       }
     } finally {
@@ -307,8 +318,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: _busy ? null : () => _editRequest(editable),
-                        child: const Text('Edit request'),
+                        onPressed: _busy ? null : () => _editRide(ride, editable),
+                        child: Text(ride.listingType == 'OFFER' ? 'Edit offer' : 'Edit request'),
                       ),
                     ),
                   Align(

@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 
 import '../ride_request_controller.dart' show extractErrorCode;
+import '../../ride_offer/ride_offer_service.dart';
 import '../ride_request_service.dart';
 
 class EditRideRequestDialog extends StatefulWidget {
-  const EditRideRequestDialog({
-    super.key,
-    required this.legs,
-    required this.service,
-  });
+  const EditRideRequestDialog({super.key, required this.legs, required RideRequestService service})
+      : service = service, offerService = null;
+
+  const EditRideRequestDialog.offer({super.key, required this.legs, required RideOfferService service})
+      : offerService = service, service = null;
 
   final List<Map<String, dynamic>> legs;
-  final RideRequestService service;
+  final RideRequestService? service;
+  final RideOfferService? offerService;
 
   @override
   State<EditRideRequestDialog> createState() => _EditRideRequestDialogState();
@@ -33,6 +35,9 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   late String? arrival = _time('arriving', 'arrivalTime');
   late String? departure = _time('departing', 'departureTime');
 
+  late String seats = (first['passengerNum'] as int).toString();
+  late bool askingForDrivers = first['askingForDrivers'] as bool;
+  String get kind => widget.offerService == null ? 'request' : 'offer';
   bool saving = false;
   String? error;
 
@@ -86,16 +91,33 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     });
 
     try {
-      await widget.service.updateRideRequest(
-        requestId: first['requestId'] as String,
-        roundTrip: first['roundTripId'] != null,
-        city: city.trim(),
-        streetAddress: street.trim(),
-        arrivalTime: arrival?.trim(),
-        departureTime: departure?.trim(),
-        daysOfWeek: weekdays.where(days.contains).toList(),
-        description: description.trim().isEmpty ? null : description.trim(),
-      );
+      final selectedDays = weekdays.where(days.contains).toList();
+      final note = description.trim().isEmpty ? null : description.trim();
+      final offerService = widget.offerService;
+      if (offerService == null) {
+        await widget.service!.updateRideRequest(
+          requestId: first['requestId'] as String,
+          roundTrip: first['roundTripId'] != null,
+          city: city.trim(),
+          streetAddress: street.trim(),
+          daysOfWeek: selectedDays,
+          arrivalTime: arrival?.trim(),
+          departureTime: departure?.trim(),
+          description: note,
+        );
+      } else {
+        await offerService.updateRideOffer(
+          offerId: first['offerId'] as String,
+          city: city.trim(),
+          streetAddress: street.trim(),
+          daysOfWeek: selectedDays,
+          arrivalTime: arrival?.trim(),
+          departureTime: departure?.trim(),
+          description: note,
+          passengerNum: int.parse(seats.trim(), radix: 10),
+          askingForDrivers: askingForDrivers,
+        );
+      }
 
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
@@ -104,8 +126,8 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
         saving = false;
         error = switch (extractErrorCode(e)) {
           401 => 'Your session expired. Sign in again.',
-          403 => 'You do not have permission to edit this request.',
-          404 || 409 => 'This request has changed or can no longer be edited. Close and refresh.',
+          403 => 'You do not have permission to edit this $kind.',
+          404 || 409 => 'This $kind has changed or can no longer be edited. Close and refresh.',
           422 => 'Address not found. Check the city and street address.',
           _ => 'Unable to save your changes. Please try again.',
         };
@@ -118,7 +140,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     return PopScope(
       canPop: !saving,
       child: AlertDialog(
-        title: Text(first['roundTripId'] == null ? 'Edit ride request' : 'Edit both legs'),
+        title: Text(first['roundTripId'] == null ? 'Edit ride $kind' : 'Edit both legs'),
         scrollable: true,
         content: SizedBox(
           width: 420,
@@ -154,8 +176,29 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                       ),
                   ],
                 ),
+              if (widget.offerService != null) ...[
                 TextFormField(
-                  initialValue: description,
+                  initialValue: seats,
+                  enabled: !saving,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Available seats'),
+                  onChanged: (value) => seats = value,
+                  validator: (value) {
+                    final count = int.tryParse(value?.trim() ?? '', radix: 10);
+                    if (count == null || count < 1 || count > 2147483647) {
+                      return 'Enter a valid seat count.';
+                    }
+                    return null;
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text('Looking for a driver'),
+                  value: askingForDrivers,
+                  onChanged: saving ? null : (value) => setState(() => askingForDrivers = value),
+                ),
+              ],
+              TextFormField(
+                initialValue: description,
                   decoration: const InputDecoration(labelText: 'Description'),
                   enabled: !saving,
                   onChanged: (value) => description = value,
