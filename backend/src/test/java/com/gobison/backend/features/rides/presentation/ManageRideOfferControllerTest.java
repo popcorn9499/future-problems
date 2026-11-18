@@ -5,6 +5,7 @@ import com.gobison.backend.features.rides.application.geocoding.Geocoder;
 import com.gobison.backend.features.rides.domain.model.RideOffer;
 import com.gobison.backend.features.rides.domain.model.RideType;
 import com.gobison.backend.features.rides.domain.repository.RideOfferRepository;
+import com.gobison.backend.features.rides.domain.repository.RideOfferRepository.CancellationResult;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.security.SecurityConfiguration;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,8 +33,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -105,12 +109,7 @@ class ManageRideOfferControllerTest {
     @Test
     void ownerEditsBothLegsFromDepartureId() throws Exception {
         account(OWNER, true);
-        var departure = givenOffer();
-        var arrivalId = UUID.randomUUID();
-        var arrival = new RideOffer(RideType.ARRIVAL, null, roundTripId, arrivalId, OWNER,
-                "Winnipeg", "123 Main Street", LocalTime.of(8, 0), Set.of(DayOfWeek.MONDAY),
-                null, "OPEN", 3, true);
-        when(offers.findRoundTripLegs(roundTripId, OWNER)).thenReturn(List.of(departure, arrival));
+        var arrivalId = givenRoundTrip();
         when(offers.updateIfEditable(eq(OWNER), anyList()))
                 .thenAnswer(call -> Optional.of(call.<List<RideOffer>>getArgument(1)));
 
@@ -153,6 +152,60 @@ class ManageRideOfferControllerTest {
         when(offers.updateIfEditable(eq(OWNER), anyList())).thenReturn(Optional.empty());
         patchOffer(OWNER, false).andExpect(status().isConflict());
         verify(offers).updateIfEditable(eq(OWNER), anyList());
+    }
+
+    @Test
+    void ownerCancelsOneWayOffer() throws Exception {
+        account(OWNER, true);
+        givenOffer(null);
+        when(offers.cancelForOwner(OWNER, List.of(offerId), false)).thenReturn(CancellationResult.CANCELLED);
+
+        mvc.perform(delete(URL, offerId).with(user(OWNER))).andExpect(status().isNoContent());
+        verify(offers).cancelForOwner(OWNER, List.of(offerId), false);
+    }
+
+    @Test
+    void confirmsParticipantsBeforeCancellingBothLegs() throws Exception {
+        account(OWNER, true);
+        var ids = List.of(offerId, givenRoundTrip());
+        when(offers.cancelForOwner(OWNER, ids, false)).thenReturn(CancellationResult.CONFIRMATION_REQUIRED);
+        when(offers.cancelForOwner(OWNER, ids, true)).thenReturn(CancellationResult.CANCELLED);
+
+        mvc.perform(delete(URL, offerId).with(user(OWNER)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CONFIRMATION_REQUIRED"));
+        mvc.perform(delete(URL, offerId).with(user(OWNER)).param("confirmParticipants", "true"))
+                .andExpect(status().isNoContent());
+        verify(offers).cancelForOwner(OWNER, ids, true);
+    }
+
+    @Test
+    void loginAndOwnershipAreRequiredToCancel() throws Exception {
+        mvc.perform(delete(URL, offerId)).andExpect(status().isUnauthorized());
+        account(OTHER, true);
+        givenOffer(null);
+        mvc.perform(delete(URL, offerId).with(user(OTHER)).param("confirmParticipants", "true"))
+                .andExpect(status().isForbidden());
+        verify(offers, never()).cancelForOwner(anyString(), anyList(), anyBoolean());
+    }
+
+    @Test
+    void changedOfferReturnsConflictWithoutConfirmationCode() throws Exception {
+        account(OWNER, true);
+        givenOffer(null);
+        when(offers.cancelForOwner(OWNER, List.of(offerId), false)).thenReturn(CancellationResult.OFFER_CHANGED);
+        mvc.perform(delete(URL, offerId).with(user(OWNER)))
+                .andExpect(status().isConflict()).andExpect(content().string(""));
+    }
+
+    private UUID givenRoundTrip() {
+        var departure = givenOffer();
+        var arrivalId = UUID.randomUUID();
+        var arrival = new RideOffer(RideType.ARRIVAL, null, roundTripId, arrivalId, OWNER,
+                "Winnipeg", "123 Main Street", LocalTime.of(8, 0), Set.of(DayOfWeek.MONDAY),
+                null, "OPEN", 3, true);
+        when(offers.findRoundTripLegs(roundTripId, OWNER)).thenReturn(List.of(departure, arrival));
+        return arrivalId;
     }
 
     private ResultActions patchOffer(String email, boolean roundTrip) throws Exception {

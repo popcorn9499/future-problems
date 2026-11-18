@@ -102,7 +102,8 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/rides/requests/*",
                                                                 "/api/v1/rides/requests/*/round-trip", "/api/v1/rides/offers/*")
                                                 .authenticated()
-                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/rides/requests/*")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/offers/*")
                                                 .authenticated()
                                                 .anyRequest().denyAll())
 

@@ -53,15 +53,46 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
     @Transactional
     public Optional<List<RideOffer>> updateIfEditable(String ownerEmail, List<RideOffer> editedLegs) {
         var ids = editedLegs.stream().map(RideOffer::getOfferId).toList();
-        var statuses = entityManager.createNativeQuery("""
+        var statuses = lockOfferStatuses(ownerEmail, ids);
+        if (statuses.size() != ids.size() || statuses.contains("CANCELLED")) {
+            return Optional.empty();
+        }
+        return hasOtherParticipantsUnderLock(ownerEmail, ids) ? Optional.empty() : updateAll(editedLegs);
+    }
+
+    @Override
+    @Transactional
+    public CancellationResult cancelForOwner(String ownerEmail, List<UUID> offerIds, boolean confirmParticipants) {
+        if (offerIds.isEmpty() || offerIds.size() > 2) {
+            return CancellationResult.OFFER_CHANGED;
+        }
+        var statuses = lockOfferStatuses(ownerEmail, offerIds);
+        if (statuses.size() != offerIds.size()) {
+            return CancellationResult.OFFER_CHANGED;
+        }
+        if (statuses.stream().allMatch("CANCELLED"::equals)) {
+            return CancellationResult.CANCELLED;
+        }
+        if (!confirmParticipants && hasOtherParticipantsUnderLock(ownerEmail, offerIds)) {
+            return CancellationResult.CONFIRMATION_REQUIRED;
+        }
+
+        entityManager.createNativeQuery("""
+                UPDATE ride_offers SET status = 'CANCELLED'
+                WHERE user_email = :owner AND offer_id IN (:ids)
+                """).setParameter("owner", ownerEmail).setParameter("ids", offerIds).executeUpdate();
+        return CancellationResult.CANCELLED;
+    }
+
+    private List<?> lockOfferStatuses(String ownerEmail, List<UUID> ids) {
+        return entityManager.createNativeQuery("""
                 SELECT status FROM ride_offers
                 WHERE user_email = :owner AND offer_id IN (:ids)
                 ORDER BY offer_id FOR UPDATE
                 """).setParameter("owner", ownerEmail).setParameter("ids", ids).getResultList();
-        if (statuses.size() != ids.size() || statuses.contains("CANCELLED")) {
-            return Optional.empty();
-        }
+    }
 
+    private boolean hasOtherParticipantsUnderLock(String ownerEmail, List<UUID> ids) {
         entityManager.createNativeQuery("""
                 SELECT agreement_id FROM ride_agreements
                 WHERE offer_id IN (:ids) ORDER BY agreement_id FOR UPDATE
@@ -73,7 +104,7 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
                     WHERE a.offer_id IN (:ids) AND m.user_email <> :owner
                 )
                 """).setParameter("ids", ids).setParameter("owner", ownerEmail).getSingleResult();
-        return Boolean.TRUE.equals(joined) ? Optional.empty() : updateAll(editedLegs);
+        return Boolean.TRUE.equals(joined);
     }
 
     Optional<List<RideOffer>> updateAll(List<RideOffer> editedLegs) {

@@ -8,6 +8,10 @@ import java.util.UUID;
 
 public interface RideOfferRepository {
 
+    enum CancellationResult {
+        CANCELLED, CONFIRMATION_REQUIRED, OFFER_CHANGED
+    }
+
     RideOffer create(RideOffer rideOffer);
 
     Optional<RideOffer> findById(UUID offerId);
@@ -15,4 +19,6 @@ public interface RideOfferRepository {
     List<RideOffer> findRoundTripLegs(UUID roundTripId, String ownerEmail);
 
     Optional<List<RideOffer>> updateIfEditable(String ownerEmail, List<RideOffer> editedLegs);
+
+    CancellationResult cancelForOwner(String ownerEmail, List<UUID> offerIds, boolean confirmParticipants);
 }

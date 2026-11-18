@@ -47,7 +47,7 @@ public class ManageRideOfferService {
 
     public List<RideOffer> update(String email, UUID offerId, UpdateRideOfferRequest form) {
         var current = getForOwner(email, offerId);
-        var legs = legsForEdit(current);
+        var legs = legsForManagement(current);
         if (legs.stream().anyMatch(leg -> "CANCELLED".equals(leg.getStatus()))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cancelled offers cannot be edited");
         }
@@ -82,7 +82,13 @@ public class ManageRideOfferService {
                 new ResponseStatusException(HttpStatus.CONFLICT, "Offer changed or has other participants"));
     }
 
-    private List<RideOffer> legsForEdit(RideOffer current) {
+    public RideOfferRepository.CancellationResult cancel(String email, UUID offerId, boolean confirmParticipants) {
+        var current = getForOwner(email, offerId);
+        var ids = legsForManagement(current).stream().map(RideOffer::getOfferId).toList();
+        return offers.cancelForOwner(current.getUserId(), ids, confirmParticipants);
+    }
+
+    private List<RideOffer> legsForManagement(RideOffer current) {
         if (current.getRoundTripId() == null && current.getRideType() != RideType.ROUND_TRIP) {
             return List.of(current);
         }
