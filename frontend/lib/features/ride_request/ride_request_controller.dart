@@ -9,6 +9,7 @@ class RideRequestController extends ChangeNotifier {
 
   bool isLoading = false;
   String? errorMessage;
+  bool invalidAddress = false;
   RideRequest? createdRideRequest;
   RideRequest? updatedRideRequest;
 
@@ -26,6 +27,7 @@ class RideRequestController extends ChangeNotifier {
     
     isLoading = true;
     errorMessage = null;
+    invalidAddress = false;
     notifyListeners();
 
     try {
@@ -51,7 +53,9 @@ class RideRequestController extends ChangeNotifier {
       createdRideRequest = RideRequest.fromJson(data);
 
     } catch (e) {
-      errorMessage = _handleError(extractErrorCode(e));
+      final code = extractErrorCode(e);
+      invalidAddress = code == 422;
+      errorMessage = _handleError(code);
     } finally {
       isLoading = false;
       notifyListeners();
@@ -66,6 +70,10 @@ class RideRequestController extends ChangeNotifier {
         return 'Your session has expired. Please sign in again.';
       case 403:
         return 'Verify your email before posting a ride.';
+      case 422:
+        return 'We couldn’t locate that address in Canada. Check the street address and city and try again.';
+      case 503:
+        return 'Address lookup is temporarily unavailable. Please try again.';
       case 500:
         return 'Something went wrong. Please try again later.';
       default:

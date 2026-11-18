@@ -207,4 +207,43 @@ class UserRepositoryImplTest {
                 () -> assertTrue(retrieved.isVerified())
         );
     }
+
+    @Test
+    void shouldUpdateProfileWithoutOverwritingAccountFields() {
+        User original = createTestUser("Original", "Name", true);
+        userRepository.save(original);
+
+        User profileUpdate = new User(
+                original.getEmail(),
+                "ignored-password",
+                "Ignored",
+                "Name",
+                false
+        );
+        profileUpdate.setGender("Other");
+        profileUpdate.setAge(25);
+        profileUpdate.setDescription("A short profile");
+        profileUpdate.setAvatarColor("#123ABC");
+
+        User updated = userRepository.update(profileUpdate);
+
+        assertAll(
+                () -> assertEquals(original.getPassword(), updated.getPassword()),
+                () -> assertEquals(original.getFirstName(), updated.getFirstName()),
+                () -> assertTrue(updated.isVerified()),
+                () -> assertEquals("Other", updated.getGender()),
+                () -> assertEquals(25, updated.getAge()),
+                () -> assertEquals("A short profile", updated.getDescription()),
+                () -> assertEquals("#123ABC", updated.getAvatarColor())
+        );
+    }
+
+    @Test
+    void newUsersReceiveDefaultAvatarColor() {
+        User user = createTestUser("Default", "Avatar", false);
+
+        User saved = userRepository.create(user);
+
+        assertEquals(User.DEFAULT_AVATAR_COLOR, saved.getAvatarColor());
+    }
 }

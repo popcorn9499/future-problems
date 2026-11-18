@@ -2,6 +2,8 @@ package com.gobison.backend.features.user.domain.model;
 
 public class User {
 
+    public static final String DEFAULT_AVATAR_COLOR = "#E9DFD2";
+
     private String email;
     private String firstName;
     private String lastName;
@@ -9,6 +11,11 @@ public class User {
     private String verificationCode; 
     private String password;
     private boolean deleted;
+
+    private String gender;
+    private Integer age;
+    private String description;
+    private String avatarColor = DEFAULT_AVATAR_COLOR;
 
     public User(String email, String password, String firstName, String lastName, boolean verified) {
         this.email = email;
@@ -65,4 +72,20 @@ public class User {
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
+
+    public void setGender(String gender) { this.gender = gender; }
+
+    public String getGender() { return gender; }
+
+    public void setAge(Integer age) { this.age = age; }
+
+    public Integer getAge() { return age; }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public String getDescription() { return description; }
+
+    public void setAvatarColor(String avatarColor) { this.avatarColor = avatarColor; }
+
+    public String getAvatarColor() { return avatarColor; }
 }

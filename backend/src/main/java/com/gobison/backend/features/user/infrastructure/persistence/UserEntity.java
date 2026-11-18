@@ -1,5 +1,6 @@
 package com.gobison.backend.features.user.infrastructure.persistence;
 
+import com.gobison.backend.features.user.domain.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -32,6 +33,18 @@ public class UserEntity {
 
     @Column(name = "verification_code", length = 6)
     private String verificationCode;
+
+    @Column(name = "gender", nullable = true)
+    private String gender;
+
+    @Column(name = "age", nullable = true)
+    private Integer age;
+
+    @Column(name = "description", nullable = true)
+    private String description;
+
+    @Column(name = "avatar_color", nullable = false, length = 7)
+    private String avatarColor = User.DEFAULT_AVATAR_COLOR;
 
     // Required by JPA
     protected UserEntity() {
@@ -97,4 +110,20 @@ public class UserEntity {
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
+
+    public void setGender(String gender) { this.gender = gender; }
+
+    public String getGender() { return gender; }
+
+    public void setAge(Integer age) { this.age = age; }
+
+    public Integer getAge() { return age; }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public String getDescription() { return description; }
+
+    public void setAvatarColor(String avatarColor) { this.avatarColor = avatarColor; }
+
+    public String getAvatarColor() { return avatarColor; }
 }

@@ -3,6 +3,7 @@ package com.gobison.backend.features.user.infrastructure.persistence;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 
 import org.springframework.stereotype.Repository;
@@ -22,6 +23,7 @@ public class UserRepositoryImpl implements UserRepository {
     public User create(User user) {
         UserEntity entity = new UserEntity(user.getEmail(), user.getPassword(),
                 user.getFirstName(), user.getLastName(), user.isVerified());
+        entity.setAvatarColor(user.getAvatarColor());
         entityManager.persist(entity);
         entityManager.flush();
         return toDomain(entity);
@@ -50,6 +52,10 @@ public class UserRepositoryImpl implements UserRepository {
         );
         entity.setVerificationCode(user.getVerificationCode());
         entity.setDeleted(user.isDeleted());
+        entity.setGender(user.getGender());
+        entity.setAge(user.getAge());
+        entity.setDescription(user.getDescription());
+        entity.setAvatarColor(user.getAvatarColor());
 
         UserEntity saved = jpaRepository.save(entity);
 
@@ -67,6 +73,21 @@ public class UserRepositoryImpl implements UserRepository {
         jpaRepository.deleteByEmail(email);
     }
 
+    @Override
+    @Transactional
+    public User update(User user) {
+        UserEntity entity = jpaRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "User not found: " + user.getEmail()));
+
+        entity.setGender(user.getGender());
+        entity.setAge(user.getAge());
+        entity.setDescription(user.getDescription());
+        entity.setAvatarColor(user.getAvatarColor());
+
+        return toDomain(jpaRepository.save(entity));
+    }
+
     private User toDomain(UserEntity entity) {
         User user = new User(
                 entity.getEmail(),
@@ -77,6 +98,10 @@ public class UserRepositoryImpl implements UserRepository {
         );
         user.setVerificationCode(entity.getVerificationCode());
         user.setDeleted(entity.isDeleted());
+        user.setGender(entity.getGender());
+        user.setAge(entity.getAge());
+        user.setDescription(entity.getDescription());
+        user.setAvatarColor(entity.getAvatarColor());
         return user;
     }
 }
