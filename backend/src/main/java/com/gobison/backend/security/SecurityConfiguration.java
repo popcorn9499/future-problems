@@ -94,6 +94,7 @@ public class SecurityConfiguration {
                                                 .authenticated()
 
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
                                                 .anyRequest().denyAll())
 
                                 .exceptionHandling(exceptions -> exceptions

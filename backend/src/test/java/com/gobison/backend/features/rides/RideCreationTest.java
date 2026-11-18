@@ -24,6 +24,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.ObjectMapper;
+import com.gobison.backend.features.rides.application.GetRideRequestsService;
+import com.gobison.backend.features.rides.application.RetrieveRideOffersService;
 
 import java.util.Optional;
 
@@ -61,6 +63,12 @@ class RideCreationTest {
 
     @MockitoBean
     Geocoder geocoder;
+
+    @MockitoBean
+    RetrieveRideOffersService retrieveRideOffersService;
+
+    @MockitoBean
+    GetRideRequestsService getRideRequestsService;
 
     private final String email = "ada@myumanitoba.ca";
 
