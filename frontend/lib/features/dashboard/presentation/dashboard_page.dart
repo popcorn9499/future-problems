@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/ride_agreement.dart';
 import '../../ride_request/presentation/edit_ride_request_dialog.dart';
+import '../../ride_offer/ride_offer_service.dart';
 import '../../ride_request/ride_request_service.dart';
 import '../dashboard_controller.dart';
 import '../dashboard_service.dart';
@@ -22,11 +23,13 @@ class DashboardPage extends StatefulWidget {
     required this.user,
     this.dashboardService,
     this.rideRequestService,
+    this.rideOfferService,
   });
 
   final User user;
   final DashboardService? dashboardService;
   final RideRequestService? rideRequestService;
+  final RideOfferService? rideOfferService;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -39,6 +42,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final Set<String> _selectedDays = {};
   TicketFilter _kind = TicketFilter.all;
   late final _requests = widget.rideRequestService ?? RideRequestService();
+  late final _offers = widget.rideOfferService ?? RideOfferService();
   bool _busy = false;
 
   @override
@@ -83,17 +87,27 @@ class _DashboardPageState extends State<DashboardPage> {
     }).toList();
   }
 
-  Future<void> _cancelRequest(RideAgreement ride) async {
+  Future<bool> _cancelOnServer(RideAgreement ride, {bool confirmed = false}) async {
+    if (ride.listingType == 'OFFER') {
+      final result = await _offers.cancelRideOffer(ride.listingId, confirmParticipants: confirmed);
+      return result == RideOfferCancellationResult.cancelled;
+    }
+    final result = await _requests.cancelRideRequest(ride.listingId, confirmParticipants: confirmed);
+    return result == RideRequestCancellationResult.cancelled;
+  }
+
+  Future<void> _cancelRide(RideAgreement ride) async {
     if (_busy) return;
     setState(() => _busy = true);
+    final kind = ride.listingType == 'OFFER' ? 'offer' : 'request';
     try {
-      var result = await _requests.cancelRideRequest(ride.listingId);
+      final cancelled = await _cancelOnServer(ride);
       if (!mounted) return;
-      if (result == RideRequestCancellationResult.confirmationRequired) {
+      if (!cancelled) {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialog) => AlertDialog(
-            title: Text(ride.roundTripId == null ? 'Cancel request?' : 'Cancel both legs?'),
+            title: Text(ride.roundTripId == null ? 'Cancel $kind?' : 'Cancel both legs?'),
             content: const Text('Other people have joined this ride. Cancel it for everyone?'),
             actions: [
               TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Keep ride')),
@@ -102,18 +116,14 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         );
         if (!mounted || confirmed != true) return;
-        result = await _requests.cancelRideRequest(ride.listingId, confirmParticipants: true);
+        final accepted = await _cancelOnServer(ride, confirmed: true);
         if (!mounted) return;
-      }
-      if (result != RideRequestCancellationResult.cancelled) {
-        throw StateError('Cancellation was not confirmed');
+        if (!accepted) throw StateError('Cancellation was not confirmed');
       }
       await _dashboardController.loadAgreements();
       if (!mounted) return;
-      final message = _dashboardController.errorMessage == null
-          ? 'Ride request cancelled.'
-          : 'Ride request cancelled. Pull to refresh your dashboard.';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      final suffix = _dashboardController.errorMessage == null ? '' : ' Pull to refresh your dashboard.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ride $kind cancelled.$suffix')));
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -283,7 +293,7 @@ class _DashboardPageState extends State<DashboardPage> {
               final ticket = group.length == 1
                   ? _TicketCard(agreement: ride, currentUserId: widget.user.email)
                   : _RoundTripGroup(agreements: group, currentUserId: widget.user.email);
-              if (!ride.createdByCurrentUser || ride.listingType != 'REQUEST' ||
+              if (!ride.createdByCurrentUser || (ride.listingType != 'REQUEST' && ride.listingType != 'OFFER') ||
                   group.every((leg) => leg.status.toUpperCase() == 'CANCELLED')) {
                 return ticket;
               }
@@ -304,8 +314,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _busy ? null : () => _cancelRequest(ride),
-                      child: Text(ride.roundTripId == null ? 'Cancel request' : 'Cancel both legs'),
+                      onPressed: _busy ? null : () => _cancelRide(ride),
+                      child: Text(ride.roundTripId == null ? (ride.listingType == 'OFFER' ? 'Cancel offer' : 'Cancel request') : 'Cancel both legs'),
                     ),
                   ),
                 ],
