@@ -4,7 +4,7 @@ import com.gobison.backend.features.livechat.application.CreateConversationServi
 import com.gobison.backend.features.livechat.application.CreateConversationException;
 import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
-import com.gobison.backend.features.livechat.presentation.CreateConversationController;
+import com.gobison.backend.features.livechat.presentation.ConversationController;
 import com.gobison.backend.security.SecurityConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = CreateConversationController.class, properties = "spring.config.import=")
+@WebMvcTest(controllers = ConversationController.class, properties = "spring.config.import=")
 @Import(SecurityConfiguration.class)
 class CreateConversationEndpointTest {
 

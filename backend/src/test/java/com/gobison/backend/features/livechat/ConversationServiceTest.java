@@ -15,7 +15,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-class CreateConversationServiceTest {
+class ConversationServiceTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
     private final ConversationRepository conversationRepository = mock(ConversationRepository.class);

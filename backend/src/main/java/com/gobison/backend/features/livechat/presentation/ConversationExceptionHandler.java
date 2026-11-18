@@ -6,8 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = CreateConversationController.class)
-public class CreateConversationExceptionHandler {
+@RestControllerAdvice(assignableTypes = ConversationController.class)
+public class ConversationExceptionHandler {
 
     @ExceptionHandler(CreateConversationException.class)
     public ResponseEntity<Void> handleCreateConversation(CreateConversationException exception) {
