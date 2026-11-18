@@ -104,9 +104,9 @@ class UpdateProfileServiceTest {
                 Arguments.of(
                         "lastName", (Consumer<UpdateProfileRequest>) request -> request.setLastName("  ")),
                 Arguments.of(
-                        "gender", (Consumer<UpdateProfileRequest>) request -> request.setPronouns(null)),
+                        "pronouns", (Consumer<UpdateProfileRequest>) request -> request.setPronouns(null)),
                 Arguments.of(
-                        "gender", (Consumer<UpdateProfileRequest>) request -> request.setPronouns("  "))
+                        "pronouns", (Consumer<UpdateProfileRequest>) request -> request.setPronouns("  "))
         );
     }
 }
