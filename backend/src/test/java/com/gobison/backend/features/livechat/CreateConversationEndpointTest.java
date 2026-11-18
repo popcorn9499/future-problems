@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
+import com.gobison.backend.features.livechat.application.CreateConversationException;
 import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
 import com.gobison.backend.features.livechat.presentation.CreateConversationController;
@@ -12,8 +13,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -67,7 +66,8 @@ class CreateConversationEndpointTest {
     @Test
     void returnsNotFoundWhenParticipantDoesNotExist() throws Exception {
         when(service.create(CURRENT_USER, PARTICIPANT))
-                .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
+                .thenThrow(new CreateConversationException(
+                        CreateConversationException.Reason.PARTICIPANT_NOT_FOUND));
 
         mvc.perform(post(ENDPOINT).with(user(CURRENT_USER))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,6 +75,30 @@ class CreateConversationEndpointTest {
                 .andExpect(status().isNotFound());
 
         verify(service).create(CURRENT_USER, PARTICIPANT);
+    }
+
+    @Test
+    void returnsBadRequestWhenCreatingConversationWithSelf() throws Exception {
+        when(service.create(CURRENT_USER, CURRENT_USER))
+                .thenThrow(new CreateConversationException(CreateConversationException.Reason.SELF_CONVERSATION));
+
+        mvc.perform(post(ENDPOINT).with(user(CURRENT_USER))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"participantId\":\"" + CURRENT_USER + "\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void returnsConflictWhenConversationAlreadyExists() throws Exception {
+        when(service.create(CURRENT_USER, PARTICIPANT))
+                .thenReturn(new ConversationRepository.CreateResult(
+                        new Conversation("conversation-123", List.of(CURRENT_USER, PARTICIPANT)),
+                        false));
+
+        mvc.perform(post(ENDPOINT).with(user(CURRENT_USER))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"participantId\":\"" + PARTICIPANT + "\"}"))
+                .andExpect(status().isConflict());
     }
 
     @Test

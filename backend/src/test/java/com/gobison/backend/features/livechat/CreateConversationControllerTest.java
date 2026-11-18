@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
+import com.gobison.backend.features.livechat.application.CreateConversationException;
 import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
 import com.gobison.backend.features.livechat.presentation.CreateConversationController;
@@ -11,14 +12,14 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class CreateConversationControllerTest {
 
     @Test
-    void returnsConflictWithoutConversationBodyWhenConversationAlreadyExists() {
+    void throwsExceptionWhenConversationAlreadyExists() {
         var service = mock(CreateConversationService.class);
         var authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("first@example.com");
@@ -28,11 +29,12 @@ class CreateConversationControllerTest {
                         false));
         var controller = new CreateConversationController(service);
 
-        var response = controller.create(
-                authentication, new CreateConversationController.CreateConversationRequest("second@example.com"));
+        var exception = assertThrows(
+                CreateConversationException.class,
+                () -> controller.create(
+                        authentication, new CreateConversationController.CreateConversationRequest("second@example.com")));
 
-        assertEquals(409, response.getStatusCode().value());
-        assertNull(response.getBody());
+        assertEquals(CreateConversationException.Reason.CONVERSATION_ALREADY_EXISTS, exception.getReason());
     }
 
     @Test

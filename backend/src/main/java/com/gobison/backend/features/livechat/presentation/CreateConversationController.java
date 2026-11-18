@@ -1,8 +1,9 @@
 package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
-import jakarta.validation.constraints.Email;
+import com.gobison.backend.features.livechat.application.CreateConversationException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +38,8 @@ public class CreateConversationController {
             @Valid @RequestBody CreateConversationRequest request) {
         var result = createConversationService.create(authentication.getName(), request.participantId());
         if (!result.created()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            throw new CreateConversationException(
+                    CreateConversationException.Reason.CONVERSATION_ALREADY_EXISTS);
         }
 
         var conversation = result.conversation();

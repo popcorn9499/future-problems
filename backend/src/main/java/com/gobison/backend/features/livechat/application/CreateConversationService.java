@@ -2,9 +2,7 @@ package com.gobison.backend.features.livechat.application;
 
 import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Locale;
 
@@ -23,21 +21,23 @@ public class CreateConversationService {
 
     public ConversationRepository.CreateResult create(String currentUserId, String participantId) {
         if (participantId == null || participantId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Participant ID is required");
+            throw new CreateConversationException(CreateConversationException.Reason.INVALID_REQUEST);
         }
 
         var currentUser = userRepository.findByEmail(currentUserId)
                 .filter(user -> !user.isDeleted())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new CreateConversationException(
+                        CreateConversationException.Reason.CURRENT_USER_NOT_FOUND));
 
         String normalizedParticipantId = participantId.trim().toLowerCase(Locale.ROOT);
         if (currentUser.getEmail().equalsIgnoreCase(normalizedParticipantId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot create a conversation with yourself");
+            throw new CreateConversationException(CreateConversationException.Reason.SELF_CONVERSATION);
         }
 
         userRepository.findByEmail(normalizedParticipantId)
                 .filter(user -> !user.isDeleted())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participant not found"));
+                .orElseThrow(() -> new CreateConversationException(
+                        CreateConversationException.Reason.PARTICIPANT_NOT_FOUND));
 
         return conversationRepository.createOrFindDirectConversation(
                 currentUser.getEmail(), normalizedParticipantId);
