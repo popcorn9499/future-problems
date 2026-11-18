@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/ride_agreement.dart';
+import '../../ride_request/presentation/edit_ride_request_dialog.dart';
+import '../../ride_request/ride_request_service.dart';
 import '../dashboard_controller.dart';
 import '../dashboard_service.dart';
 
@@ -19,10 +21,12 @@ class DashboardPage extends StatefulWidget {
     super.key,
     required this.user,
     this.dashboardService,
+    this.rideRequestService,
   });
 
   final User user;
   final DashboardService? dashboardService;
+  final RideRequestService? rideRequestService;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -34,6 +38,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   final Set<String> _selectedDays = {};
   TicketFilter _kind = TicketFilter.all;
+  late final _requests = widget.rideRequestService ?? RideRequestService();
+  bool _busy = false;
 
   @override
   void initState() {
@@ -75,6 +81,108 @@ class _DashboardPageState extends State<DashboardPage> {
 
       return group;
     }).toList();
+  }
+
+  Future<void> _cancelRequest(RideAgreement ride) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      var result = await _requests.cancelRideRequest(ride.listingId);
+      if (!mounted) return;
+      if (result == RideRequestCancellationResult.confirmationRequired) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: Text(ride.roundTripId == null ? 'Cancel request?' : 'Cancel both legs?'),
+            content: const Text('Other people have joined this ride. Cancel it for everyone?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Keep ride')),
+              TextButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Yes, cancel')),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+        result = await _requests.cancelRideRequest(ride.listingId, confirmParticipants: true);
+        if (!mounted) return;
+      }
+      if (result != RideRequestCancellationResult.cancelled) {
+        throw StateError('Cancellation was not confirmed');
+      }
+      await _dashboardController.loadAgreements();
+      if (!mounted) return;
+      final message = _dashboardController.errorMessage == null
+          ? 'Ride request cancelled.'
+          : 'Ride request cancelled. Pull to refresh your dashboard.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not confirm cancellation. Refresh to check your ride.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  List<RideAgreement> _editableLegs(RideAgreement ride) {
+    final tripId = ride.roundTripId;
+    final legs = tripId == null ? [ride] : _dashboardController.agreements
+        .where((leg) => leg.roundTripId == tripId).toList();
+    final email = widget.user.email.toLowerCase();
+    for (final leg in legs) {
+      if (!leg.createdByCurrentUser || leg.listingType != 'REQUEST' ||
+          leg.status.toUpperCase() == 'CANCELLED' ||
+          [...leg.drivers, ...leg.passengers].any((member) => member.id.toLowerCase() != email)) {
+        return [];
+      }
+    }
+    final unique = {for (final leg in legs) leg.listingId: leg}.values.toList();
+    if (tripId != null && (unique.length != 2 ||
+        !unique.any((leg) => leg.rideType == 'ARRIVAL') ||
+        !unique.any((leg) => leg.rideType == 'DEPARTURE'))) {
+      return [];
+    }
+    return unique;
+  }
+
+  Future<void> _editRequest(List<RideAgreement> legs) async {
+    if (_busy || legs.isEmpty) return;
+    setState(() => _busy = true);
+    try {
+      final details = await Future.wait(
+        legs.map((leg) => _requests.getRideRequestDetails(leg.listingId)),
+      );
+      if (!mounted) return;
+      for (var i = 0; i < legs.length; i++) {
+        final detail = details[i];
+        final type = legs[i].rideType == 'ARRIVAL' ? 'arriving' : 'departing';
+        if (detail['requestId'] != legs[i].listingId || detail['rideType'] != type ||
+            detail['roundTripId'] != legs[i].roundTripId || detail['status'] == 'CANCELLED') {
+          throw StateError('Ride details changed');
+        }
+      }
+      final saved = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => EditRideRequestDialog(legs: details, service: _requests),
+      );
+      if (!mounted || saved != true) return;
+      await _dashboardController.loadAgreements();
+      if (!mounted) return;
+      final message = _dashboardController.errorMessage == null
+          ? 'Ride request updated.'
+          : 'Ride request updated. Pull to refresh your dashboard.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to open this request. Refresh and try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Widget _buildBody() {
@@ -171,16 +279,36 @@ class _DashboardPageState extends State<DashboardPage> {
 
               final group = groupedAgreements[index - 1];
 
-              if (group.length == 1) {
-                return _TicketCard(
-                  agreement: group.first,
-                  currentUserId: widget.user.email,
-                );
+              final ride = group.first;
+              final ticket = group.length == 1
+                  ? _TicketCard(agreement: ride, currentUserId: widget.user.email)
+                  : _RoundTripGroup(agreements: group, currentUserId: widget.user.email);
+              if (!ride.createdByCurrentUser || ride.listingType != 'REQUEST' ||
+                  group.every((leg) => leg.status.toUpperCase() == 'CANCELLED')) {
+                return ticket;
               }
 
-              return _RoundTripGroup(
-                agreements: group,
-                currentUserId: widget.user.email,
+              final editable = _editableLegs(ride);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ticket,
+                  if (editable.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _busy ? null : () => _editRequest(editable),
+                        child: const Text('Edit request'),
+                      ),
+                    ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _busy ? null : () => _cancelRequest(ride),
+                      child: Text(ride.roundTripId == null ? 'Cancel request' : 'Cancel both legs'),
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -479,6 +607,7 @@ class _OwnershipLabels extends StatelessWidget {
     final isUnjoinedOwnListing =
         agreement.createdByCurrentUser &&
         agreement.id == null &&
+        agreement.status.toUpperCase() != 'CANCELLED' &&
         agreement.drivers.length + agreement.passengers.length <= 1;
 
     return Wrap(

@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import 'package:gobison/core/models/user.dart';
+import 'package:gobison/features/ride_request/ride_request_service.dart';
 import 'package:gobison/features/dashboard/dashboard_service.dart';
 import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 
@@ -131,6 +132,7 @@ Future<void> _pumpPage(
       home: Scaffold(
         body: DashboardPage(
           user: _currentUser,
+          rideRequestService: RideRequestService(client: client),
           dashboardService: DashboardService(
             client: client,
           ),
@@ -177,6 +179,106 @@ Future<void> _tapKind(WidgetTester tester, String label) async {
 }
 
 void main() {
+  testWidgets('edits both request legs when the day filter hides the return', (tester) async {
+    final loads = <String>[];
+    final writes = <Map<String, dynamic>>[];
+    var dashboardLoads = 0;
+    final client = MockClient((request) async {
+      final path = request.url.path;
+      if (path == '/api/v1/dashboard/agreements') {
+        dashboardLoads++;
+        return _ok([
+          for (final id in ['a', 'b'])
+            {
+              ..._agreement(listingId: id, roundTripId: 'trip',
+                rideType: id == 'a' ? 'ARRIVAL' : 'DEPARTURE',
+                days: [id == 'a' ? 'MONDAY' : 'TUESDAY'], createdByCurrentUser: true,
+                drivers: [], passengers: [_member(_currentUser.email, 'Kamryn', 'Janke')]),
+              'listingType': 'REQUEST',
+            },
+        ]);
+      }
+      if (request.method == 'GET') {
+        final id = request.url.pathSegments.last;
+        loads.add(id);
+        return http.Response(jsonEncode({
+          'requestId': id, 'roundTripId': 'trip', 'status': 'OPEN',
+          'rideType': id == 'a' ? 'arriving' : 'departing',
+          'city': 'Winnipeg', 'streetAddress': '123 Main Street', 'daysOfWeek': ['MONDAY'],
+          'arrivalTime': id == 'a' ? '08:30' : null,
+          'departureTime': id == 'b' ? '17:00' : null,
+        }), 200);
+      }
+      expect(request.method, 'PATCH');
+      expect(path, '/api/v1/rides/requests/a/round-trip');
+      writes.add(jsonDecode(request.body) as Map<String, dynamic>);
+      return http.Response('[]', 200);
+    });
+
+    await _pumpPage(tester, client);
+    await tester.pumpAndSettle();
+    await _tapChip(tester, 'Monday');
+    final edit = find.text('Edit request');
+    await tester.ensureVisible(edit);
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
+    expect(loads, unorderedEquals(['a', 'b']));
+    expect(find.text('Edit both legs'), findsOneWidget);
+    final address = find.widgetWithText(TextFormField, '123 Main Street');
+    await tester.enterText(address, '456 Main Street');
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    expect(writes.single['streetAddress'], '456 Main Street');
+    expect(writes.single['arrivalTime'], '08:30');
+    expect(writes.single['departureTime'], '17:00');
+    expect(dashboardLoads, 2);
+    expect(find.text('Edit both legs'), findsNothing);
+  });
+
+  testWidgets('cancels both legs only after confirmation and refreshes the group', (tester) async {
+    var cancelled = false;
+    final deletes = <Uri>[];
+    final client = MockClient((request) async {
+      if (request.method == 'GET') {
+        return _ok([
+          for (final type in ['ARRIVAL', 'DEPARTURE'])
+            {
+              ..._agreement(listingId: type == 'ARRIVAL' ? 'arrival-id' : 'departure-id', roundTripId: 'round', rideType: type,
+                  createdByCurrentUser: true, status: cancelled ? 'CANCELLED' : 'OPEN'),
+              'listingType': 'REQUEST',
+            },
+        ]);
+      }
+      expect(request.method, 'DELETE');
+      deletes.add(request.url);
+      expect(request.url.path, '/api/v1/rides/requests/arrival-id');
+      if (request.url.queryParameters['confirmParticipants'] == 'true') {
+        cancelled = true;
+        return http.Response('', 204);
+      }
+      return http.Response('{"code":"CONFIRMATION_REQUIRED"}', 409);
+    });
+
+    await _pumpPage(tester, client);
+    await tester.pumpAndSettle();
+    final button = find.text('Cancel both legs');
+    expect(button, findsOneWidget);
+    expect(find.text('Edit request'), findsNothing);
+    await tester.ensureVisible(button);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Keep ride'));
+    await tester.pumpAndSettle();
+    expect(deletes.single.queryParameters, isEmpty);
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yes, cancel'));
+    await tester.pumpAndSettle();
+    expect(deletes.map((uri) => uri.queryParameters['confirmParticipants']), [null, null, 'true']);
+    expect(button, findsNothing);
+    expect(find.text('Ride request cancelled.'), findsOneWidget);
+  });
+
   group('loading, empty and error states', () {
     testWidgets(
       'shows a spinner while loading, then the tickets',

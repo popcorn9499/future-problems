@@ -52,7 +52,7 @@ class DashboardController extends ChangeNotifier {
       );
     } finally {
       isLoading = false;
-      notifyListeners();
+      if (hasListeners) notifyListeners();
     }
   }
 }

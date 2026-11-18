@@ -115,6 +115,14 @@ void main() {
   });
 
   group('RideAgreement', () {
+    test('reads the listing type when the dashboard supplies it', () {
+      final json = agreementJson();
+      expect(RideAgreement.fromJson(json).listingType, isNull);
+      for (final type in ['REQUEST', 'OFFER']) {
+        expect(RideAgreement.fromJson({...json, 'listingType': type}).listingType, type);
+      }
+    });
+
     test('parses a one-way arrival', () {
       final agreement = RideAgreement.fromJson(
         agreementJson(

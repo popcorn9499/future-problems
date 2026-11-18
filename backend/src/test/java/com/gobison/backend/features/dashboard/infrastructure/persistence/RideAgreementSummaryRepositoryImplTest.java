@@ -137,6 +137,7 @@ class RideAgreementSummaryRepositoryImplTest {
         assertAll(
                 () -> assertEquals(Long.valueOf(agreementId), ticket.id()),
                 () -> assertEquals(offerId, ticket.listingId()),
+                () -> assertEquals("OFFER", ticket.listingType()),
                 () -> assertFalse(ticket.createdByCurrentUser()),
                 () -> assertEquals(List.of(new AgreementMember(owner, "Olive", "Owner")), ticket.drivers()),
                 () -> assertEquals(List.of(new AgreementMember(joiner, "Jo", "Joiner")), ticket.passengers())
@@ -160,6 +161,7 @@ class RideAgreementSummaryRepositoryImplTest {
         assertAll(
                 () -> assertEquals(Long.valueOf(agreementId), ticket.id()),
                 () -> assertEquals(requestId, ticket.listingId()),
+                () -> assertEquals("REQUEST", ticket.listingType()),
                 () -> assertFalse(ticket.createdByCurrentUser()),
                 () -> assertEquals(List.of(new AgreementMember(driver, "Dana", "Driver")), ticket.drivers()),
                 () -> assertEquals(List.of(new AgreementMember(requester, "Rhea", "Rider")), ticket.passengers())
