@@ -1,6 +1,6 @@
 package com.gobison.backend.features.user.presentation;
 
-import com.gobison.backend.features.auth.presentation.dto.RegisterAccountRequest;
+import com.gobison.backend.features.user.application.UpdateProfileService;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.features.user.presentation.dto.GetProfileResponse;
 import com.gobison.backend.features.user.presentation.dto.UpdateProfileRequest;
@@ -19,9 +19,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/v1/users")
 public class UserAccountController {
     private final UserRepository users;
+    private final UpdateProfileService updateProfileService;
 
-    public UserAccountController(UserRepository users) {
+    public UserAccountController(UserRepository users, UpdateProfileService updateProfileService) {
         this.users = users;
+        this.updateProfileService = updateProfileService;
     }
 
     @PatchMapping("/me/profile")
@@ -30,7 +32,7 @@ public class UserAccountController {
         var user = users.findByEmail(authentication.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
-
+        user = updateProfileService.updateProfile(user, request);
 
         GetProfileResponse response = new GetProfileResponse(
                 user.getEmail(),

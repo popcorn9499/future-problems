@@ -15,31 +15,29 @@ public class UpdateProfileService {
     }
 
 
-    public UserRepository.CreateResult updateProfile(User user, UpdateProfileRequest request) {
-        User updatedUser = null;
-        boolean saved = false;
+    public User updateProfile(User user, UpdateProfileRequest request) {
+        if (request.hasAge() && request.getAge() == null) {
+            throw new FieldBlankException("age");
+        }
+        requireNotBlank(request.hasAvatarColor(), request.getAvatarColor(), "avatarColor");
+        requireNotBlank(request.hasDescription(), request.getDescription(), "description");
+        requireNotBlank(request.hasFirstName(), request.getFirstName(), "firstName");
+        requireNotBlank(request.hasLastName(), request.getLastName(), "lastName");
+        requireNotBlank(request.hasGender(), request.getGender(), "gender");
 
+        if (request.hasAge()) user.setAge(request.getAge());
+        if (request.hasAvatarColor()) user.setAvatarColor(request.getAvatarColor());
+        if (request.hasDescription()) user.setDescription(request.getDescription());
+        if (request.hasFirstName()) user.setFirstName(request.getFirstName());
+        if (request.hasLastName()) user.setLastName(request.getLastName());
+        if (request.hasGender()) user.setGender(request.getGender());
 
-        // updated what is updated
-        if (request.hasAge())             user.setAge(request.getAge());
+        return userRepository.update(user);
+    }
 
-        if (request.hasAvatarColor())
-            user.setAvatarColor(request.getAvatarColor());
-
-        if (request.hasDescription())
-            user.setDescription(request.getDescription());
-
-        if (request.hasFirstName())
-            user.setFirstName(request.getFirstName());
-
-        if (request.hasLastName())
-            user.setLastName(request.getLastName());
-
-        if (request.hasGender())
-            user.setGender(request.getGender());
-
-        updatedUser = userRepository.update(user);
-        saved = updatedUser != null && updatedUser.getEmail().equals(user.getEmail());
-        return new UserRepository.CreateResult(user, saved);
+    private void requireNotBlank(boolean supplied, String value, String field) {
+        if (supplied && (value == null || value.isBlank())) {
+            throw new FieldBlankException(field);
+        }
     }
 }
