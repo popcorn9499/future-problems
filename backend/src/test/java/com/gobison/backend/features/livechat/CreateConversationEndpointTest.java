@@ -2,11 +2,16 @@ package com.gobison.backend.features.livechat;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
 import com.gobison.backend.features.livechat.application.CreateConversationException;
+import com.gobison.backend.features.livechat.application.GetConversationsService;
+import com.gobison.backend.features.livechat.application.dto.ConversationSummaryResponse;
 import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
 import com.gobison.backend.features.livechat.presentation.ConversationController;
+import com.gobison.backend.features.user.domain.model.User;
+import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.security.SecurityConfiguration;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -15,11 +20,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -38,6 +45,18 @@ class CreateConversationEndpointTest {
     @MockitoBean
     private CreateConversationService service;
 
+    @MockitoBean
+    private GetConversationsService getConversationsService;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @BeforeEach
+    void setUp() {
+        when(userRepository.findByEmail(CURRENT_USER))
+                .thenReturn(Optional.of(new User(CURRENT_USER, "password", "First", "User", true)));
+    }
+
     @Test
     void requiresAuthentication() throws Exception {
         mvc.perform(post(ENDPOINT)
@@ -46,6 +65,29 @@ class CreateConversationEndpointTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void getsConversationsInExpectedResponseBody() throws Exception {
+        when(getConversationsService.getConversations(org.mockito.ArgumentMatchers.any(User.class)))
+                .thenReturn(List.of(new ConversationSummaryResponse(
+                        "conv_123",
+                        new ConversationSummaryResponse.Participant(
+                                "second@example.com", "Second", "User", "#123ABC"),
+                        "Hello",
+                        java.time.Instant.parse("2026-11-18T12:00:00Z"),
+                        2L)));
+
+        mvc.perform(get(ENDPOINT).with(user(CURRENT_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conversations[0].conversationId").value("conv_123"))
+                .andExpect(jsonPath("$.conversations[0].participant.userId").value("second@example.com"))
+                .andExpect(jsonPath("$.conversations[0].participant.firstName").value("Second"))
+                .andExpect(jsonPath("$.conversations[0].participant.lastName").value("User"))
+                .andExpect(jsonPath("$.conversations[0].participant.avatarColor").value("#123ABC"))
+                .andExpect(jsonPath("$.conversations[0].lastMessage").value("Hello"))
+                .andExpect(jsonPath("$.conversations[0].lastMessageAt").value("2026-11-18T12:00:00Z"))
+                .andExpect(jsonPath("$.conversations[0].unreadCount").value(2));
     }
 
     @Test

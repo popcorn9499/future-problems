@@ -85,6 +85,7 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
 
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/conversation").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/conversation").authenticated()
 
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me/profile")
                                                 .authenticated()

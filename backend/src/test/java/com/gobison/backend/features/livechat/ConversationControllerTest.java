@@ -2,6 +2,7 @@ package com.gobison.backend.features.livechat;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
 import com.gobison.backend.features.livechat.application.CreateConversationException;
+import com.gobison.backend.features.livechat.application.GetConversationsService;
 import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
 import com.gobison.backend.features.livechat.presentation.ConversationController;
@@ -25,6 +26,7 @@ class ConversationControllerTest {
     void throwsExceptionWhenConversationAlreadyExists() {
         var service = mock(CreateConversationService.class);
         var userRepository = mock(UserRepository.class);
+        var getConversationsService = mock(GetConversationsService.class);
         var authentication = mock(Authentication.class);
         when(userRepository.findByEmail("first@example.com"))
                 .thenReturn(Optional.of(new User("first@example.com", "password", "First", "User", true)));
@@ -33,7 +35,7 @@ class ConversationControllerTest {
                 .thenReturn(new ConversationRepository.CreateResult(
                         new Conversation("conv_123", List.of("first@example.com", "second@example.com")),
                         false));
-        var controller = new ConversationController(service, userRepository);
+        var controller = new ConversationController(service, userRepository, getConversationsService);
 
         var exception = assertThrows(
                 CreateConversationException.class,
@@ -47,6 +49,7 @@ class ConversationControllerTest {
     void returnsCreatedWithConversationWhenNewConversationIsCreated() {
         var service = mock(CreateConversationService.class);
         var userRepository = mock(UserRepository.class);
+        var getConversationsService = mock(GetConversationsService.class);
         var authentication = mock(Authentication.class);
         when(userRepository.findByEmail("first@example.com"))
                 .thenReturn(Optional.of(new User("first@example.com", "password", "First", "User", true)));
@@ -55,7 +58,7 @@ class ConversationControllerTest {
                 .thenReturn(new ConversationRepository.CreateResult(
                         new Conversation("conv_123", List.of("first@example.com", "second@example.com")),
                         true));
-        var controller = new ConversationController(service, userRepository);
+        var controller = new ConversationController(service, userRepository, getConversationsService);
 
         var response = controller.create(
                 authentication, new ConversationController.CreateConversationRequest("second@example.com"));

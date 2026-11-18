@@ -7,10 +7,12 @@ import com.gobison.backend.features.livechat.domain.repository.ConversationRepos
 import com.gobison.backend.features.livechat.domain.repository.MessageRepository;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Service
 public class GetConversationsService {
     private final UserRepository userRepository;
     private final ConversationRepository conversationRepository;
@@ -26,23 +28,22 @@ public class GetConversationsService {
     }
 
     public List<ConversationSummaryResponse> getConversations(User user) {
-        List<ConversationSummaryResponse> convoSummaryList = new ArrayList<ConversationSummaryResponse>();
-
+        List<ConversationSummaryResponse> convoSummaryList = new ArrayList<>();
         List<Conversation> convoList = conversationRepository.findConversations(user.getEmail());
-        ConversationSummaryResponse convoSumResp;
-        ConversationSummaryResponse.Participant otherPerson;
-
-        Message msg;
-        int unreadCount = 0; // TODO implement
 
         for (Conversation conversation : convoList) {
-            // Build a summary response for this conversation.
-            otherPerson = getParticipant(conversation.getParticipants(), user);
-            msg = messageRepository.retrieveLatestMsg(conversation.getId());
-            convoSumResp = new ConversationSummaryResponse(conversation.getId(), otherPerson, msg.getContent(), msg.getSentAt(), unreadCount);
+            ConversationSummaryResponse.Participant otherPerson =
+                    getParticipant(conversation.getParticipants(), user);
+            Message latestMessage = messageRepository.retrieveLatestMsg(conversation.getId());
+            long unreadCount = messageRepository.countUnreadMessages(conversation.getId(), user.getEmail());
 
+            convoSummaryList.add(new ConversationSummaryResponse(
+                    conversation.getId(),
+                    otherPerson,
+                    latestMessage == null ? null : latestMessage.getContent(),
+                    latestMessage == null ? null : latestMessage.getSentAt(),
+                    unreadCount));
         }
-
         return convoSummaryList;
     }
 
