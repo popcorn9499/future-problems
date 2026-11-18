@@ -9,5 +9,6 @@ public interface UserRepository {
     User create(User user);
     boolean existsByEmail(String email);
     void deleteByEmail(String email);
+    User update(User user);
 }
 

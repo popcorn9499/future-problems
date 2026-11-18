@@ -10,6 +10,10 @@ public class User {
     private String password;
     private boolean deleted;
 
+    private String gender;
+    private Integer age;
+    private String description;
+
     public User(String email, String password, String firstName, String lastName, boolean verified) {
         this.email = email;
         this.password = password;
@@ -65,4 +69,16 @@ public class User {
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
     }
+
+    public void setGender(String gender) { this.gender = gender; }
+
+    public String getGender() { return gender; }
+
+    public void setAge(Integer age) { this.age = age; }
+
+    public Integer getAge() { return age; }
+
+    public void setDescription(String description) { this.description = description; }
+
+    public String getDescription() { return description; }
 }
