@@ -1,6 +1,7 @@
 package com.gobison.backend.features.auth.presentation;
 
 import com.gobison.backend.features.auth.application.EmailVerificationService;
+import com.gobison.backend.features.user.application.UpdateProfileService;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.features.user.presentation.UserAccountController;
@@ -34,6 +35,7 @@ class LoginControllerTest {
     @Autowired PasswordEncoder passwords;
     @MockitoBean UserRepository users;
     @MockitoBean EmailVerificationService verification;
+    @MockitoBean UpdateProfileService updateProfileService;
 
     private User account(boolean verified) {
         var user = new User("ada@myumanitoba.ca", passwords.encode("password"), "Ada", "Lovelace", verified);
@@ -196,4 +198,3 @@ class LoginControllerTest {
         verify(users, never()).deleteByEmail(anyString());
     }
 }
-
