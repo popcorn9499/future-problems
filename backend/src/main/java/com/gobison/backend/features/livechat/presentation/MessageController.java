@@ -1,22 +1,17 @@
 package com.gobison.backend.features.livechat.presentation;
 
-import com.gobison.backend.features.livechat.application.CreateConversationService;
-import com.gobison.backend.features.livechat.application.GetConversationsService;
-import com.gobison.backend.features.livechat.domain.repository.ConversationRepository;
-import com.gobison.backend.features.livechat.domain.model.Message;
-import com.gobison.backend.features.livechat.domain.repository.MessageRepository;
+import com.gobison.backend.features.livechat.application.GetMessagesService;
+import com.gobison.backend.features.livechat.application.dto.RetrieveMessage;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/conversations")
@@ -24,39 +19,21 @@ public class MessageController {
     private static final int DEFAULT_MESSAGE_LIMIT = 50;
 
     private final UserRepository userRepository;
-    private final CreateConversationService createConversationService;
-    private final GetConversationsService getConversationsService;
-    private final MessageRepository messageRepository;
-    private final ConversationRepository conversationRepository;
-    public MessageController(CreateConversationService createConversationService,
-                                  UserRepository userRepository,
-                                  GetConversationsService getConversationsService,
-                             MessageRepository messageRepository,
-                             ConversationRepository conversationRepository
-    ) {
-        this.createConversationService = createConversationService;
+    private final GetMessagesService getMessagesService;
+
+    public MessageController(UserRepository userRepository, GetMessagesService getMessagesService) {
         this.userRepository = userRepository;
-        this.getConversationsService = getConversationsService;
-        this.messageRepository = messageRepository;
-        this.conversationRepository = conversationRepository;
+        this.getMessagesService = getMessagesService;
     }
 
-
-
     @GetMapping("/{conversationId}/messages")
-    public ResponseEntity<List<Message>> getMessages(
+    public ResponseEntity<RetrieveMessage> getMessages(
             @PathVariable String conversationId,
             @RequestParam(defaultValue = "" + DEFAULT_MESSAGE_LIMIT) int limit,
+            @RequestParam(required = false) String before,
             Authentication authentication) {
-        if (limit < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Limit must be greater than zero");
-        }
-
-        boolean isParticipant = conversationRepository.findConversations(authentication.getName()).stream()
-                .anyMatch(conversation -> conversation.getId().equals(conversationId));
-        if (!isParticipant) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        }
-        return ResponseEntity.ok(messageRepository.retrieveMsgs(conversationId, limit));
+        var user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        return ResponseEntity.ok(getMessagesService.getConversation(user, conversationId, limit, before));
     }
 }

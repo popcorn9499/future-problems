@@ -34,6 +34,18 @@ public class MessageRepositoryImpl implements MessageRepository {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean existsMessage(String conversationId, String messageId) {
+        return entityManager.createQuery(
+                        "SELECT COUNT(m) FROM MessageEntity m "
+                                + "WHERE m.conversationId = :conversationId AND m.msgId = :messageId",
+                        Long.class)
+                .setParameter("conversationId", conversationId)
+                .setParameter("messageId", messageId)
+                .getSingleResult() > 0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public long countUnreadMessages(String conversationId, String userId) {
         return entityManager.createQuery("""
                         SELECT COUNT(m) FROM MessageEntity m
@@ -68,6 +80,30 @@ public class MessageRepositoryImpl implements MessageRepository {
                                 + "ORDER BY m.sentAt DESC, m.msgId DESC",
                         MessageEntity.class)
                 .setParameter("conversationId", conversationId)
+                .setMaxResults(limit)
+                .getResultList()
+                .stream()
+                .map(MessageEntity::toDomain)
+                .toList());
+
+        Collections.reverse(messages);
+        return List.copyOf(messages);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Message> retrieveMsgsBefore(String conversationId, String beforeMessageId, int limit) {
+        List<Message> messages = new ArrayList<>(entityManager.createQuery(
+                        "SELECT m FROM MessageEntity m WHERE m.conversationId = :conversationId "
+                                + "AND EXISTS (SELECT boundary FROM MessageEntity boundary "
+                                + "WHERE boundary.conversationId = :conversationId "
+                                + "AND boundary.msgId = :beforeMessageId "
+                                + "AND (m.sentAt < boundary.sentAt "
+                                + "OR (m.sentAt = boundary.sentAt AND m.msgId < boundary.msgId))) "
+                                + "ORDER BY m.sentAt DESC, m.msgId DESC",
+                        MessageEntity.class)
+                .setParameter("conversationId", conversationId)
+                .setParameter("beforeMessageId", beforeMessageId)
                 .setMaxResults(limit)
                 .getResultList()
                 .stream()
