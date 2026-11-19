@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.GetMessagesException;
+import com.gobison.backend.features.livechat.application.GetConversationsService;
 import com.gobison.backend.features.livechat.application.GetMessagesService;
 import com.gobison.backend.features.livechat.application.MarkMessagesReadException;
 import com.gobison.backend.features.livechat.application.MarkMessagesReadService;
@@ -9,6 +10,7 @@ import com.gobison.backend.features.livechat.application.SendMessageService;
 import com.gobison.backend.features.livechat.application.dto.MarkMessagesReadResponse;
 import com.gobison.backend.features.livechat.application.dto.MessageItem;
 import com.gobison.backend.features.livechat.application.dto.RetrieveMessage;
+import com.gobison.backend.features.livechat.application.dto.ConversationSummaryResponse;
 import com.gobison.backend.features.livechat.domain.model.Message;
 import com.gobison.backend.features.livechat.presentation.MessageController;
 import com.gobison.backend.features.user.domain.model.User;
@@ -58,6 +60,9 @@ class MessageEndpointTest {
     private MarkMessagesReadService markMessagesReadService;
 
     @MockitoBean
+    private GetConversationsService getConversationsService;
+
+    @MockitoBean
     private UserRepository userRepository;
 
     @BeforeEach
@@ -68,6 +73,7 @@ class MessageEndpointTest {
 
     @Test
     void requiresAuthenticationForReadSendAndMarkRead() throws Exception {
+        mvc.perform(get("/api/v1/conversations")).andExpect(status().isUnauthorized());
         mvc.perform(get(BASE_URL + "/messages")).andExpect(status().isUnauthorized());
         mvc.perform(post(BASE_URL + "/messages")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +81,26 @@ class MessageEndpointTest {
                 .andExpect(status().isUnauthorized());
         mvc.perform(patch(BASE_URL + "/read")).andExpect(status().isUnauthorized());
 
-        verifyNoInteractions(getMessagesService, sendMessageService, markMessagesReadService);
+        verifyNoInteractions(getMessagesService, sendMessageService, markMessagesReadService, getConversationsService);
+    }
+
+    @Test
+    void getsConversationsFromMessagesController() throws Exception {
+        when(getConversationsService.getConversations(org.mockito.ArgumentMatchers.any(User.class)))
+                .thenReturn(List.of(new ConversationSummaryResponse(
+                        "conv_123",
+                        new ConversationSummaryResponse.Participant(
+                                "bob@example.com", "Bob", "User", "#123ABC"),
+                        "Hello",
+                        Instant.parse("2026-11-18T12:00:00Z"),
+                        2L)));
+
+        mvc.perform(get("/api/v1/conversations").with(user(CURRENT_USER)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conversations[0].conversationId").value("conv_123"))
+                .andExpect(jsonPath("$.conversations[0].participant.userId").value("bob@example.com"))
+                .andExpect(jsonPath("$.conversations[0].lastMessage").value("Hello"))
+                .andExpect(jsonPath("$.conversations[0].unreadCount").value(2));
     }
 
     @Test

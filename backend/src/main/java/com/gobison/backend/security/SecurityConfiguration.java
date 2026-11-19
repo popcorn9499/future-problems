@@ -85,7 +85,7 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
 
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/conversation").authenticated()
-                                                .requestMatchers(HttpMethod.GET, "/api/v1/conversation").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/conversations").authenticated()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/conversations/*/messages").authenticated()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/conversations/*/messages").authenticated()
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/conversations/*/read").authenticated()

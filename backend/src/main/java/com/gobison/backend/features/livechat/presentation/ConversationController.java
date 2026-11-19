@@ -2,7 +2,6 @@ package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
 import com.gobison.backend.features.livechat.application.CreateConversationException;
-import com.gobison.backend.features.livechat.application.GetConversationsService;
 import com.gobison.backend.features.livechat.application.dto.ConversationSummaryResponse;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -23,24 +22,17 @@ public class ConversationController {
 
     private final UserRepository userRepository;
     private final CreateConversationService createConversationService;
-    private final GetConversationsService getConversationsService;
 
     public ConversationController(CreateConversationService createConversationService,
-                                  UserRepository userRepository,
-                                  GetConversationsService getConversationsService
-    ) {
+                                  UserRepository userRepository) {
         this.createConversationService = createConversationService;
         this.userRepository = userRepository;
-        this.getConversationsService = getConversationsService;
     }
 
     public record CreateConversationRequest(@NotBlank @Email String participantId) {
     }
 
     public record CreateConversationResponse(String conversationId, List<String> participants, Instant createdAt) {
-    }
-
-    public record GetConversationsResponse(List<ConversationSummaryResponse> conversations) {
     }
 
     @PostMapping
@@ -58,14 +50,5 @@ public class ConversationController {
         var response = new CreateConversationResponse(
                 conversation.getId(), conversation.getParticipants(), conversation.getCreatedAt());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-
-    @GetMapping
-    public ResponseEntity<GetConversationsResponse> getConversations(Authentication authentication) {
-        var user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        var conversations = getConversationsService.getConversations(user);
-        return ResponseEntity.ok(new GetConversationsResponse(conversations));
     }
 }

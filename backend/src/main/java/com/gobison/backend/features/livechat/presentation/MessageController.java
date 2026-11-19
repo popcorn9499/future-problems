@@ -1,10 +1,12 @@
 package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.GetMessagesException;
+import com.gobison.backend.features.livechat.application.GetConversationsService;
 import com.gobison.backend.features.livechat.application.GetMessagesService;
 import com.gobison.backend.features.livechat.application.MarkMessagesReadException;
 import com.gobison.backend.features.livechat.application.MarkMessagesReadService;
 import com.gobison.backend.features.livechat.application.SendMessageService;
+import com.gobison.backend.features.livechat.application.dto.ConversationSummaryResponse;
 import com.gobison.backend.features.livechat.application.dto.MarkMessagesReadResponse;
 import com.gobison.backend.features.livechat.application.dto.RetrieveMessage;
 import com.gobison.backend.features.livechat.application.dto.SendMessageResponse;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/conversations")
 public class MessageController {
@@ -30,19 +34,33 @@ public class MessageController {
     private final GetMessagesService getMessagesService;
     private final SendMessageService sendMessageService;
     private final MarkMessagesReadService markMessagesReadService;
+    private final GetConversationsService getConversationsService;
 
     public MessageController(
             UserRepository userRepository,
             GetMessagesService getMessagesService,
             SendMessageService sendMessageService,
-            MarkMessagesReadService markMessagesReadService) {
+            MarkMessagesReadService markMessagesReadService,
+            GetConversationsService getConversationsService) {
         this.userRepository = userRepository;
         this.getMessagesService = getMessagesService;
         this.sendMessageService = sendMessageService;
         this.markMessagesReadService = markMessagesReadService;
+        this.getConversationsService = getConversationsService;
     }
 
     public record SendMessageRequest(String content) {
+    }
+
+    public record GetConversationsResponse(List<ConversationSummaryResponse> conversations) {
+    }
+
+    @GetMapping
+    public ResponseEntity<GetConversationsResponse> getConversations(Authentication authentication) {
+        var user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new GetMessagesException(GetMessagesException.Reason.USER_NOT_FOUND));
+        var conversations = getConversationsService.getConversations(user);
+        return ResponseEntity.ok(new GetConversationsResponse(conversations));
     }
 
     @GetMapping("/{conversationId}/messages")
