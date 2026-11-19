@@ -3,6 +3,7 @@ package com.gobison.backend.features.rides.presentation;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.gobison.backend.features.rides.domain.model.RideRequest;
 import com.gobison.backend.features.rides.domain.model.RideType;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
 
 import java.time.DayOfWeek;
 import java.time.format.DateTimeFormatter;
@@ -23,7 +24,8 @@ public record RideRequestResponse(
         String arrivalTime,
         List<DayOfWeek> daysOfWeek,
         String description,
-        String status) {
+        String status,
+        GeoLocation location) {
 
     public static RideRequestResponse from(List<RideRequest> savedLegs) {
         var arrival = savedLegs.stream()
@@ -50,6 +52,7 @@ public record RideRequestResponse(
                         : arrival.getArrivalTime().format(DateTimeFormatter.ofPattern("HH:mm")),
                 rideRequest.getDaysOfWeek().stream().sorted().toList(),
                 rideRequest.getDescription(),
-                rideRequest.getStatus());
+                rideRequest.getStatus(),
+                rideRequest.getLocation());
     }
 }

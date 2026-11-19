@@ -30,32 +30,32 @@ class AppSidebar extends StatelessWidget {
       width: isExpanded ? 250 : 76,
       decoration: BoxDecoration(
         color: colors.surface,
-        border: Border(right: BorderSide(color: colors.outlineVariant, width: 0.7)),
+        border: Border(
+          right: BorderSide(color: colors.outlineVariant, width: 0.7),
+        ),
       ),
       child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
             child: isExpanded
-          ? Row(
-              children: [
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: GoBisonLogo(height: 60),
-                  ),
-                ),
-                IconButton(
-                  onPressed: onToggle,
-                  tooltip: 'Collapse sidebar',
-                  icon: const Icon(Icons.menu_open_rounded),
-                ),
-              ],
-            )
-          : Center(
-              child: LogoSmall(height: 45),
-            ),
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: GoBisonLogo(height: 60),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: onToggle,
+                        tooltip: 'Collapse sidebar',
+                        icon: const Icon(Icons.menu_open_rounded),
+                      ),
+                    ],
+                  )
+                : Center(child: LogoSmall(height: 45)),
           ),
           if (!isExpanded)
             IconButton(
@@ -96,6 +96,14 @@ class AppSidebar extends StatelessWidget {
             isSelected: selectedIndex == 3,
             isExpanded: isExpanded,
             onTap: () => onDestinationSelected(3),
+          ),
+
+          NavigationItem(
+            label: 'Ride Requests & Offers',
+            icon: Icons.map_outlined,
+            isSelected: selectedIndex == 4,
+            isExpanded: isExpanded,
+            onTap: () => onDestinationSelected(4),
           ),
 
           const Spacer(),
