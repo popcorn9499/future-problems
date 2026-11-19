@@ -11,6 +11,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -68,5 +69,20 @@ class ConversationRepositoryImplTest {
 
         assertEquals(List.of(), conversations);
         verify(query).setParameter("userId", "alice@example.com");
+    }
+
+    @Test
+    void checksWhetherConversationExists() {
+        var entityManager = mock(EntityManager.class);
+        @SuppressWarnings("unchecked")
+        TypedQuery<Long> query = mock(TypedQuery.class);
+        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(query);
+        when(query.setParameter("conversationId", "conv_123")).thenReturn(query);
+        when(query.getSingleResult()).thenReturn(1L);
+        var repository = new ConversationRepositoryImpl();
+        ReflectionTestUtils.setField(repository, "entityManager", entityManager);
+
+        assertTrue(repository.existsConversation("conv_123"));
+        verify(query).setParameter("conversationId", "conv_123");
     }
 }

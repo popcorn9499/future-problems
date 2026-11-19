@@ -13,4 +13,6 @@ public interface ConversationRepository {
     Conversation create(Conversation conversation);
 
     List<Conversation> findConversations(String participantID);
+
+    boolean existsConversation(String conversationId);
 }

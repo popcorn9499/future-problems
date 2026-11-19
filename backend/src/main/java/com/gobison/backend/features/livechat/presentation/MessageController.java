@@ -2,13 +2,18 @@ package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.GetMessagesException;
 import com.gobison.backend.features.livechat.application.GetMessagesService;
+import com.gobison.backend.features.livechat.application.SendMessageService;
 import com.gobison.backend.features.livechat.application.dto.RetrieveMessage;
+import com.gobison.backend.features.livechat.application.dto.SendMessageResponse;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,10 +24,18 @@ public class MessageController {
 
     private final UserRepository userRepository;
     private final GetMessagesService getMessagesService;
+    private final SendMessageService sendMessageService;
 
-    public MessageController(UserRepository userRepository, GetMessagesService getMessagesService) {
+    public MessageController(
+            UserRepository userRepository,
+            GetMessagesService getMessagesService,
+            SendMessageService sendMessageService) {
         this.userRepository = userRepository;
         this.getMessagesService = getMessagesService;
+        this.sendMessageService = sendMessageService;
+    }
+
+    public record SendMessageRequest(String content) {
     }
 
     @GetMapping("/{conversationId}/messages")
@@ -34,5 +47,16 @@ public class MessageController {
         var user = userRepository.findByEmail(authentication.getName())
                     .orElseThrow(() -> new GetMessagesException(GetMessagesException.Reason.USER_NOT_FOUND));
         return ResponseEntity.ok(getMessagesService.getConversation(user, conversationId, limit, before));
+    }
+
+    @PostMapping("/{conversationId}/messages")
+    public ResponseEntity<SendMessageResponse> sendMessage(
+            @PathVariable String conversationId,
+            @RequestBody SendMessageRequest request,
+            Authentication authentication) {
+        var user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new GetMessagesException(GetMessagesException.Reason.USER_NOT_FOUND));
+        var message = sendMessageService.send(user, conversationId, request.content());
+        return ResponseEntity.status(HttpStatus.CREATED).body(SendMessageResponse.from(message));
     }
 }

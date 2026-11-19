@@ -73,4 +73,14 @@ public class ConversationRepositoryImpl implements ConversationRepository {
                 .map(ConversationEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsConversation(String conversationId) {
+        return entityManager.createQuery(
+                        "SELECT COUNT(c) FROM ConversationEntity c WHERE c.id = :conversationId",
+                        Long.class)
+                .setParameter("conversationId", conversationId)
+                .getSingleResult() > 0;
+    }
 }
