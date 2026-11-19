@@ -60,10 +60,10 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     @Override
     public List<Conversation> findConversations(String participantId) {
         String jpql = """
-            SELECT c FROM ConversationEntity c 
-            WHERE c.directParticipantOneId = :userId 
-               OR c.directParticipantTwoId = :userId
-        """;
+                    SELECT c FROM ConversationEntity c 
+                    WHERE c.directParticipantOneId = :userId 
+                       OR c.directParticipantTwoId = :userId
+                """;
 
         List<ConversationEntity> entities = entityManager.createQuery(jpql, ConversationEntity.class)
                 .setParameter("userId", participantId)

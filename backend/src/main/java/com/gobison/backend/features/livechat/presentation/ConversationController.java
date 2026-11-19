@@ -28,7 +28,7 @@ public class ConversationController {
     public ConversationController(CreateConversationService createConversationService,
                                   UserRepository userRepository,
                                   GetConversationsService getConversationsService
-                                    ) {
+    ) {
         this.createConversationService = createConversationService;
         this.userRepository = userRepository;
         this.getConversationsService = getConversationsService;

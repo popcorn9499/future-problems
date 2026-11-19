@@ -52,7 +52,7 @@ public class MessageController {
             @RequestParam(required = false) String before,
             Authentication authentication) {
         var user = userRepository.findByEmail(authentication.getName())
-                    .orElseThrow(() -> new GetMessagesException(GetMessagesException.Reason.USER_NOT_FOUND));
+                .orElseThrow(() -> new GetMessagesException(GetMessagesException.Reason.USER_NOT_FOUND));
         return ResponseEntity.ok(getMessagesService.getConversation(user, conversationId, limit, before));
     }
 

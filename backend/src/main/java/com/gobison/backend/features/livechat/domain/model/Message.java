@@ -42,12 +42,29 @@ public class Message {
         this.readAt = readAt;
     }
 
-    public String getMsgId() { return msgId; }
-    public String getConversationId() { return conversationId; }
-    public String getSenderId() { return senderId; }
-    public String getContent() { return content; }
-    public Instant getSentAt() { return sentAt; }
-    public Instant getReadAt() { return readAt; }
+    public String getMsgId() {
+        return msgId;
+    }
+
+    public String getConversationId() {
+        return conversationId;
+    }
+
+    public String getSenderId() {
+        return senderId;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public Instant getSentAt() {
+        return sentAt;
+    }
+
+    public Instant getReadAt() {
+        return readAt;
+    }
 
     public void markRead() {
         if (readAt == null) {
