@@ -67,10 +67,8 @@ public class RideRequestEntity {
     private String status;
 
     @ElementCollection
-    @CollectionTable(
-            name = "ride_request_days",
-            joinColumns = @JoinColumn(name = "request_id"),
-            uniqueConstraints = @UniqueConstraint(columnNames = {"request_id", "day_of_week"}))
+    @CollectionTable(name = "ride_request_days", joinColumns = @JoinColumn(name = "request_id"), uniqueConstraints = @UniqueConstraint(columnNames = {
+            "request_id", "day_of_week" }))
     @Enumerated(EnumType.STRING)
     @Column(name = "day_of_week", nullable = false, length = 9)
     private Set<DayOfWeek> daysOfWeek;
@@ -79,22 +77,37 @@ public class RideRequestEntity {
     }
 
     public RideRequestEntity(RideRequest rideRequest) {
-        if (rideRequest.getLocation() != null) {
-            var coordinates = rideRequest.getLocation();
-            location = new GeometryFactory(new PrecisionModel(), 4326).createPoint(
-                    new Coordinate(coordinates.longitude(), coordinates.latitude()));
-        }
-        rideType = rideRequest.getRideType();
-        departureTime = rideRequest.getDepartureTime();
-        roundTripId = rideRequest.getRoundTripId();
         id = rideRequest.getRequestId();
         userEmail = rideRequest.getUserId();
+        rideType = rideRequest.getRideType();
+        roundTripId = rideRequest.getRoundTripId();
+        status = rideRequest.getStatus();
+        daysOfWeek = EnumSet.noneOf(DayOfWeek.class);
+
+        updateDetails(rideRequest);
+    }
+
+    void updateDetails(RideRequest rideRequest) {
         city = rideRequest.getCity();
         streetAddress = rideRequest.getStreetAddress();
         arrivalTime = rideRequest.getArrivalTime();
+        departureTime = rideRequest.getDepartureTime();
         description = rideRequest.getDescription();
-        status = rideRequest.getStatus();
-        daysOfWeek = EnumSet.copyOf(rideRequest.getDaysOfWeek());
+
+        daysOfWeek.clear();
+        daysOfWeek.addAll(rideRequest.getDaysOfWeek());
+
+        var coordinates = rideRequest.getLocation();
+        location = coordinates == null
+                ? null
+                : new GeometryFactory(new PrecisionModel(), 4326)
+                        .createPoint(new Coordinate(
+                                coordinates.longitude(),
+                                coordinates.latitude()));
+    }
+
+    void cancel() {
+        status = "CANCELLED";
     }
 
     public RideRequest toDomain() {
@@ -110,7 +123,8 @@ public class RideRequestEntity {
                 EnumSet.copyOf(daysOfWeek),
                 description,
                 status);
-        if (location != null) ride.setLocation(new GeoLocation(location.getX(), location.getY()));
+        if (location != null)
+            ride.setLocation(new GeoLocation(location.getX(), location.getY()));
         return ride;
     }
 }

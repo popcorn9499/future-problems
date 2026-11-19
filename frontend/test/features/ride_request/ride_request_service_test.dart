@@ -9,6 +9,46 @@ import 'package:gobison/features/ride_request/ride_request_service.dart';
 
 void main() {
   group('RideRequestService', () {
+    test('loads edit details for the selected request', () async {
+      final service = RideRequestService(client: MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/api/v1/rides/requests/leg-1');
+        return http.Response('{"requestId":"leg-1","arrivalTime":"08:30"}', 200);
+      }));
+
+      final details = await service.getRideRequestDetails('leg-1');
+      expect(details['arrivalTime'], '08:30');
+    });
+
+    for (final roundTrip in [false, true]) {
+      test('saves a ${roundTrip ? "round-trip" : "one-way"} request', () async {
+        final service = RideRequestService(client: MockClient((request) async {
+          expect(request.method, 'PATCH');
+          const path = '/api/v1/rides/requests/leg-1';
+          expect(request.url.path, roundTrip ? '$path/round-trip' : path);
+          expect(jsonDecode(request.body), {
+            'city': 'Winnipeg',
+            'streetAddress': '123 Main Street',
+            'daysOfWeek': ['MONDAY'],
+            'arrivalTime': '08:30',
+            'departureTime': roundTrip ? '17:00' : null,
+            'description': null,
+          });
+          return http.Response(roundTrip ? '[{},{}]' : '{}', 200);
+        }));
+
+        await service.updateRideRequest(
+          requestId: 'leg-1',
+          roundTrip: roundTrip,
+          city: 'Winnipeg',
+          streetAddress: '123 Main Street',
+          daysOfWeek: ['Monday'],
+          arrivalTime: '08:30',
+          departureTime: roundTrip ? '17:00' : null,
+        );
+      });
+    }
+
     group('createRideRequest', () {
       test(
         'sends the correct request and returns the created ride request',

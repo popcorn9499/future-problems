@@ -10,6 +10,7 @@ public record RideAgreementSummary(
         UUID listingId,              // Individual offer/request ID
         UUID roundTripId,            // Null for one-way rides
         String rideType,               // ARRIVAL or DEPARTURE
+        String listingType,
         String origin,
         String destination,
         LocalTime arrivalTime,
