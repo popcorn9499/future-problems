@@ -63,4 +63,20 @@ class MarkMessagesReadServiceTest {
         assertEquals(MarkMessagesReadException.Reason.CONVERSATION_NOT_FOUND, notFound.getReason());
         assertEquals(MarkMessagesReadException.Reason.NOT_PARTICIPANT, forbidden.getReason());
     }
+
+    @Test
+    void returnsZeroAndEmptyIdsWhenThereAreNoUnreadMessages() {
+        when(conversationRepository.findConversations("alice@example.com"))
+                .thenReturn(List.of(new Conversation("conv_123", List.of("alice@example.com", "bob@example.com"))));
+        when(messageRepository.markUnreadMessagesAsRead(
+                org.mockito.ArgumentMatchers.eq("conv_123"),
+                org.mockito.ArgumentMatchers.eq("alice@example.com"),
+                any(Instant.class)))
+                .thenReturn(List.of());
+
+        var response = service.markRead(user, "conv_123");
+
+        assertEquals(0, response.markedAsRead());
+        assertEquals(List.of(), response.messageIds());
+    }
 }

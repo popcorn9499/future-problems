@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SendMessageServiceTest {
@@ -44,6 +45,7 @@ class SendMessageServiceTest {
                 () -> service.send(user, "conv_123", "  "));
 
         assertEquals(SendMessageException.Reason.INVALID_CONTENT, exception.getReason());
+        verifyNoInteractions(conversationRepository, messageRepository);
     }
 
     @Test
