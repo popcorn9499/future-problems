@@ -6,9 +6,7 @@ import com.gobison.backend.features.livechat.domain.repository.ConversationRepos
 import com.gobison.backend.features.livechat.domain.model.Message;
 import com.gobison.backend.features.livechat.domain.repository.MessageRepository;
 import com.gobison.backend.features.user.domain.model.User;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -32,11 +30,11 @@ public class GetMessagesService {
         ensureConversationExists(user, converastionId);
 
         if (limit < 1) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Limit must be greater than zero");
+            throw new GetMessagesException(GetMessagesException.Reason.INVALID_LIMIT);
         }
 
         if (before != null && !messageRepository.existsMessage(converastionId, before)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found");
+            throw new GetMessagesException(GetMessagesException.Reason.MESSAGE_NOT_FOUND);
         }
 
         int fetchLimit = limit;
@@ -81,7 +79,7 @@ public class GetMessagesService {
                 .anyMatch(conversation -> conversation.getId().equals(conversationId));
 
         if (!exists) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation not found");
+            throw new GetMessagesException(GetMessagesException.Reason.CONVERSATION_NOT_FOUND);
         }
     }
 
