@@ -46,32 +46,37 @@ the hashed password is hashed using spring frameworks crypto password encoder fu
 
 # Live Chat
 
-This module of our backend server allows for creating conversations via `/api/v1/conversation`
-As well as retreiving conversations, all messages, sending and marking messages read via `/api/v1/conversations`.
-Given our users do not have  a id associated with them we opted to use email as the id as email shouldn't change given the structure of our application.
+The Live Chat API supports creating conversations, listing a user's conversations, retrieving and sending messages, and marking incoming messages as read. All endpoints require an authenticated user. User email addresses are used as participant IDs.
 
 | Method | Path | Request | Successful response |
 | --- | --- | --- | --- |
 | POST | `/api/v1/conversation` | JSON body: `{"participantId":"user@example.com"}` | `201 Created` with `conversationId`, `participants`, and `createdAt` |
-| GET | `/api/v1/conversations` | — | `200 OK` with a `conversations` array of conversation summaries |
-| GET | `/api/v1/conversations/{conversationId}/messages` | Optional query parameters: `limit` (default `50`) and `before` (message ID cursor) | `200 OK` with `conversationId`, `messages`, and pagination info (`limit`, `hasMore`, `nextCursor`) |
+| GET | `/api/v1/conversations` | — | `200 OK` with a `conversations` array |
+| GET | `/api/v1/conversations/{conversationId}/messages` | Optional query parameters: `limit` (default `50`) and `before` (message ID cursor) | `200 OK` with `conversationId`, `messages`, and `pagination` |
 | POST | `/api/v1/conversations/{conversationId}/messages` | JSON body: `{"content":"Hello"}` | `201 Created` with the created message |
 | PATCH | `/api/v1/conversations/{conversationId}/read` | — | `200 OK` with `conversationId`, `markedAsRead`, `messageIds`, and `readAt` |
 
-All requests with a body use JSON as it is simple and everything has a parser for JSON. 
+### Request and response details
 
-For reading conversations which is a PATCH method we take the convo id as part of the url 
-are really take nothing else as that combined with our authentication is all we really need to know who's messages to mark read.
+- **Create a conversation** (`POST /api/v1/conversation`): `participantId` must be a non-empty email address. The response includes the conversation ID, participant email addresses, and creation timestamp.
+- **List conversations** (`GET /api/v1/conversations`): each item in `conversations` includes `conversationId`, `participant` (`userId`, `firstName`, `lastName`, `avatarColor`), `lastMessage`, `lastMessageAt`, and `unreadCount`.
+- **Get messages** (`GET /api/v1/conversations/{conversationId}/messages`): `limit` must be at least `1`. The optional `before` cursor is a message ID; when provided, the response contains messages older than that message. Each message includes `messageId`, `senderId`, `content`, `sentAt`, and `readAt`. Pagination contains the requested `limit`, `hasMore`, and `nextCursor`; use `nextCursor` as the `before` value to request an older page.
+- **Send a message** (`POST /api/v1/conversations/{conversationId}/messages`): `content` must not be blank. The response includes `messageId`, `conversationId`, `senderId`, `content`, `sentAt`, and `readAt`.
+- **Mark messages as read** (`PATCH /api/v1/conversations/{conversationId}/read`): the conversation ID in the path identifies which conversation to update. The authenticated user determines whose incoming unread messages are marked. The response includes the number and IDs of messages updated, along with `readAt`.
 
-As for creating a conversation we use POST we just ask for the other participant id and log it in our backend. 
-Returning JSON to tell us the convo id participants and what time it was made at. This is sent in UTC time `yyyy-MM-dd'T'HH:mm:ss'Z'`
+Timestamps are serialized as ISO 8601 UTC timestamps (for example, `2026-11-10T14:30:00Z`). The serialized value may include fractional seconds.
 
-GET conversations gets any conversations we don't need any request body as it is self-explanatory. However for the return body we use JSON and format it with a list of the conversations. the participant and the avatar color they chose.  
+All request bodies use JSON. The `conversationId` in message and read routes is a path parameter, not a request-body field.
 
-As for making a conversation we use POST with a url parameter conversationId in the path to allow us
-to keep track of what chat this is for and to send the message JSON with just the content inside.
+### Error responses
 
-For getting the messages we use pagination with the GET method allowing us to get the last x messages as well as within the response JSON telling us 
-if we can keep reading as well as the next message id to start reading from next time.
+| Status | Meaning |
+| --- | --- |
+| `400 Bad Request` | Invalid participant email, blank message content, or a message limit below `1` |
+| `401 Unauthorized` | Authentication is missing or the authenticated user cannot be found |
+| `403 Forbidden` | The authenticated user is not a participant in the conversation |
+| `404 Not Found` | The conversation, message cursor, or requested participant does not exist |
+| `409 Conflict` | A conversation already exists between the participants |
+| `500 Internal Server Error` | A persistence or transaction failure occurred |
 
-
+Mapped application errors return an empty response body.
