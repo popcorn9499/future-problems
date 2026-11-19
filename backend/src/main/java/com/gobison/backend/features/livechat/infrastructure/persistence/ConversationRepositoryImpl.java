@@ -60,7 +60,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     @Override
     public List<Conversation> findConversations(String participantId) {
         String jpql = """
-                    SELECT c FROM ConversationEntity c 
+                    SELECT c FROM ConversationEntity c
                     WHERE c.directParticipantOneId = :userId 
                        OR c.directParticipantTwoId = :userId
                 """;

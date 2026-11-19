@@ -1,7 +1,6 @@
 package com.gobison.backend.features.livechat.domain.model;
 
 import java.time.Instant;
-import java.util.List;
 
 public class Message {
     private final String msgId;

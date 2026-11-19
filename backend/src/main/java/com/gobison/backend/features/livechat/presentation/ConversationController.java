@@ -2,7 +2,6 @@ package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.CreateConversationService;
 import com.gobison.backend.features.livechat.application.CreateConversationException;
-import com.gobison.backend.features.livechat.application.dto.ConversationSummaryResponse;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
