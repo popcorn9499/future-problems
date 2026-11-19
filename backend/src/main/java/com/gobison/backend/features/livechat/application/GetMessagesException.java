@@ -6,6 +6,7 @@ public class GetMessagesException extends RuntimeException {
         USER_NOT_FOUND,
         INVALID_LIMIT,
         CONVERSATION_NOT_FOUND,
+        NOT_PARTICIPANT,
         MESSAGE_NOT_FOUND
     }
 

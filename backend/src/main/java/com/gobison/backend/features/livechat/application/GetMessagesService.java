@@ -75,11 +75,15 @@ public class GetMessagesService {
     }
 
     private void ensureConversationExists(User user, String conversationId) {
-        boolean exists = conversationRepository.findConversations(user.getEmail()).stream()
+        if (!conversationRepository.existsConversation(conversationId)) {
+            throw new GetMessagesException(GetMessagesException.Reason.CONVERSATION_NOT_FOUND);
+        }
+
+        boolean isParticipant = conversationRepository.findConversations(user.getEmail()).stream()
                 .anyMatch(conversation -> conversation.getId().equals(conversationId));
 
-        if (!exists) {
-            throw new GetMessagesException(GetMessagesException.Reason.CONVERSATION_NOT_FOUND);
+        if (!isParticipant) {
+            throw new GetMessagesException(GetMessagesException.Reason.NOT_PARTICIPANT);
         }
     }
 

@@ -18,6 +18,7 @@ public class MessageExceptionHandler {
         HttpStatus status = switch (exception.getReason()) {
             case USER_NOT_FOUND -> HttpStatus.UNAUTHORIZED;
             case INVALID_LIMIT -> HttpStatus.BAD_REQUEST;
+            case NOT_PARTICIPANT -> HttpStatus.FORBIDDEN;
             case CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND -> HttpStatus.NOT_FOUND;
         };
         return ResponseEntity.status(status).build();

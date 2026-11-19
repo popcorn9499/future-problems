@@ -40,6 +40,14 @@ class MessageExceptionHandlerTest {
     }
 
     @Test
+    void mapsNonParticipantToForbidden() {
+        var response = exceptionHandler.handleGetMessages(
+                new GetMessagesException(GetMessagesException.Reason.NOT_PARTICIPANT));
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+    }
+
+    @Test
     void mapsMarkReadErrorsToExpectedStatuses() {
         var unauthorized = exceptionHandler.handleMarkMessagesRead(
                 new MarkMessagesReadException(MarkMessagesReadException.Reason.USER_NOT_FOUND));
