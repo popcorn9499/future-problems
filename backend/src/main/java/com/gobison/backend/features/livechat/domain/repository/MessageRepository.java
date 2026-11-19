@@ -15,5 +15,7 @@ public interface MessageRepository {
 
     public List<Message> retrieveMsgs(String conversationId);
 
+    List<Message> retrieveMsgs(String conversationId, int limit);
+
     public CreateResult saveMsg(String content, String conversationId, String senderId);
 }

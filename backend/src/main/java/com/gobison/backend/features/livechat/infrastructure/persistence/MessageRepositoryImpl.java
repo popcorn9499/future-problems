@@ -7,6 +7,8 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,6 +58,24 @@ public class MessageRepositoryImpl implements MessageRepository {
                 .stream()
                 .map(MessageEntity::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Message> retrieveMsgs(String conversationId, int limit) {
+        List<Message> messages = new ArrayList<>(entityManager.createQuery(
+                        "SELECT m FROM MessageEntity m WHERE m.conversationId = :conversationId "
+                                + "ORDER BY m.sentAt DESC, m.msgId DESC",
+                        MessageEntity.class)
+                .setParameter("conversationId", conversationId)
+                .setMaxResults(limit)
+                .getResultList()
+                .stream()
+                .map(MessageEntity::toDomain)
+                .toList());
+
+        Collections.reverse(messages);
+        return List.copyOf(messages);
     }
 
     @Override

@@ -71,6 +71,27 @@ class MessageRepositoryImplTest {
     }
 
     @Test
+    void retrievesLatestMessagesUpToLimitInSentOrder() {
+        var entityManager = mock(EntityManager.class);
+        @SuppressWarnings("unchecked")
+        TypedQuery<MessageEntity> query = mock(TypedQuery.class);
+        var latest = new MessageEntity(Message.restore(
+                "msg_124", "conv_123", "usr_124", "Latest", Instant.parse("2026-11-10T14:45:00Z"), null));
+        var earlier = new MessageEntity(Message.restore(
+                "msg_123", "conv_123", "usr_123", "Earlier", Instant.parse("2026-11-10T14:40:00Z"), null));
+        when(entityManager.createQuery(anyString(), eq(MessageEntity.class))).thenReturn(query);
+        when(query.setParameter("conversationId", "conv_123")).thenReturn(query);
+        when(query.setMaxResults(2)).thenReturn(query);
+        when(query.getResultList()).thenReturn(List.of(latest, earlier));
+        var repository = repositoryWith(entityManager);
+
+        var messages = repository.retrieveMsgs("conv_123", 2);
+
+        assertEquals(List.of("msg_123", "msg_124"), messages.stream().map(Message::getMsgId).toList());
+        verify(query).setMaxResults(2);
+    }
+
+    @Test
     void retrievesLatestMessageAndLimitsQueryToOneResult() {
         var entityManager = mock(EntityManager.class);
         @SuppressWarnings("unchecked")
