@@ -44,7 +44,10 @@ In terms of coverage, our tests are covering a good percentage of code but we ac
 
 ## Cross-Team Testing
 
-//TODO: LINK TO GITHUB ISSUE OPENED
+We reviewed Group 3's application:
+- [Group 3 Review](https://github.com/laradeleon/the-story-machine/issues/95)
+
+//TODO: RESPOND TO OUR REVIEW
 
 ## API Documentation
 
