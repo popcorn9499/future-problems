@@ -119,7 +119,9 @@ class _DashboardPageState extends State<DashboardPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 850),
           child: ListView.separated(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(
+              MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+            ),
             itemCount: groupedAgreements.isEmpty
                 ? 2
                 : groupedAgreements.length + 1,
@@ -291,91 +293,137 @@ class _TicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 600;
+    final pad = compact ? 12.0 : 16.0;
+
     final hasDrivers = agreement.drivers.isNotEmpty;
     final hasPassengers = agreement.passengers.isNotEmpty;
     final hasMembers = hasDrivers || hasPassengers;
     final isWaiting = agreement.id == null;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isWaiting
-                  ? AppColors.border
-                  : AppColors.primary.withValues(alpha: 0.5),
-              width: isWaiting ? 1.5 : 1,
-            ),
+    final memberSections = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasDrivers)
+          _MemberSection(
+            label: agreement.drivers.length > 1 ? 'DRIVERS' : 'DRIVER',
+            members: agreement.drivers,
+            currentUserId: currentUserId,
           ),
+        if (hasDrivers && hasPassengers) const SizedBox(height: 10),
+        if (hasPassengers)
+          _MemberSection(
+            label: agreement.passengers.length > 1
+                ? 'PASSENGERS'
+                : 'PASSENGER',
+            members: agreement.passengers,
+            currentUserId: currentUserId,
+          ),
+      ],
+    );
+
+    final card = Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isWaiting
+              ? AppColors.border
+              : AppColors.primary.withValues(alpha: 0.5),
+          width: isWaiting ? 1.5 : 1,
+        ),
+      ),
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            padding: EdgeInsets.fromLTRB(pad, 12, pad, 10),
             child: _TicketHeader(agreement: agreement),
           ),
           const _TearLine(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+            padding: EdgeInsets.fromLTRB(pad, 12, pad, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _WeekdayRow(
-                        activeDays: agreement.daysOfWeek,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _RideTime(agreement: agreement),
-                  ],
-                ),
-                if (hasMembers) ...[
-                  const SizedBox(height: 14),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (hasDrivers)
-                              _MemberSection(
-                                label: agreement.drivers.length > 1
-                                    ? 'DRIVERS'
-                                    : 'DRIVER',
-                                members: agreement.drivers,
-                                currentUserId: currentUserId,
-                              ),
-                            if (hasDrivers && hasPassengers)
-                              const SizedBox(height: 10),
-                            if (hasPassengers)
-                              _MemberSection(
-                                label: agreement.passengers.length > 1
-                                    ? 'PASSENGERS'
-                                    : 'PASSENGER',
-                                members: agreement.passengers,
-                                currentUserId: currentUserId,
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _OwnershipLabels(agreement: agreement),
+                      _WeekdayRow(activeDays: agreement.daysOfWeek),
+                      _RideTime(agreement: agreement),
                     ],
                   ),
-                ] else ...[
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: _OwnershipLabels(agreement: agreement),
-                  ),
-                ],
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final narrow = constraints.maxWidth < 520;
+
+                    if (!hasMembers) {
+                      return Align(
+                        alignment: narrow
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight,
+                        child: _OwnershipLabels(
+                          agreement: agreement,
+                          alignEnd: !narrow,
+                        ),
+                      );
+                    }
+
+                    // Narrow card (phone): members first, pills underneath,
+                    // everything left-aligned.
+                    if (narrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          memberSections,
+                          const SizedBox(height: 12),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _OwnershipLabels(
+                              agreement: agreement,
+                              alignEnd: false,
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    // Wide card: members on the left, pills on the right.
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(child: memberSections),
+                        const SizedBox(width: 10),
+                        _OwnershipLabels(agreement: agreement),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
         ],
       ),
+    );
+
+    if (!compact) return card;
+
+    // On phones, shrink all text in the ticket to 90% of whatever the user's
+    // own font-size setting is.
+    final mediaQuery = MediaQuery.of(context);
+    return MediaQuery(
+      data: mediaQuery.copyWith(
+        textScaler: TextScaler.linear(
+          mediaQuery.textScaler.scale(1) * 0.9,
+        ),
+      ),
+      child: card,
     );
   }
 }
@@ -470,9 +518,13 @@ class _TicketHeader extends StatelessWidget {
 }
 
 class _OwnershipLabels extends StatelessWidget {
-  const _OwnershipLabels({required this.agreement});
+  const _OwnershipLabels({
+    required this.agreement,
+    this.alignEnd = true,
+  });
 
   final RideAgreement agreement;
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -482,7 +534,7 @@ class _OwnershipLabels extends StatelessWidget {
         agreement.drivers.length + agreement.passengers.length <= 1;
 
     return Wrap(
-      alignment: WrapAlignment.end,
+      alignment: alignEnd ? WrapAlignment.end : WrapAlignment.start,
       spacing: 7,
       runSpacing: 5,
       children: [
@@ -758,14 +810,18 @@ class _WeekdayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 600;
+
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         for (final (day, letter) in _weekdays)
           Padding(
-            padding: const EdgeInsets.only(right: 7),
+            padding: EdgeInsets.only(right: compact ? 5 : 7),
             child: _DayCircle(
               letter: letter,
               active: activeDays.contains(day),
+              size: compact ? 28 : 32,
             ),
           ),
       ],
@@ -777,16 +833,18 @@ class _DayCircle extends StatelessWidget {
   const _DayCircle({
     required this.letter,
     required this.active,
+    this.size = 32,
   });
 
   final String letter;
   final bool active;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 32,
-      height: 32,
+      width: size,
+      height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -798,7 +856,7 @@ class _DayCircle extends StatelessWidget {
       child: Text(
         letter,
         style: TextStyle(
-          fontSize: 13,
+          fontSize: size < 32 ? 12 : 13,
           fontWeight: FontWeight.w600,
           color: active ? Colors.white : AppColors.textSecondary,
         ),
