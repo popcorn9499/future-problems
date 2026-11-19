@@ -42,6 +42,7 @@ class _InboxPageState extends State<InboxPage> {
   }
 
   Future<void> _reload() async {
+    if (_controller.isLoadingInbox) return;
     await _controller.loadInbox();
   }
 
@@ -78,22 +79,36 @@ class _InboxPageState extends State<InboxPage> {
 
           final inboxItems = _controller.inbox;
           if (inboxItems.isEmpty) {
-            return const _MessageState(
+            return _MessageState(
               icon: Icons.chat_bubble_outline_rounded,
               title: 'No conversations yet',
               subtitle: 'When you connect with another rider, your messages will show up here.',
+              action: TextButton(
+                onPressed: _reload,
+                child: const Text('Refresh'),
+              ),
             );
           }
 
           return Column(
             children: [
               if (_controller.usingMockData) const _PreviewNotice(),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _controller.isLoadingInbox ? null : _reload,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh messages'),
+                ),
+              ),
               if (_controller.isLoadingInbox)
                 const LinearProgressIndicator(minHeight: 2),
+              if (_controller.inboxErrorMessage case final error?) Text(error),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _reload,
                   child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: inboxItems.length,
                     separatorBuilder: (_, _) =>
@@ -110,6 +125,7 @@ class _InboxPageState extends State<InboxPage> {
                             ),
                           ),
                         );
+                        if (mounted) await _reload();
                       },
                     ),
                   ),

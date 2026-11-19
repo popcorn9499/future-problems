@@ -3,10 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 /// In-memory stand-in for the messaging API.
-/// Set [useMock] to false to send requests to the real backend instead.
 class MessagingApiMock {
-  static const bool useMock = true;
-
   final Map<String, Map<String, dynamic>> _conversations = {
     'conv_123': {
       'conversationId': 'conv_123',
