@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/ride_agreement.dart';
+import '../../ride_request/presentation/edit_ride_request_dialog.dart';
+import '../../ride_offer/ride_offer_service.dart';
+import '../../ride_request/ride_request_service.dart';
 import '../dashboard_controller.dart';
 import '../dashboard_service.dart';
 
@@ -14,15 +17,25 @@ const List<(String, String)> _weekdays = [
   ('FRIDAY', 'F'),
 ];
 
+List<(String, String)> _visibleDays(Iterable<String> savedDays) => [
+  ..._weekdays,
+  if (savedDays.contains('SATURDAY')) ('SATURDAY', 'Sa'),
+  if (savedDays.contains('SUNDAY')) ('SUNDAY', 'Su'),
+];
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
     super.key,
     required this.user,
     this.dashboardService,
+    this.rideRequestService,
+    this.rideOfferService,
   });
 
   final User user;
   final DashboardService? dashboardService;
+  final RideRequestService? rideRequestService;
+  final RideOfferService? rideOfferService;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -34,6 +47,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
   final Set<String> _selectedDays = {};
   TicketFilter _kind = TicketFilter.all;
+  late final _requests = widget.rideRequestService ?? RideRequestService();
+  late final _offers = widget.rideOfferService ?? RideOfferService();
+  bool _busy = false;
 
   @override
   void initState() {
@@ -75,6 +91,125 @@ class _DashboardPageState extends State<DashboardPage> {
 
       return group;
     }).toList();
+  }
+
+  Future<bool> _cancelOnServer(RideAgreement ride, {bool confirmed = false}) async {
+    if (ride.listingType == 'OFFER') {
+      final result = await _offers.cancelRideOffer(ride.listingId, confirmParticipants: confirmed);
+      return result == RideOfferCancellationResult.cancelled;
+    }
+    final result = await _requests.cancelRideRequest(ride.listingId, confirmParticipants: confirmed);
+    return result == RideRequestCancellationResult.cancelled;
+  }
+
+  Future<void> _cancelRide(RideAgreement ride) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final kind = ride.listingType == 'OFFER' ? 'offer' : 'request';
+    try {
+      final cancelled = await _cancelOnServer(ride);
+      if (!mounted) return;
+      if (!cancelled) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialog) => AlertDialog(
+            title: Text(ride.roundTripId == null ? 'Cancel $kind?' : 'Cancel both legs?'),
+            content: const Text('Other people have joined this ride. Cancel it for everyone?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Keep ride')),
+              TextButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Yes, cancel')),
+            ],
+          ),
+        );
+        if (!mounted || confirmed != true) return;
+        final accepted = await _cancelOnServer(ride, confirmed: true);
+        if (!mounted) return;
+        if (!accepted) throw StateError('Cancellation was not confirmed');
+      }
+      await _dashboardController.loadAgreements();
+      if (!mounted) return;
+      final suffix = _dashboardController.errorMessage == null ? '' : ' Pull to refresh your dashboard.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ride $kind cancelled.$suffix')));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not confirm cancellation. Refresh to check your ride.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  List<RideAgreement> _editableLegs(RideAgreement ride) {
+    final tripId = ride.roundTripId;
+    final legs = tripId == null ? [ride] : _dashboardController.agreements
+        .where((leg) => leg.roundTripId == tripId).toList();
+    final email = widget.user.email.toLowerCase();
+    for (final leg in legs) {
+      if (!leg.createdByCurrentUser || leg.listingType != ride.listingType ||
+          leg.status.toUpperCase() == 'CANCELLED' ||
+          [...leg.drivers, ...leg.passengers].any((member) => member.id.toLowerCase() != email)) {
+        return [];
+      }
+    }
+    final unique = {for (final leg in legs) leg.listingId: leg}.values.toList();
+    if (tripId != null && (unique.length != 2 ||
+        !unique.any((leg) => leg.rideType == 'ARRIVAL') ||
+        !unique.any((leg) => leg.rideType == 'DEPARTURE'))) {
+      return [];
+    }
+    return unique;
+  }
+
+  Future<void> _editRide(RideAgreement ride, List<RideAgreement> editable) async {
+    if (_busy || editable.isEmpty) return;
+    setState(() => _busy = true);
+    final isOffer = ride.listingType == 'OFFER';
+    final kind = isOffer ? 'offer' : 'request';
+    try {
+      final legs = isOffer
+          ? [ride, ...editable.where((leg) => leg.listingId != ride.listingId)]
+          : editable;
+      final load = isOffer ? _offers.getRideOfferDetails : _requests.getRideRequestDetails;
+      final details = await Future.wait(legs.map((leg) => load(leg.listingId)));
+      if (!mounted) return;
+
+      for (var i = 0; i < legs.length; i++) {
+        final detail = details[i];
+        final type = legs[i].rideType == 'ARRIVAL' ? 'arriving' : 'departing';
+        if (detail[isOffer ? 'offerId' : 'requestId'] != legs[i].listingId ||
+            detail['roundTripId'] != legs[i].roundTripId ||
+            detail['rideType'] != type || detail['status'] == 'CANCELLED') {
+          throw StateError('Ride details changed');
+        }
+        final seats = detail['passengerNum'];
+        if (isOffer && (seats is! int || seats < 1 || detail['askingForDrivers'] is! bool)) {
+          throw StateError('Incomplete offer details');
+        }
+      }
+
+      final saved = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => isOffer
+            ? EditRideRequestDialog.offer(legs: details, service: _offers)
+            : EditRideRequestDialog(legs: details, service: _requests),
+      );
+      if (!mounted || saved != true) return;
+      await _dashboardController.loadAgreements();
+      if (!mounted) return;
+      final suffix = _dashboardController.errorMessage == null ? '' : ' Pull to refresh your dashboard.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ride $kind updated.$suffix')));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to open this $kind. Refresh and try again.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Widget _buildBody() {
@@ -138,6 +273,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 16),
                     _DayFilter(
+                      savedDays: controller.agreements.expand((ride) => ride.daysOfWeek),
                       selectedDays: _selectedDays,
                       onDaySelected: (day) {
                         setState(() {
@@ -173,16 +309,36 @@ class _DashboardPageState extends State<DashboardPage> {
 
               final group = groupedAgreements[index - 1];
 
-              if (group.length == 1) {
-                return _TicketCard(
-                  agreement: group.first,
-                  currentUserId: widget.user.email,
-                );
+              final ride = group.first;
+              final ticket = group.length == 1
+                  ? _TicketCard(agreement: ride, currentUserId: widget.user.email)
+                  : _RoundTripGroup(agreements: group, currentUserId: widget.user.email);
+              if (!ride.createdByCurrentUser || (ride.listingType != 'REQUEST' && ride.listingType != 'OFFER') ||
+                  group.every((leg) => leg.status.toUpperCase() == 'CANCELLED')) {
+                return ticket;
               }
 
-              return _RoundTripGroup(
-                agreements: group,
-                currentUserId: widget.user.email,
+              final editable = _editableLegs(ride);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ticket,
+                  if (editable.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _busy ? null : () => _editRide(ride, editable),
+                        child: Text(ride.listingType == 'OFFER' ? 'Edit offer' : 'Edit request'),
+                      ),
+                    ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _busy ? null : () => _cancelRide(ride),
+                      child: Text(ride.roundTripId == null ? (ride.listingType == 'OFFER' ? 'Cancel offer' : 'Cancel request') : 'Cancel both legs'),
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -531,6 +687,7 @@ class _OwnershipLabels extends StatelessWidget {
     final isUnjoinedOwnListing =
         agreement.createdByCurrentUser &&
         agreement.id == null &&
+        agreement.status.toUpperCase() != 'CANCELLED' &&
         agreement.drivers.length + agreement.passengers.length <= 1;
 
     return Wrap(
@@ -812,10 +969,9 @@ class _WeekdayRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final compact = MediaQuery.sizeOf(context).width < 600;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
       children: [
-        for (final (day, letter) in _weekdays)
+        for (final (day, letter) in _visibleDays(activeDays))
           Padding(
             padding: EdgeInsets.only(right: compact ? 5 : 7),
             child: _DayCircle(
@@ -1105,11 +1261,13 @@ class _KindFilter extends StatelessWidget {
 
 class _DayFilter extends StatelessWidget {
   const _DayFilter({
+    required this.savedDays,
     required this.selectedDays,
     required this.onDaySelected,
     required this.onClear,
   });
 
+  final Iterable<String> savedDays;
   final Set<String> selectedDays;
   final ValueChanged<String> onDaySelected;
   final VoidCallback onClear;
@@ -1140,7 +1298,7 @@ class _DayFilter extends StatelessWidget {
               selected: allSelected,
               onSelected: (_) => onClear(),
             ),
-            for (final (day, _) in _weekdays)
+            for (final (day, _) in _visibleDays([...savedDays, ...selectedDays]))
               FilterChip(
                 label: Text(
                   day[0] + day.substring(1).toLowerCase(),

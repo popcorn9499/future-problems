@@ -93,8 +93,21 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/agreements")
                                                 .authenticated()
 
-                                                .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
-                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests",
+                                                                "/api/v1/rides/offers")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/offers/*")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/requests/*/round-trip", "/api/v1/rides/offers/*")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/offers/*")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests",
+                                                                "/api/v1/rides/offers")
+                                                .authenticated()
                                                 .anyRequest().denyAll())
 
                                 .exceptionHandling(exceptions -> exceptions

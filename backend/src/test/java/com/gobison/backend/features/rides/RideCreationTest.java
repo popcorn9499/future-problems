@@ -152,6 +152,7 @@ class RideCreationTest {
                 body.replace("08:30", "24:00"),
                 body.replace(" Winnipeg ", " "),
                 body.replace("[\"FRIDAY\",\"MONDAY\",\"MONDAY\"]", "[]"),
+                body.replace("FRIDAY", "SATURDAY"),
                 body.replace("FRIDAY", "FUNDAY"),
                 body.replace("\"FRIDAY\"", "null"),
                 "{}",
@@ -163,7 +164,7 @@ class RideCreationTest {
                 .andExpect(status().isBadRequest());
         }
         for (String seats : new String[] {
-                "0", "-1", "null", "0.9", "-2.9", "2147483648", "\"invalid\""}) {
+                "0", "10", "-1", "null", "0.9", "-2.9", "2147483648", "\"invalid\""}) {
             mvc.perform(post("/api/v1/rides/offers")
                         .with(user(email))
                         .contentType(MediaType.APPLICATION_JSON)

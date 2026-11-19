@@ -309,6 +309,7 @@ public class RideAgreementSummaryRepositoryImpl
                 listing.id(),
                 listing.roundTripId(),
                 listing.rideType(),
+                listing.isOffer() ? "OFFER" : "REQUEST",
                 origin,
                 destination,
                 listing.arrivalTime(),

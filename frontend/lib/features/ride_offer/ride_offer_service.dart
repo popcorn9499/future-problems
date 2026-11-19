@@ -5,11 +5,76 @@ import 'package:http/http.dart' as http;
 import '../../core/network/api_config.dart';
 import '../../core/network/auth_client.dart';
 
+enum RideOfferCancellationResult { cancelled, confirmationRequired }
+
 class RideOfferService {
   RideOfferService({http.Client? client})
     : _client = client ?? createAuthClient();
 
   final http.Client _client;
+
+  Uri _offerUri(String id) => Uri.parse(
+    '${ApiConfig.baseUrl}/api/v1/rides/offers/${Uri.encodeComponent(id)}',
+  );
+
+  Future<Map<String, dynamic>> getRideOfferDetails(String offerId) async {
+    final response = await _client.get(_offerUri(offerId), headers: {'Accept': 'application/json'});
+    if (response.statusCode == 200) {
+      return jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    }
+    throw Exception('Loading ride offer failed (${response.statusCode}): ${response.body}');
+  }
+
+  Future<void> updateRideOffer({
+    required String offerId,
+    required String city,
+    required String streetAddress,
+    required List<String> daysOfWeek,
+    required int passengerNum,
+    required bool askingForDrivers,
+    String? arrivalTime,
+    String? departureTime,
+    String? description,
+  }) async {
+    final response = await _client.patch(
+      _offerUri(offerId),
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      body: jsonEncode({
+        'city': city,
+        'streetAddress': streetAddress,
+        'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),
+        'passengerNum': passengerNum,
+        'askingForDrivers': askingForDrivers,
+        'arrivalTime': arrivalTime,
+        'departureTime': departureTime,
+        'description': description,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Updating ride offer failed (${response.statusCode}): ${response.body}');
+    }
+  }
+
+  Future<RideOfferCancellationResult> cancelRideOffer(String offerId, {bool confirmParticipants = false}) async {
+    final uri = _offerUri(offerId);
+    final response = await _client.delete(
+      confirmParticipants ? uri.replace(queryParameters: {'confirmParticipants': 'true'}) : uri,
+      headers: {'Accept': 'application/json'},
+    );
+    if (response.statusCode == 204) return RideOfferCancellationResult.cancelled;
+    final failure = Exception('Cancelling ride offer failed (${response.statusCode}): ${response.body}');
+    if (response.statusCode == 409 && response.body.isNotEmpty) {
+      try {
+        final body = jsonDecode(utf8.decode(response.bodyBytes));
+        if (body is Map && body['code'] == 'CONFIRMATION_REQUIRED') {
+          return RideOfferCancellationResult.confirmationRequired;
+        }
+      } on FormatException {
+        throw failure;
+      }
+    }
+    throw failure;
+  }
 
   Future<Map<String, dynamic>> createRideOffer({
     required String userId,

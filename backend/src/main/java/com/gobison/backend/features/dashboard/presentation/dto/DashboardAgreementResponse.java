@@ -13,6 +13,7 @@ public record DashboardAgreementResponse(
         String listingId, //identifies individual leg so its either an offer id or a request id
         String roundTripId, //shared by both legs, or null for one-way rides
         String rideType, //ARRIVAL or DEPARTURE
+        String listingType,
         String origin,
         String destination,
         String arrivalTime,
@@ -54,6 +55,7 @@ public record DashboardAgreementResponse(
                     ? null
                     : agreement.roundTripId().toString(),
             agreement.rideType(),
+            agreement.listingType(),
             agreement.origin(),
             agreement.destination(),
             formatTime(agreement.arrivalTime()),
