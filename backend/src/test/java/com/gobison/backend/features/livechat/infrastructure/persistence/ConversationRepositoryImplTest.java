@@ -1,4 +1,4 @@
-package com.gobison.backend.features.livechat;
+package com.gobison.backend.features.livechat.infrastructure.persistence;
 
 import com.gobison.backend.features.livechat.domain.model.Conversation;
 import com.gobison.backend.features.livechat.infrastructure.persistence.ConversationEntity;

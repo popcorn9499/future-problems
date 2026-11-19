@@ -1,4 +1,4 @@
-package com.gobison.backend.features.livechat;
+package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.GetMessagesService;
 import com.gobison.backend.features.livechat.application.MarkMessagesReadService;

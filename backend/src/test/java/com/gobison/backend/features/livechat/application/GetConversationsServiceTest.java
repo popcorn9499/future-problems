@@ -1,4 +1,4 @@
-package com.gobison.backend.features.livechat;
+package com.gobison.backend.features.livechat.application;
 
 import com.gobison.backend.features.livechat.application.GetConversationsService;
 import com.gobison.backend.features.livechat.application.dto.ConversationSummaryResponse;

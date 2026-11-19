@@ -1,4 +1,4 @@
-package com.gobison.backend.features.livechat;
+package com.gobison.backend.features.livechat.application;
 
 import com.gobison.backend.features.livechat.application.GetMessagesException;
 import com.gobison.backend.features.livechat.application.GetMessagesService;
