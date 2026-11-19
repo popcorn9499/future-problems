@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/models/user_profile.dart';
@@ -7,8 +8,6 @@ import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
-import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
-
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

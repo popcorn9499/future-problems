@@ -1,13 +1,19 @@
 package com.gobison.backend.features.rides.infrastructure.persistence;
 
 import com.gobison.backend.features.rides.domain.model.RideRequest;
+import com.gobison.backend.features.rides.domain.model.RideType;
 import com.gobison.backend.features.rides.domain.repository.RideRequestRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -142,5 +148,69 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
         rides.forEach(RideRequestEntity::cancel);
         entityManager.flush();
         return true;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RideRequest> findFiltered(
+            String excludeUserEmail,
+            String city,
+            List<DayOfWeek> daysOfWeek,
+            RideType rideType,
+            LocalTime departureTime,
+            LocalTime arrivalTime,
+            String status) {
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<RideRequestEntity> query = cb.createQuery(RideRequestEntity.class);
+        Root<RideRequestEntity> root = query.from(RideRequestEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (excludeUserEmail != null) {
+            predicates.add(cb.notEqual(root.get("userEmail"), excludeUserEmail));
+        }
+
+        if (status != null && !status.isBlank()) {
+            predicates.add(cb.equal(root.get("status"), status));
+        }
+
+        if (city != null && !city.isBlank()) {
+            predicates.add(cb.equal(cb.lower(root.get("city")), city.trim().toLowerCase()));
+        }
+
+        if (rideType != null) {
+            predicates.add(cb.equal(root.get("rideType"), rideType));
+        }
+
+        if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<RideRequestEntity> subRoot = subquery.from(RideRequestEntity.class);
+            Join<RideRequestEntity, DayOfWeek> subDays = subRoot.join("daysOfWeek");
+
+            subquery.select(cb.count(subDays))
+                    .where(
+                        cb.equal(subRoot.get("id"), root.get("id")),
+                        subDays.in(daysOfWeek)
+                    );
+
+            predicates.add(cb.equal(subquery, (long) daysOfWeek.size()));
+        }
+
+        if (departureTime != null) {
+            predicates.add(cb.equal(root.get("departureTime"), departureTime));
+        }
+
+        if (arrivalTime != null) {
+            predicates.add(cb.equal(root.get("arrivalTime"), arrivalTime));
+        }
+
+        query.where(predicates.toArray(new Predicate[0]));
+
+        return entityManager.createQuery(query)
+                .getResultList()
+                .stream()
+                .map(RideRequestEntity::toDomain)
+                .toList();
     }
 }

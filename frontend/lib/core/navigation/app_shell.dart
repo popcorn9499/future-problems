@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/models/user.dart';
 
@@ -10,9 +11,10 @@ import 'app_sidebar.dart';
 
 class AppShell extends StatefulWidget {
   final Widget dashboardPage;
-  final Widget messagesPage;
+  final Widget inboxPage;
   final Widget rideRequestPage;
   final Widget rideOfferPage;
+  final Widget mapPage;
   final User user;
   final ImageProvider? profileImage;
   final VoidCallback onProfileTap;
@@ -20,9 +22,10 @@ class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
     required this.dashboardPage,
-    required this.messagesPage,
+    required this.inboxPage,
     required this.rideRequestPage,
     required this.rideOfferPage,
+    required this.mapPage,
     required this.user,
     this.profileImage,
     required this.onProfileTap,
@@ -73,6 +76,8 @@ class _AppShellState extends State<AppShell> {
         return 'Create Ride Request';
       case 3:
         return 'Create Ride Offer';
+      case 4:
+        return 'Browse Ride Requests & Offers';
       default:
         return '';
     }
@@ -84,9 +89,10 @@ class _AppShellState extends State<AppShell> {
 
     final pages = [
       widget.dashboardPage,
-      widget.messagesPage,
+      widget.inboxPage,
       widget.rideRequestPage,
       widget.rideOfferPage,
+      widget.mapPage,
     ];
 
     return Scaffold(
@@ -109,13 +115,21 @@ class _AppShellState extends State<AppShell> {
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     decoration: BoxDecoration(
                       color: colors.surface,
-                      border: Border(bottom: BorderSide(color: colors.outlineVariant, width: 0.7)),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: colors.outlineVariant,
+                          width: 0.7,
+                        ),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Text(
                           _pageTitle,
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
 
                         const Spacer(),
