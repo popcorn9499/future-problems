@@ -22,7 +22,7 @@ class EditRideRequestDialog extends StatefulWidget {
 class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   static const weekdays = [
     'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY',
-    'FRIDAY', 'SATURDAY', 'SUNDAY',
+    'FRIDAY',
   ];
   static final timeFormat = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
 
@@ -31,7 +31,12 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   late String city = first['city'] as String;
   late String street = first['streetAddress'] as String;
   late String description = first['description'] as String? ?? '';
-  late final days = Set<String>.from(first['daysOfWeek'] as List);
+  late final legacyDays = [
+    for (final day in const ['SATURDAY', 'SUNDAY'])
+      if (widget.legs.any((leg) => (leg['daysOfWeek'] as List).contains(day))) day,
+  ];
+  late final availableDays = [...weekdays, ...legacyDays];
+  late final days = {...List<String>.from(first['daysOfWeek'] as List), ...legacyDays};
   late String? arrival = _time('arriving', 'arrivalTime');
   late String? departure = _time('departing', 'departureTime');
 
@@ -73,8 +78,11 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   Future<void> _save() async {
     if (saving || !form.currentState!.validate()) return;
 
-    if (days.isEmpty) {
-      setState(() => error = 'Choose at least one day.');
+    final needsWeekday = !weekdays.any(days.contains) && widget.legs.any(
+      (leg) => !(leg['daysOfWeek'] as List).any(days.contains),
+    );
+    if (days.isEmpty || needsWeekday) {
+      setState(() => error = 'Choose at least one day for each leg.');
       return;
     }
 
@@ -91,7 +99,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     });
 
     try {
-      final selectedDays = weekdays.where(days.contains).toList();
+      final selectedDays = availableDays.where(days.contains).toList();
       final note = description.trim().isEmpty ? null : description.trim();
       final offerService = widget.offerService;
       if (offerService == null) {
@@ -160,7 +168,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                 Wrap(
                   spacing: 6,
                   children: [
-                    for (final day in weekdays)
+                    for (final day in availableDays)
                       FilterChip(
                         label: Text(day.substring(0, 3)),
                         selected: days.contains(day),
@@ -185,8 +193,8 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                   onChanged: (value) => seats = value,
                   validator: (value) {
                     final count = int.tryParse(value?.trim() ?? '', radix: 10);
-                    if (count == null || count < 1 || count > 2147483647) {
-                      return 'Enter a valid seat count.';
+                    if (count == null || count < 1 || count > 9) {
+                      return 'Enter 1 to 9 seats.';
                     }
                     return null;
                   },

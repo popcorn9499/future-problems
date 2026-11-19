@@ -61,7 +61,9 @@ a nonempty `daysOfWeek` list (for example, `["MONDAY"]`), and the times in
 `HH:mm` format. A one-way ride takes its direction's time. A round trip takes
 both `arrivalTime` and `departureTime`, with departure later than arrival.
 The optional `description` can be cleared. Offers also require an integer
-`passengerNum` of at least 1 and a boolean `askingForDrivers`.
+`passengerNum` from 1 to 9 and a boolean `askingForDrivers`.
+New schedules use Monday through Friday. An edit can keep or remove weekend
+days already saved on a leg. Each leg needs at least one day.
 
 Cancelled rides and rides with another participant return `409` on edit.
 An invalid address returns `422 INVALID_ADDRESS`. A temporary geocoding

@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalTime;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,6 +61,7 @@ public class ManageRideOfferService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Departure must be later than arrival");
         }
 
+        RideDays.validate(form.daysOfWeek(), legs.stream().map(RideOffer::getDaysOfWeek).toList());
         var city = form.city().trim();
         var street = form.streetAddress().trim();
         var description = form.description() == null ? "" : form.description().trim();
@@ -72,7 +72,7 @@ public class ManageRideOfferService {
             boolean arriving = leg.getRideType() == RideType.ARRIVAL;
             var offer = new RideOffer(leg.getRideType(), arriving ? null : departure, leg.getRoundTripId(),
                     leg.getOfferId(), leg.getUserId(), city, street, arriving ? arrival : null,
-                    EnumSet.copyOf(form.daysOfWeek()), description.isEmpty() ? null : description,
+                    RideDays.forLeg(form.daysOfWeek(), leg.getDaysOfWeek()), description.isEmpty() ? null : description,
                     leg.getStatus(), form.passengerNum(), form.askingForDrivers());
             offer.setLocation(moved ? location : leg.getLocation());
             return offer;

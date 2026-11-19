@@ -1,5 +1,6 @@
 package com.gobison.backend.features.rides.presentation;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,6 +18,6 @@ public record UpdateRideOfferRequest(
         @Pattern(regexp = "(?:[01][0-9]|2[0-3]):[0-5][0-9]") String departureTime,
         @NotEmpty List<@NotNull DayOfWeek> daysOfWeek,
         String description,
-        @NotNull @Min(1) Integer passengerNum,
+        @NotNull @Min(1) @Max(9) Integer passengerNum,
         @NotNull Boolean askingForDrivers) {
 }

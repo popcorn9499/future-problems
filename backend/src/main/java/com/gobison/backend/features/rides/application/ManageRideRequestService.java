@@ -13,7 +13,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -193,6 +192,7 @@ public class ManageRideRequestService {
     private List<RideRequest> saveEditedLegs(
             List<RideRequest> legs, UpdateRideRequestRequest form,
             LocalTime arrivalTime, LocalTime departureTime) {
+        RideDays.validate(form.daysOfWeek(), legs.stream().map(RideRequest::getDaysOfWeek).toList());
         var city = form.city().trim();
         var street = form.streetAddress().trim();
         var description = form.description() == null ? null : form.description().trim();
@@ -219,7 +219,7 @@ public class ManageRideRequestService {
                     city,
                     street,
                     isArrival ? arrivalTime : null,
-                    EnumSet.copyOf(form.daysOfWeek()),
+                    RideDays.forLeg(form.daysOfWeek(), leg.getDaysOfWeek()),
                     description == null || description.isEmpty() ? null : description,
                     leg.getStatus());
             updated.setLocation(addressChanged ? newLocation : leg.getLocation());

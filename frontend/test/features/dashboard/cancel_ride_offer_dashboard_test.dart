@@ -41,6 +41,7 @@ void main() {
     testWidgets('edits an owned ${roundTrip ? "round-trip" : "one-way"} offer', (tester) async {
       final ids = roundTrip ? ['a', 'b'] : ['a'];
       final tripId = roundTrip ? 'trip' : null;
+      final days = roundTrip ? ['MONDAY'] : ['MONDAY', 'SATURDAY'];
       final gets = <String>[];
       final writes = <Map<String, dynamic>>[];
       var dashboardLoads = 0;
@@ -68,7 +69,7 @@ void main() {
             'offerId': id, 'roundTripId': tripId, 'rideType': id == 'a' ? 'arriving' : 'departing',
             'status': 'OPEN', 'city': 'Winnipeg', 'streetAddress': '123 Main Street',
             'arrivalTime': id == 'a' ? '08:30' : null, 'departureTime': id == 'b' ? '17:00' : null,
-            'daysOfWeek': ['MONDAY'], 'description': 'Test ride', 'passengerNum': 3, 'askingForDrivers': true,
+            'daysOfWeek': days, 'description': 'Test ride', 'passengerNum': 3, 'askingForDrivers': true,
           }), 200);
         }
         expect(request.method, 'PATCH');
@@ -92,18 +93,27 @@ void main() {
       final drivers = find.widgetWithText(SwitchListTile, 'Looking for a driver');
       expect(tester.widget<TextFormField>(seats).initialValue, '3');
       expect(tester.widget<SwitchListTile>(drivers).value, isTrue);
+      expect(find.widgetWithText(FilterChip, 'SAT'), roundTrip ? findsNothing : findsOneWidget);
+      expect(find.widgetWithText(FilterChip, 'SUN'), findsNothing);
+      final save = find.text('Save changes');
       await tester.ensureVisible(seats);
-      await tester.enterText(seats, '4');
+      await tester.enterText(seats, '10');
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(writes, isEmpty);
+      expect(save, findsOneWidget);
+      await tester.ensureVisible(seats);
+      await tester.enterText(seats, '9');
       await tester.ensureVisible(drivers);
       await tester.tap(drivers);
-      final save = find.text('Save changes');
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
       expect(writes.single, {
-        'city': 'Winnipeg', 'streetAddress': '123 Main Street', 'daysOfWeek': ['MONDAY'],
+        'city': 'Winnipeg', 'streetAddress': '123 Main Street', 'daysOfWeek': days,
         'arrivalTime': '08:30', 'departureTime': roundTrip ? '17:00' : null,
-        'description': 'Test ride', 'passengerNum': 4, 'askingForDrivers': false,
+        'description': 'Test ride', 'passengerNum': 9, 'askingForDrivers': false,
       });
       expect(dashboardLoads, 2);
       expect(save, findsNothing);

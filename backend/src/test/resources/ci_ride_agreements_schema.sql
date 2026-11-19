@@ -1,11 +1,6 @@
 -- Ride listing and agreement tables for the CI / test database.
 -- Mirrors the Supabase schema. Safe to run more than once.
 -- Requires the users table (primary key: email) to exist already.
---
--- Left out on purpose: the nullable `location geography` column on ride_offers
--- and ride_requests. It needs PostGIS, and nothing in the dashboard code or
--- tests uses it. Add it here if CI runs a postgis/postgis image and other
--- code needs it.
 
 CREATE TABLE IF NOT EXISTS ride_offers (
     offer_id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),

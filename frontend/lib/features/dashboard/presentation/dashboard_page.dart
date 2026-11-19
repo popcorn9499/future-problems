@@ -17,6 +17,12 @@ const List<(String, String)> _weekdays = [
   ('FRIDAY', 'F'),
 ];
 
+List<(String, String)> _visibleDays(Iterable<String> savedDays) => [
+  ..._weekdays,
+  if (savedDays.contains('SATURDAY')) ('SATURDAY', 'Sa'),
+  if (savedDays.contains('SUNDAY')) ('SUNDAY', 'Su'),
+];
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
     super.key,
@@ -265,6 +271,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 16),
                     _DayFilter(
+                      savedDays: controller.agreements.expand((ride) => ride.daysOfWeek),
                       selectedDays: _selectedDays,
                       onDaySelected: (day) {
                         setState(() {
@@ -908,9 +915,9 @@ class _WeekdayRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
       children: [
-        for (final (day, letter) in _weekdays)
+        for (final (day, letter) in _visibleDays(activeDays))
           Padding(
             padding: const EdgeInsets.only(right: 7),
             child: _DayCircle(
@@ -1197,11 +1204,13 @@ class _KindFilter extends StatelessWidget {
 
 class _DayFilter extends StatelessWidget {
   const _DayFilter({
+    required this.savedDays,
     required this.selectedDays,
     required this.onDaySelected,
     required this.onClear,
   });
 
+  final Iterable<String> savedDays;
   final Set<String> selectedDays;
   final ValueChanged<String> onDaySelected;
   final VoidCallback onClear;
@@ -1232,7 +1241,7 @@ class _DayFilter extends StatelessWidget {
               selected: allSelected,
               onSelected: (_) => onClear(),
             ),
-            for (final (day, _) in _weekdays)
+            for (final (day, _) in _visibleDays([...savedDays, ...selectedDays]))
               FilterChip(
                 label: Text(
                   day[0] + day.substring(1).toLowerCase(),
