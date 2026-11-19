@@ -88,6 +88,7 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/conversation").authenticated()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/conversations/*/messages").authenticated()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/conversations/*/messages").authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/conversations/*/read").authenticated()
 
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me/profile")
                                                 .authenticated()

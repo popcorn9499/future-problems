@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat;
 
 import com.gobison.backend.features.livechat.application.GetMessagesException;
+import com.gobison.backend.features.livechat.application.MarkMessagesReadException;
 import com.gobison.backend.features.livechat.presentation.MessageExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -36,5 +37,19 @@ class MessageExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, conversationResponse.getStatusCode());
         assertEquals(HttpStatus.NOT_FOUND, messageResponse.getStatusCode());
+    }
+
+    @Test
+    void mapsMarkReadErrorsToExpectedStatuses() {
+        var unauthorized = exceptionHandler.handleMarkMessagesRead(
+                new MarkMessagesReadException(MarkMessagesReadException.Reason.USER_NOT_FOUND));
+        var forbidden = exceptionHandler.handleMarkMessagesRead(
+                new MarkMessagesReadException(MarkMessagesReadException.Reason.NOT_PARTICIPANT));
+        var notFound = exceptionHandler.handleMarkMessagesRead(
+                new MarkMessagesReadException(MarkMessagesReadException.Reason.CONVERSATION_NOT_FOUND));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, unauthorized.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, forbidden.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, notFound.getStatusCode());
     }
 }

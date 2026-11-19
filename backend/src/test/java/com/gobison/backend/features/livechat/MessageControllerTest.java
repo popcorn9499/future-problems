@@ -1,7 +1,9 @@
 package com.gobison.backend.features.livechat;
 
 import com.gobison.backend.features.livechat.application.GetMessagesService;
+import com.gobison.backend.features.livechat.application.MarkMessagesReadService;
 import com.gobison.backend.features.livechat.application.SendMessageService;
+import com.gobison.backend.features.livechat.application.dto.MarkMessagesReadResponse;
 import com.gobison.backend.features.livechat.application.dto.RetrieveMessage;
 import com.gobison.backend.features.livechat.domain.model.Message;
 import com.gobison.backend.features.livechat.presentation.MessageController;
@@ -26,6 +28,7 @@ class MessageControllerTest {
         var userRepository = mock(UserRepository.class);
         var getMessagesService = mock(GetMessagesService.class);
         var sendMessageService = mock(SendMessageService.class);
+        var markMessagesReadService = mock(MarkMessagesReadService.class);
         var authentication = mock(Authentication.class);
         var user = new User("first@example.com", "password", "First", "User", true);
         var responseBody = new RetrieveMessage(
@@ -36,7 +39,8 @@ class MessageControllerTest {
         when(userRepository.findByEmail("first@example.com")).thenReturn(Optional.of(user));
         when(getMessagesService.getConversation(user, "conv_123", 25, "msg_002"))
                 .thenReturn(responseBody);
-        var controller = new MessageController(userRepository, getMessagesService, sendMessageService);
+        var controller = new MessageController(
+                userRepository, getMessagesService, sendMessageService, markMessagesReadService);
 
         var response = controller.getMessages("conv_123", 25, "msg_002", authentication);
 
@@ -50,6 +54,7 @@ class MessageControllerTest {
         var userRepository = mock(UserRepository.class);
         var getMessagesService = mock(GetMessagesService.class);
         var sendMessageService = mock(SendMessageService.class);
+        var markMessagesReadService = mock(MarkMessagesReadService.class);
         var authentication = mock(Authentication.class);
         var user = new User("first@example.com", "password", "First", "User", true);
         var message = Message.restore(
@@ -63,7 +68,8 @@ class MessageControllerTest {
         when(userRepository.findByEmail("first@example.com")).thenReturn(Optional.of(user));
         when(sendMessageService.send(user, "conv_123", "Are you available on Monday?"))
                 .thenReturn(message);
-        var controller = new MessageController(userRepository, getMessagesService, sendMessageService);
+        var controller = new MessageController(
+                userRepository, getMessagesService, sendMessageService, markMessagesReadService);
 
         var response = controller.sendMessage(
                 "conv_123",
@@ -81,5 +87,28 @@ class MessageControllerTest {
                         null),
                 response.getBody());
         verify(sendMessageService).send(user, "conv_123", "Are you available on Monday?");
+    }
+
+    @Test
+    void marksConversationMessagesAsReadForAuthenticatedUser() {
+        var userRepository = mock(UserRepository.class);
+        var getMessagesService = mock(GetMessagesService.class);
+        var sendMessageService = mock(SendMessageService.class);
+        var markMessagesReadService = mock(MarkMessagesReadService.class);
+        var authentication = mock(Authentication.class);
+        var user = new User("first@example.com", "password", "First", "User", true);
+        var responseBody = new MarkMessagesReadResponse(
+                "conv_123", 2, List.of("msg_001", "msg_002"), java.time.Instant.parse("2026-11-10T14:45:00Z"));
+        when(authentication.getName()).thenReturn("first@example.com");
+        when(userRepository.findByEmail("first@example.com")).thenReturn(Optional.of(user));
+        when(markMessagesReadService.markRead(user, "conv_123")).thenReturn(responseBody);
+        var controller = new MessageController(
+                userRepository, getMessagesService, sendMessageService, markMessagesReadService);
+
+        var response = controller.markMessagesRead("conv_123", authentication);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals(responseBody, response.getBody());
+        verify(markMessagesReadService).markRead(user, "conv_123");
     }
 }

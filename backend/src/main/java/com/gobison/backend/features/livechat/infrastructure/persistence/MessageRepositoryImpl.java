@@ -7,6 +7,7 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +57,26 @@ public class MessageRepositoryImpl implements MessageRepository {
                 .setParameter("conversationId", conversationId)
                 .setParameter("userId", userId)
                 .getSingleResult();
+    }
+
+    @Override
+    @Transactional
+    public List<String> markUnreadMessagesAsRead(String conversationId, String userId, Instant readAt) {
+        return entityManager.createNativeQuery("""
+                        UPDATE messages
+                        SET read_at = :readAt
+                        WHERE conversation_id = :conversationId
+                          AND sender_id <> :userId
+                          AND read_at IS NULL
+                        RETURNING message_id
+                        """)
+                .setParameter("readAt", readAt)
+                .setParameter("conversationId", conversationId)
+                .setParameter("userId", userId)
+                .getResultList()
+                .stream()
+                .map(Object::toString)
+                .toList();
     }
 
     @Override

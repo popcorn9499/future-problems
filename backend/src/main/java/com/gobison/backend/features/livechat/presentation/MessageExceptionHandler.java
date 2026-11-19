@@ -1,6 +1,7 @@
 package com.gobison.backend.features.livechat.presentation;
 
 import com.gobison.backend.features.livechat.application.GetMessagesException;
+import com.gobison.backend.features.livechat.application.MarkMessagesReadException;
 import com.gobison.backend.features.livechat.application.SendMessageException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,16 @@ public class MessageExceptionHandler {
     public ResponseEntity<Void> handleSendMessage(SendMessageException exception) {
         HttpStatus status = switch (exception.getReason()) {
             case INVALID_CONTENT -> HttpStatus.BAD_REQUEST;
+            case NOT_PARTICIPANT -> HttpStatus.FORBIDDEN;
+            case CONVERSATION_NOT_FOUND -> HttpStatus.NOT_FOUND;
+        };
+        return ResponseEntity.status(status).build();
+    }
+
+    @ExceptionHandler(MarkMessagesReadException.class)
+    public ResponseEntity<Void> handleMarkMessagesRead(MarkMessagesReadException exception) {
+        HttpStatus status = switch (exception.getReason()) {
+            case USER_NOT_FOUND -> HttpStatus.UNAUTHORIZED;
             case NOT_PARTICIPANT -> HttpStatus.FORBIDDEN;
             case CONVERSATION_NOT_FOUND -> HttpStatus.NOT_FOUND;
         };

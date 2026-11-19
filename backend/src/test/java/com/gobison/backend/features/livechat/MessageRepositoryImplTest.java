@@ -51,6 +51,26 @@ class MessageRepositoryImplTest {
     }
 
     @Test
+    void marksUnreadMessagesFromOtherUsersAsReadAndReturnsTheirIds() {
+        var entityManager = mock(EntityManager.class);
+        var query = mock(Query.class);
+        var readAt = Instant.parse("2026-11-10T14:45:00Z");
+        when(entityManager.createNativeQuery(anyString())).thenReturn(query);
+        when(query.setParameter("readAt", readAt)).thenReturn(query);
+        when(query.setParameter("conversationId", "conv_123")).thenReturn(query);
+        when(query.setParameter("userId", "alice@example.com")).thenReturn(query);
+        when(query.getResultList()).thenReturn(List.of("msg_001", "msg_002"));
+        var repository = repositoryWith(entityManager);
+
+        var messageIds = repository.markUnreadMessagesAsRead("conv_123", "alice@example.com", readAt);
+
+        assertEquals(List.of("msg_001", "msg_002"), messageIds);
+        verify(query).setParameter("readAt", readAt);
+        verify(query).setParameter("conversationId", "conv_123");
+        verify(query).setParameter("userId", "alice@example.com");
+    }
+
+    @Test
     void retrievesMessagesInSentOrderForConversation() {
         var entityManager = mock(EntityManager.class);
         @SuppressWarnings("unchecked")
