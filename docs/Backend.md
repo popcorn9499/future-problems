@@ -24,6 +24,7 @@ Setup
 run tests via `./mvnw clean test` or `.\mvnw clean test` depending on if you run the superior Linux or Windows(cough cough more like Windblows)
 
 ## Postmap
+
 Has the draft of our api docs [https://moreaboutrebekah-4859954.docs.buildwithfern.com/gobison-api](https://moreaboutrebekah-4859954.docs.buildwithfern.com/gobison-api)
 
 ## Core Features
@@ -44,7 +45,7 @@ Handles email verification as well as registering the user
 
 the hashed password is hashed using spring frameworks crypto password encoder function.
 
-# Live Chat
+## Live Chat
 
 The Live Chat API supports creating conversations, listing a user's conversations, retrieving and sending messages, and marking incoming messages as read. All endpoints require an authenticated user. User email addresses are used as participant IDs.
 
