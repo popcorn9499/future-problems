@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/features/messages/messaging_controller.dart';
+import 'package:gobison/features/messages/models/chat_message.dart';
 
 import 'messaging_test_helpers.dart';
 
@@ -72,6 +75,38 @@ void main() {
       expect(service.readCallCount, 0);
       expect(controller.isLoadingConversation, isFalse);
     });
+
+    test(
+      'skips overlapping polls and preserves a message sent during a poll',
+      () async {
+        final pending = Completer<List<ChatMessage>>();
+        service.pendingConversation = pending.future;
+        Future<bool> poll() => controller.pollConversation(
+          conversationId: 'conversation-1',
+          currentUserId: 'current-user',
+          isVisible: () => true,
+        );
+
+        final inFlight = poll();
+        expect(await poll(), isFalse);
+        expect(service.conversationCallCount, 1);
+        expect(controller.isLoadingConversation, isFalse);
+
+        await controller.sendMessage(
+          conversationId: 'conversation-1',
+          content: 'Sent during polling',
+          currentUserId: 'current-user',
+        );
+        pending.complete([testChatMessage()]);
+
+        expect(await inFlight, isFalse);
+        expect(
+          controller.conversationMessages.single.content,
+          'Sent during polling',
+        );
+        expect(service.readCallCount, 0);
+      },
+    );
 
     test(
       'sends a trimmed message and updates chat and inbox preview',

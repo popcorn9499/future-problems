@@ -53,6 +53,8 @@ class FakeMessagingService extends MessagingService {
   String? requestedCurrentUserId;
   String? sentContent;
   int readCallCount = 0;
+  int conversationCallCount = 0;
+  Future<List<ChatMessage>>? pendingConversation;
 
   @override
   bool get usingMockData => false;
@@ -68,10 +70,12 @@ class FakeMessagingService extends MessagingService {
     String conversationId, {
     required String currentUserId,
   }) async {
+    conversationCallCount++;
     requestedConversationId = conversationId;
     requestedCurrentUserId = currentUserId;
     if (conversationFailure != null) throw conversationFailure!;
-    return messagesResult;
+    final pending = pendingConversation;
+    return pending == null ? messagesResult : await pending;
   }
 
   @override
