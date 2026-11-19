@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +21,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/conversations")
 public class MessageController {
+    private static final int DEFAULT_MESSAGE_LIMIT = 50;
+
     private final UserRepository userRepository;
     private final CreateConversationService createConversationService;
     private final GetConversationsService getConversationsService;
@@ -43,12 +46,17 @@ public class MessageController {
     @GetMapping("/{conversationId}/messages")
     public ResponseEntity<List<Message>> getMessages(
             @PathVariable String conversationId,
+            @RequestParam(defaultValue = "" + DEFAULT_MESSAGE_LIMIT) int limit,
             Authentication authentication) {
+        if (limit < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Limit must be greater than zero");
+        }
+
         boolean isParticipant = conversationRepository.findConversations(authentication.getName()).stream()
                 .anyMatch(conversation -> conversation.getId().equals(conversationId));
         if (!isParticipant) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-        return ResponseEntity.ok(messageRepository.retrieveMsgs(conversationId));
+        return ResponseEntity.ok(messageRepository.retrieveMsgs(conversationId, limit));
     }
 }
