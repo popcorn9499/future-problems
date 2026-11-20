@@ -64,7 +64,6 @@ Omitted fields remain unchanged. Supplied string fields must not be blank, and `
 | `400 Bad Request` | A supplied string field is blank, or `age` is explicitly `null` |
 | `401 Unauthorized` | Authentication is missing or the authenticated user cannot be found |
 
-
 ### Auth
 
 Handles email verification as well as registering the user
