@@ -1,0 +1,27 @@
+package com.gobison.backend.features.livechat.infrastructure.persistence;
+
+import com.gobison.backend.features.livechat.domain.model.Conversation;
+import com.gobison.backend.features.livechat.infrastructure.persistence.ConversationEntity;
+import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConversationEntityMappingTest {
+
+    @Test
+    void preservesConversationFieldsThroughEntityMapping() {
+        var createdAt = Instant.parse("2026-11-16T19:38:00Z");
+        var conversation = new Conversation("conv_123", List.of("two@example.com", "one@example.com"), createdAt);
+
+        var restored = new ConversationEntity(conversation).toDomain();
+
+        assertAll(
+                () -> assertEquals("conv_123", restored.getId()),
+                () -> assertEquals(List.of("one@example.com", "two@example.com"), restored.getParticipants()),
+                () -> assertEquals(createdAt, restored.getCreatedAt()));
+    }
+}

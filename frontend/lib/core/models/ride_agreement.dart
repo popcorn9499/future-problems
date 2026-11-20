@@ -36,6 +36,7 @@ class AgreementMember {
 class RideAgreement {
   final String? id;
   final String listingId;
+  final String? listingType;
   final String? roundTripId;
   final String rideType;
   final String origin;
@@ -51,6 +52,7 @@ class RideAgreement {
   const RideAgreement({
     required this.id,
     required this.listingId,
+    this.listingType,
     this.roundTripId,
     required this.rideType,
     required this.origin,
@@ -100,6 +102,7 @@ class RideAgreement {
     return RideAgreement(
       id: json['id']?.toString(),
       listingId: json['listingId'] as String,
+      listingType: json['listingType'] as String?,
       roundTripId: json['roundTripId'] as String?,
       rideType: json['rideType'] as String,
       origin: json['origin'] as String,

@@ -62,6 +62,7 @@ class DashboardControllerTest {
                 UUID.fromString("3f2b8c1e-0000-4000-8000-000000000001"),
                 roundTripId,
                 rideType,
+                "OFFER",
                 "Steinbach",
                 "University of Manitoba",
                 arrivalTime,
@@ -137,8 +138,9 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$[0].drivers[0].firstName").value("Ada"))
                 .andExpect(jsonPath("$[0].drivers[0].lastName").value("Lovelace"))
                 .andExpect(jsonPath("$[0].passengers[0].id").value("pat@myumanitoba.ca"))
-                // exactly these 13 fields, so nothing new (like an address) leaks in
-                .andExpect(jsonPath("$[0].length()").value(13))
+                // exactly these 14 fields, so nothing new (like an address) leaks in
+                .andExpect(jsonPath("$[0].listingType").value("OFFER"))
+                .andExpect(jsonPath("$[0].length()").value(14))
                 .andExpect(jsonPath("$[0].drivers[0].length()").value(3));
     }
 

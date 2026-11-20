@@ -85,22 +85,27 @@ public class RideOfferEntity {
     }
 
     public RideOfferEntity(RideOffer rideOffer) {
-        if (rideOffer.getLocation() != null) {
-            var coordinates = rideOffer.getLocation();
-            location = new GeometryFactory(new PrecisionModel(), 4326).createPoint(
-                    new Coordinate(coordinates.longitude(), coordinates.latitude()));
-        }
         rideType = rideOffer.getRideType();
-        departureTime = rideOffer.getDepartureTime();
         roundTripId = rideOffer.getRoundTripId();
         id = rideOffer.getOfferId();
         userEmail = rideOffer.getUserId();
+        status = rideOffer.getStatus();
+        daysOfWeek = EnumSet.noneOf(DayOfWeek.class);
+        updateDetails(rideOffer);
+    }
+
+    void updateDetails(RideOffer rideOffer) {
+        var coordinates = rideOffer.getLocation();
+        location = coordinates == null ? null
+                : new GeometryFactory(new PrecisionModel(), 4326).createPoint(
+                        new Coordinate(coordinates.longitude(), coordinates.latitude()));
         city = rideOffer.getCity();
         streetAddress = rideOffer.getStreetAddress();
         arrivalTime = rideOffer.getArrivalTime();
+        departureTime = rideOffer.getDepartureTime();
         description = rideOffer.getDescription();
-        status = rideOffer.getStatus();
-        daysOfWeek = EnumSet.copyOf(rideOffer.getDaysOfWeek());
+        daysOfWeek.clear();
+        daysOfWeek.addAll(rideOffer.getDaysOfWeek());
         passengerNum = rideOffer.getPassengerNum();
         askingForDrivers = rideOffer.isAskingForDrivers();
     }

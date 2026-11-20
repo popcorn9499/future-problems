@@ -8,6 +8,45 @@ import 'package:gobison/features/ride_offer/ride_offer_service.dart';
 void main() {
   group('RideOfferService', () {
 
+    test('loads details for the selected offer leg', () async {
+      final service = RideOfferService(client: MockClient((request) async {
+        expect(request.method, 'GET');
+        expect(request.url.path, '/api/v1/rides/offers/return');
+        return http.Response('{"offerId":"return","roundTripId":"trip","passengerNum":3}', 200);
+      }));
+
+      final details = await service.getRideOfferDetails('return');
+      expect(details['roundTripId'], 'trip');
+      expect(details['passengerNum'], 3);
+    });
+
+    test('saves both times and offer options at the selected leg URL', () async {
+      final service = RideOfferService(client: MockClient((request) async {
+        expect(request.method, 'PATCH');
+        expect(request.url.path, '/api/v1/rides/offers/return');
+        expect(jsonDecode(request.body), {
+          'city': 'Winnipeg', 'streetAddress': '123 Main', 'daysOfWeek': ['MONDAY'],
+          'arrivalTime': '08:30', 'departureTime': '17:00', 'description': null,
+          'passengerNum': 4, 'askingForDrivers': false,
+        });
+        return http.Response('{}', 200);
+      }));
+
+      await service.updateRideOffer(offerId: 'return', city: 'Winnipeg', streetAddress: '123 Main',
+          daysOfWeek: ['Monday'], arrivalTime: '08:30', departureTime: '17:00',
+          passengerNum: 4, askingForDrivers: false);
+    });
+
+    test('treats an unrelated cancellation conflict as an error', () async {
+      final service = RideOfferService(client: MockClient((request) async {
+        expect(request.method, 'DELETE');
+        expect(request.url.queryParameters, isEmpty);
+        return http.Response('', 409);
+      }));
+
+      await expectLater(service.cancelRideOffer('return'), throwsA(isA<Exception>()));
+    });
+
     group('createRideOffer', () {
       test(
         'sends the correct request and returns the created ride offer',
