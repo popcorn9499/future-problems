@@ -73,4 +73,4 @@ jobs:
           rsync -avz -e "ssh -p2525 -i private_key -o StrictHostKeyChecking=no" backend/target/backend-0.0.1-SNAPSHOT.jar deploybot@popicraft.net:/home/deploybot/gobison-backend/backend.jar
           
           # Restart the backend service via systemd
-          ssh -p2525 -i private_key -o StrictHostKeyChecking=no deploybot@popicraft.net "systemctl --user restart gobison-backend"
+          ssh -p2525 -i private_key -o StrictHostKeyChecking=no deploybot@popicraft.net "sudo -n systemctl restart gobison-backend.service"
