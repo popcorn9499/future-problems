@@ -10,9 +10,9 @@ This sprint, our team focused on building out our core features and implementing
 - Dashboard showing users all of their current agreements and postings
 - Users can now create ride requests and offers
 - Implemented a map that displays all open ride offers and requests nearby
-- Allow users to edit and delete their ride arrangements
+- Allow users to edit and delete their ride agreements
 - Allow users to delete their account
-- Implemented live chat functionality for users to talk to eachother
+- Implemented live chat functionality for users to talk to eachother (they can initiate a conversation from a posting they're interesting in joining)
 - Added regression tests to our automated test suite
 - Added linting to our CI pipeline
 
@@ -28,11 +28,13 @@ The team currently uses a combination of unit, integration, and frontend widget 
 Our test methods have remained the same as outlined in [the testing status section of sprint1.md](../sprint1/sprint1.md), we have continued to use flutter widget tests, Junit 5, SpringBoot tools, and Mockito.
 
 There are some testing gaps we are aware of, and would like to address in the next sprint. 
-One gap in our frontend testing is the fact that the layouts are all tested at the same size, meaning we could miss overflow issues on smaller screen sizes. To fix this, we should add widget tests that run on smaller screen sizes next sprint.
+One gap in our frontend testing is the fact that the layouts are all tested at the same size, meaning we could miss overflow issues on smaller screen sizes. This gap exists mostly due to lack of awareness and then lack of time, as the team did not think or know about this until late into the sprint. To fix this, we should add widget tests that run on smaller screen sizes next sprint.
 
-We also currently have no tests that measure performance, so we do not yet know how the app and database will respond to higher amounts of traffic and queries. Our dashboard logic makes a lot of queries to the database, and could possibly return a very large amount of data to the frontend, so this could be a high-risk area. Next sprint, we will make sure to add tests to measure our app's performance.
+Another gap exists, where a couple of features are missing integration tests that test different layers together. For example, the dashboard and creation of ride requests/offers do not have integration tests that use both the frontend and backend together. Again, this was due to lack of time this sprint and we will be sure to remedy this in sprint 3 by ensuring all features have integration tests.
 
-Another area which might be considered a testing gap is accessbility. Flutter has built in tools for testing accessibility, which can measure how well the app is meeting accessbility guidelines for contrast, sizes, and labels. We have not used these tools this sprint, but would like to implement some tests using them during the next iteration.
+We also currently have no tests that measure performance, so we do not yet know how the app and database will respond to higher amounts of traffic and queries. Our dashboard logic makes a lot of queries to the database, and could possibly return a very large amount of data to the frontend, so this could be a high-risk area that's untested. This gap exists as we considered other types of tests to be the priority this iteration. Next sprint, we will make sure to add tests to measure our app's performance.
+
+Another area which might be considered a testing gap is accessbility. Flutter has built in tools for testing accessibility, which can measure how well the app is meeting accessbility guidelines for contrast, sizes, and labels that we did not get to utilize this sprint. The reason that this gap exists is that we hadn't even considered that this was a possible test type until the end of the sprint, and we were not aware flutter had tools for this. We would like to implement some tests using them during the next iteration.
 
 In terms of coverage, our tests are covering a good percentage of code but we acknowledge that this only means the lines ran, and not that all inputs and behaviour are being thoroughly tested. We will aim to include a wider variety of test types and test more possible behaviours next sprint.
 
@@ -59,9 +61,19 @@ We reviewed Group 3's application:
 
 ## Reflection & Risk
 
-### Sasha
+### What technical decision or implementation improved most since Sprint 1, and why?
 
-There are some areas of uncertainty and technical risk in our project going into the final sprint. The ability to actually join other people’s postings is not implemented yet, nor is the ability for the creator of a posting to approve people joining. This is a possible risk going forward, as this implementation could affect surrounding features in ways we have not thought of yet and it’s arguably one of the most important workflows of our application. There is also some uncertainty surrounding how this might be implemented since there were some previously unconsidered rules and semantics surrounding this feature that came up this sprint, and it is also not fully decided how exactly we want to handle this functionality (e.g. should we have a notifications page, or should requests to join appear in the user's dashboard).
+**Leon**: The implementation that we would say has improved the most since Sprint 1 would have to be specifically, Users. In the conclusion of Sprint 1, people were able to sign up, log in, and authenticate their accounts, storing that authentication for a User. With Sprint 2 coming to a close, we've made significant progress on User related features. Users now have a profile with associated details stored, from an "About me" section to even a colour for their profile icon. Users can now logout of their account at will, and delete their account from our service. A user of our application can now do the expected actions assumed for User functionality, whereas Sprint 1 was minimal in that regard.
+
+### What feedback from Sprint 1 did the team act on, and what changed as a result?
+
+**Kamryn**: We received feedback from Lauren during our demo that some details of our profile page could be improved. This included our use of a dropdown gender field. After a group discussion we decided to change it to a pronouns textfield. This way users had full control over how they wanted to be addressed by other users.  In the same meeting Lauren suggested that users should have some control over how their user avatar looks and because of this we decided to implement an avatar colour selector in the edit profile page.
+
+### What part of the current testing, CI, or CD process creates the most friction, and what might improve it?
+
+### What is the most important technical risk or uncertainty going into the final iteration?
+
+**Sasha**: There are some areas of uncertainty and technical risk in our project going into the final sprint. The ability to actually join other people’s postings is not implemented yet, nor is the ability for the creator of a posting to approve people joining. This is a possible risk going forward, as this implementation could affect surrounding features in ways we have not thought of yet and it’s arguably one of the most important workflows of our application. There is also some uncertainty surrounding how this might be implemented since there were some previously unconsidered rules and semantics surrounding this feature that came up this sprint, and it is also not fully decided how exactly we want to handle this functionality (e.g. should we have a notifications page, or should requests to join appear in the user's dashboard).
 
 #### Work the team is proud of
 
