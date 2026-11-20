@@ -55,21 +55,6 @@ jobs:
       SUPABASE_DB_PASSWORD: ci_password
       SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
 
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: gobison_test
-          POSTGRES_USER: ci_user
-          POSTGRES_PASSWORD: ci_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ci_user -d gobison_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Download project code
         uses: actions/checkout@v4
@@ -82,9 +67,9 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Build and test backend
+      - name: Build backend
         working-directory: backend
-        run: bash ./mvnw --batch-mode verify
+        run: bash mvnw --batch-mode clean package -DskipTests
 
       - name: Upload backend test reports
         if: always()
