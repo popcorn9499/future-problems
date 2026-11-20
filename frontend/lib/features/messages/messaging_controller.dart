@@ -23,20 +23,34 @@ class MessagingController extends ChangeNotifier {
   String? inboxErrorMessage;
   String? chatErrorMessage;
   bool get usingMockData => _messagingService.usingMockData;
+  int get unreadCount =>
+      inbox.fold(0, (total, conversation) => total + conversation.unreadCount);
 
   bool _disposed = false;
   bool _isPollingConversation = false;
   int _conversationRevision = 0;
+  int _inboxReadRevision = 0;
+  bool _isFetchingInbox = false;
 
-  Future<void> loadInbox() async {
-    isLoadingInbox = true;
-    inboxErrorMessage = null;
-    _notify();
+  Future<void> loadInbox({bool silent = false}) async {
+    if (_disposed || _isFetchingInbox) return;
+    _isFetchingInbox = true;
+    final readRevision = _inboxReadRevision;
+    if (!silent) {
+      isLoadingInbox = true;
+      inboxErrorMessage = null;
+      _notify();
+    }
     try {
-      inbox = await _messagingService.getInbox();
+      final conversations = await _messagingService.getInbox();
+      if (!_disposed && readRevision == _inboxReadRevision) {
+        inbox = conversations;
+        inboxErrorMessage = null;
+      }
     } catch (error) {
-      inboxErrorMessage = _userMessage(error, 'inbox');
+      if (!silent) inboxErrorMessage = _userMessage(error, 'inbox');
     } finally {
+      _isFetchingInbox = false;
       isLoadingInbox = false;
       _notify();
     }
@@ -129,6 +143,7 @@ class MessagingController extends ChangeNotifier {
   Future<void> _markConversationAsRead(String conversationId) async {
     await _messagingService.markConversationAsRead(conversationId);
     if (_disposed) return;
+    _inboxReadRevision++;
     inbox = inbox
         .map(
           (conversation) => conversation.conversationId == conversationId
