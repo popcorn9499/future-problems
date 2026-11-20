@@ -44,13 +44,17 @@ In terms of coverage, our tests are covering a good percentage of code but we ac
 
 ## Live Deployment
 
+[See our app live here](https://gobison.popicraft.net/)
+
+[Deployment documentation](../../Deployment.md)
+
 ## Cross-Team Testing
 
-### Our Review:
+### Our Review
 
 [Review completed for group 3](https://github.com/laradeleon/the-story-machine/issues/95)
 
-### Our Feedback:
+### Our Feedback
 
 [Review received from group 1](https://github.com/popcorn9499/future-problems/issues/216)
 
