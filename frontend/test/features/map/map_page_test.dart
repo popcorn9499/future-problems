@@ -344,6 +344,7 @@ void main() {
       );
       expect(arrivalLabel, isArrival ? findsOneWidget : findsNothing);
       expect(departureLabel, isArrival ? findsNothing : findsOneWidget);
+      expect(find.text('Posted by'), findsNothing);
       expect(find.descendant(of: sheet, matching: find.text('Status:')), findsNothing);
       expect(find.descendant(of: sheet, matching: find.text('OPEN')), findsNothing);
     });
@@ -359,6 +360,7 @@ void main() {
             ? http.Response(
                 '{"$source":[{"rideType":"roundTrip","userId":"another-user",'
                 '"arrivalTime":"07:15","departureTime":"16:30",'
+                '"poster":{"firstName":"Jordan","lastName":"Lee","avatarColor":"#D1C4E9"},'
                 '"daysOfWeek":["MONDAY","WEDNESDAY","SATURDAY"],'
                 '"description":"Meet by the entrance","passengerNum":3,"askingForDrivers":false,'
                 '"location":{"latitude":49.8951,"longitude":-97.1384}}]}',
@@ -371,8 +373,17 @@ void main() {
       await settle(tester);
 
       expect(find.text('Ride $kind'), findsOneWidget);
-      expect(find.text('7:15 AM'), findsOneWidget);
-      expect(find.text('4:30 PM'), findsOneWidget);
+      final arrival = find.text('7:15 AM');
+      final departure = find.text('4:30 PM');
+      expect(arrival, findsOneWidget);
+      expect(departure, findsOneWidget);
+      expect(find.text('Ride type:'), findsNothing);
+      expect(
+        tester.getBottomLeft(find.text('Round trip')).dy,
+        lessThan(tester.getTopLeft(arrival).dy),
+      );
+      expect(tester.getTopLeft(arrival).dy, tester.getTopLeft(departure).dy);
+      expect(tester.getTopLeft(arrival).dx, lessThan(tester.getTopLeft(departure).dx));
       expect(find.text('Days'), findsOneWidget);
       expect(find.text('Sa'), findsOneWidget);
       expect(find.text('Su'), findsNothing);
@@ -392,10 +403,18 @@ void main() {
       expect(bubbleDecoration('M').color, AppColors.primary);
       expect(bubbleDecoration('T').color, Colors.transparent);
       final offerFieldMatcher = kind == 'offer' ? findsOneWidget : findsNothing;
-      expect(find.text('Maximum Passengers:'), offerFieldMatcher);
-      expect(find.text('Asking for drivers:'), offerFieldMatcher);
+      expect(find.text('Up to 3 passengers'), offerFieldMatcher);
+      final sheet = find.byType(BottomSheet);
+      expect(
+        find.descendant(of: sheet, matching: find.text('Looking for other drivers')),
+        findsNothing,
+      );
       expect(find.text('Ride notes'), findsOneWidget);
       expect(find.text('Meet by the entrance'), findsOneWidget);
+      expect(find.text('Posted by'), findsOneWidget);
+      expect(find.text('Jordan Lee'), findsOneWidget);
+      final avatar = find.widgetWithText(CircleAvatar, 'JL');
+      expect(tester.widget<CircleAvatar>(avatar).backgroundColor, const Color(0xFFD1C4E9));
 
       final message = find.widgetWithText(OutlinedButton, 'Message');
       final join = find.widgetWithText(FilledButton, 'Ask to Join Ride');
@@ -411,9 +430,47 @@ void main() {
       await tester.pumpWidget(createTestWidget(sheetWidth: 240));
       await settle(tester);
       expect(tester.takeException(), isNull);
+      expect(tester.getTopLeft(arrival).dy, lessThan(tester.getTopLeft(departure).dy));
       expect(message.hitTestable(), findsOneWidget);
       expect(join.hitTestable(), findsOneWidget);
       expect(tester.getCenter(message).dy, lessThan(tester.getCenter(join).dy));
+    });
+  }
+
+  for (final capacity in [1, null]) {
+    testWidgets('shows driver preference with capacity $capacity', (tester) async {
+      await pumpMapPage(
+        tester,
+        respond: (request) async => request.url.path.endsWith('/offers')
+            ? http.Response(
+                '{"offers":[{"rideType":"departing","askingForDrivers":true,'
+                '"passengerNum":$capacity,'
+                '"location":{"latitude":49.8951,"longitude":-97.1384}}]}',
+                200,
+              )
+            : http.Response('{}', 200),
+      );
+      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      await tester.tap(find.byWidget(marker.child));
+      await settle(tester);
+      await tester.pumpWidget(createTestWidget(sheetWidth: 240));
+      await settle(tester);
+
+      final sheet = find.byType(BottomSheet);
+      expect(find.descendant(of: sheet, matching: find.text('From campus')), findsOneWidget);
+      expect(find.text('Leave campus at:'), findsNothing);
+      expect(find.widgetWithText(Chip, 'Looking for other drivers'), findsOneWidget);
+      expect(
+        find.widgetWithText(Chip, 'Up to 1 passenger'),
+        capacity == null ? findsNothing : findsOneWidget,
+      );
+      if (capacity != null) {
+        expect(
+          tester.getTopLeft(find.widgetWithText(Chip, 'Looking for other drivers')).dy,
+          greaterThan(tester.getTopLeft(find.widgetWithText(Chip, 'Up to 1 passenger')).dy),
+        );
+      }
+      expect(tester.takeException(), isNull);
     });
   }
 
@@ -448,7 +505,7 @@ void main() {
       expect(find.text('Ride offers (1)'), mixed ? findsOneWidget : findsNothing);
       expect(find.text('Ride offers (0)'), findsNothing);
       expect(find.text('To campus'), findsNWidgets(2));
-      expect(find.text('7:15 AM'), findsNWidgets(2));
+      expect(find.text('Arrive by 7:15 AM'), findsNWidgets(2));
 
       final city = find.text('Winnipeg').first;
       final row = find.ancestor(of: city, matching: find.byType(InkWell)).first;
@@ -457,7 +514,7 @@ void main() {
         of: row,
         matching: find.text('To campus'),
       );
-      final time = find.descendant(of: row, matching: find.text('7:15 AM'));
+      final time = find.descendant(of: row, matching: find.text('Arrive by 7:15 AM'));
       final chevron = find.descendant(
         of: row,
         matching: find.byIcon(Icons.chevron_right),
@@ -483,6 +540,35 @@ void main() {
       expect(find.text('Ride request'), findsOneWidget);
     });
   }
+
+  testWidgets('labels nearby departure and round-trip times', (tester) async {
+    const location = '"location":{"latitude":49.8951,"longitude":-97.1384}';
+    await pumpMapPage(
+      tester,
+      respond: (request) async => request.url.path.endsWith('/offers')
+          ? http.Response(
+              '{"offers":['
+              '{"rideType":"roundTrip","arrivalTime":"08:30","departureTime":"16:30",$location},'
+              '{"rideType":"departing","departureTime":"17:00",$location},'
+              '{"rideType":"arriving",$location}]}',
+              200,
+            )
+          : http.Response('{}', 200),
+    );
+    final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+    await tester.tap(find.byWidget(marker.child));
+    await settle(tester);
+
+    final arrival = find.text('Arrive by 8:30 AM');
+    final departure = find.text('Leave at 4:30 PM');
+    expect(arrival, findsOneWidget);
+    expect(departure, findsOneWidget);
+    expect(tester.getCenter(arrival).dy, lessThan(tester.getCenter(departure).dy));
+    expect(tester.getTopRight(arrival).dx, closeTo(tester.getTopRight(departure).dx, 0.1));
+    expect(find.text('Leave at 5:00 PM'), findsOneWidget);
+    expect(find.textContaining('Arrive by'), findsOneWidget);
+    expect(find.textContaining('Leave at'), findsNWidgets(2));
+  });
 
   group('CarpoolMultiSourceMapPage days of week picker', () {
     testWidgets('opens a dialog with every day', (WidgetTester tester) async {

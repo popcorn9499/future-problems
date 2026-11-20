@@ -10,6 +10,8 @@ import '../../core/models/user.dart';
 import '../../core/navigation/no_animation_page_route.dart';
 import '../../core/services/session_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/avatar_color_option.dart';
+import '../../core/widgets/user_avatar.dart';
 import '../auth/presentation/login_page.dart';
 import '../messages/messaging_controller.dart';
 import '../messages/messaging_service.dart';
@@ -876,17 +878,31 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     Map<String, dynamic> details, {
     required bool isOffer,
   }) async {
-    final rideType = details['rideType'];
-    final fields = _detailFields.entries
-        .where((field) => isOffer || !_offerOnlyFields.contains(field.key))
-        .where(
-          (field) => switch (field.key) {
-            'arrivalTime' => rideType != 'departing',
-            'departureTime' => rideType != 'arriving',
-            _ => true,
-          },
-        )
-        .toList();
+    final passengerCount = details['passengerNum'];
+    final offerBadges = [
+      if (isOffer && passengerCount is int && passengerCount > 0)
+        Chip(
+          avatar: const Icon(Icons.people_outline),
+          label: Text(
+            'Up to $passengerCount passenger${passengerCount == 1 ? '' : 's'}',
+          ),
+        ),
+      if (isOffer && details['askingForDrivers'] == true)
+        const Chip(
+          avatar: Icon(Icons.directions_car_outlined),
+          label: Text('Looking for other drivers'),
+        ),
+    ];
+    final poster = details['poster'];
+    final firstName = poster is Map && poster['firstName'] is String
+        ? (poster['firstName'] as String).trim()
+        : '';
+    final lastName = poster is Map && poster['lastName'] is String
+        ? (poster['lastName'] as String).trim()
+        : '';
+    final avatarColor = poster is Map && poster['avatarColor'] is String
+        ? poster['avatarColor'] as String
+        : null;
     final notes = _formatDetailValue(details['description']).trim();
     final savedDays = details['daysOfWeek'];
     final days = savedDays is List
@@ -971,53 +987,26 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                       child: ListView(
                         shrinkWrap: true,
                         children: [
-                          for (final field in fields)
-                            if (field.key == 'daysOfWeek') ...[
-                              if (days.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                const Text(
-                                  'Days',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 6),
-                                _buildDayBubbles(sheetContext, days),
-                                const SizedBox(height: 6),
-                              ],
-                            ] else if (_formatDetailValue(details[field.key])
-                                    .trim()
-                                    .isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: Text(
-                                        '${field.value}:',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(
-                                        switch (field.key) {
-                                          'rideType' => _rideTypeLabel(rideType),
-                                          'arrivalTime' || 'departureTime' =>
-                                            _formatRideTime(
-                                              sheetContext,
-                                              details[field.key],
-                                            ),
-                                          _ => _formatDetailValue(details[field.key]),
-                                        },
-                                        style: const TextStyle(color: Colors.black87),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          _buildRideSchedule(sheetContext, details),
+                          if (days.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Days',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            _buildDayBubbles(sheetContext, days),
+                            const SizedBox(height: 6),
+                          ],
+                          if (offerBadges.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: offerBadges,
                               ),
+                            ),
                           if (notes.isNotEmpty) ...[
                             const Divider(height: 24),
                             const Text(
@@ -1026,6 +1015,33 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(notes),
+                          ],
+                          if (firstName.isNotEmpty) ...[
+                            const Divider(height: 24),
+                            Row(
+                              children: [
+                                UserAvatar(
+                                  firstName: firstName,
+                                  lastName: lastName,
+                                  radius: 18,
+                                  backgroundColor: AvatarColorOption.getBackgroundColor(avatarColor),
+                                  textColor: AvatarColorOption.getTextColor(avatarColor),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Posted by'),
+                                      Text(
+                                        '$firstName $lastName'.trim(),
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ],
                       ),
@@ -1095,22 +1111,78 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   // ===================== Privacy + grouping helpers =====================
 
-  /// Fields shown in the details sheet, in display order (API key -> title).
-  /// Anything not listed here (IDs, address, location) is not shown.
-  static const Map<String, String> _detailFields = {
-    'rideType': 'Ride type',
-    'arrivalTime': 'Arrive at campus by',
-    'departureTime': 'Leave campus at',
-    'daysOfWeek': 'Days',
-    'passengerNum': 'Maximum Passengers',
-    'askingForDrivers': 'Asking for drivers',
-  };
-
-  /// Fields that only exist on ride offers, hidden for ride requests
-  static const Set<String> _offerOnlyFields = {
-    'passengerNum',
-    'askingForDrivers',
-  };
+  Widget _buildRideSchedule(BuildContext context, Map<String, dynamic> details) {
+    final rideType = details['rideType'];
+    final direction = _rideTypeLabel(rideType);
+    final theme = Theme.of(context);
+    final times = [
+      if (rideType != 'departing')
+        ('Arrive at campus by', _formatRideTime(context, details['arrivalTime'])),
+      if (rideType != 'arriving')
+        ('Leave campus at', _formatRideTime(context, details['departureTime'])),
+    ].where((entry) => entry.$2.trim().isNotEmpty).toList();
+    final directionStyle = theme.textTheme.titleMedium?.copyWith(
+      fontWeight: FontWeight.w600,
+    );
+    if (times.isEmpty) {
+      return direction.isEmpty
+          ? const SizedBox.shrink()
+          : Text(direction, style: directionStyle);
+    }
+    final entries = [
+      for (final (label, time) in times)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$label:', style: theme.textTheme.labelLarge),
+              Text(
+                time,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(top: 4, bottom: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (direction.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+              child: Text(direction, style: directionStyle),
+            ),
+          LayoutBuilder(
+            builder: (context, constraints) => constraints.maxWidth >= 340
+                ? IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final entry in entries) Expanded(child: entry),
+                      ],
+                    ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: entries,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _rideTypeLabel(dynamic rideType) {
     return switch (rideType) {
@@ -1451,12 +1523,12 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     final details = item.details;
     final rideType = details['rideType'];
     final city = _formatDetailValue(details['city']).trim();
+    final arrival = _formatRideTime(sheetContext, details['arrivalTime']).trim();
+    final departure = _formatRideTime(sheetContext, details['departureTime']).trim();
     final times = [
-      if (rideType != 'departing')
-        _formatRideTime(sheetContext, details['arrivalTime']),
-      if (rideType != 'arriving')
-        _formatRideTime(sheetContext, details['departureTime']),
-    ].where((time) => time.isNotEmpty).join(' · ');
+      if (rideType != 'departing' && arrival.isNotEmpty) 'Arrive by $arrival',
+      if (rideType != 'arriving' && departure.isNotEmpty) 'Leave at $departure',
+    ];
     final direction = _rideTypeLabel(rideType);
     final savedDays = details['daysOfWeek'];
     final days = savedDays is List
@@ -1513,8 +1585,21 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                   if (times.isNotEmpty) ...[
                     const SizedBox(width: 12),
                     ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 112),
-                      child: Text(times, textAlign: TextAlign.end),
+                      constraints: BoxConstraints(
+                        maxWidth: math.min(176, constraints.maxWidth * 0.42),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          for (final time in times)
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: Text(time),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                   const SizedBox(width: 12),

@@ -27,9 +27,14 @@ public record RideOfferResponse(
         String status,
         int passengerNum,
         boolean askingForDrivers,
-        GeoLocation location) { // 1. Added location field
+        GeoLocation location,
+        @JsonInclude(JsonInclude.Include.NON_NULL) RidePosterResponse poster) {
 
     public static RideOfferResponse from(List<RideOffer> savedLegs) {
+        return from(savedLegs, null);
+    }
+
+    static RideOfferResponse from(List<RideOffer> savedLegs, RidePosterResponse poster) {
         var arrival = savedLegs.stream()
                 .filter(leg -> leg.getRideType() == RideType.ARRIVAL)
                 .findFirst().orElse(null);
@@ -57,6 +62,7 @@ public record RideOfferResponse(
                 rideOffer.getStatus(),
                 rideOffer.getPassengerNum(),
                 rideOffer.isAskingForDrivers(),
-                rideOffer.getLocation()); // 2. Mapped location from domain model
+                rideOffer.getLocation(),
+                poster);
     }
 }

@@ -293,6 +293,11 @@ class RideRetrievalTest {
         RideOffer arrivalLeg = offer(RideType.ARRIVAL, roundTripId);
         RideOffer departureLeg = offer(RideType.DEPARTURE, roundTripId);
         List<RideOffer> offers = List.of(departureLeg, single, arrivalLeg);
+        when(single.getUserId()).thenReturn("missing@myumanitoba.ca");
+        var poster = new User("driver@myumanitoba.ca", "secret", "Jordan", "Lee", true);
+        poster.setAvatarColor("#D1C4E9");
+        var ownerEmails = List.of("driver@myumanitoba.ca", "missing@myumanitoba.ca");
+        when(userRepository.findAllByEmail(ownerEmails)).thenReturn(Map.of(poster.getEmail(), poster));
         when(rideOfferRepository.findFilteredOffers(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(offers);
 
@@ -306,6 +311,7 @@ class RideRetrievalTest {
                 .andExpect(jsonPath("$.offers[0].departureId").value(nullValue()))
                 .andExpect(jsonPath("$.offers[0].roundTripId").value(nullValue()))
                 .andExpect(jsonPath("$.offers[0].arrivalTime").value("08:30"))
+                .andExpect(jsonPath("$.offers[0].poster").doesNotHaveJsonPath())
                 .andExpect(jsonPath("$.offers[0].departureTime").value(nullValue()))
                 .andExpect(jsonPath("$.offers[0].daysOfWeek[0]").value("MONDAY"))
                 .andExpect(jsonPath("$.offers[0].passengerNum").value(3))
@@ -318,7 +324,12 @@ class RideRetrievalTest {
                 .andExpect(jsonPath("$.offers[1].departureId").value(departureLeg.getOfferId().toString()))
                 .andExpect(jsonPath("$.offers[1].arrivalTime").value("08:30"))
                 .andExpect(jsonPath("$.offers[1].departureTime").value("16:30"))
-                .andExpect(jsonPath("$.offers[1].city").value("Winnipeg"));
+                .andExpect(jsonPath("$.offers[1].city").value("Winnipeg"))
+                .andExpect(jsonPath("$.offers[1].poster.firstName").value("Jordan"))
+                .andExpect(jsonPath("$.offers[1].poster.lastName").value("Lee"))
+                .andExpect(jsonPath("$.offers[1].poster.avatarColor").value("#D1C4E9"))
+                .andExpect(jsonPath("$.offers[1].poster.email").doesNotHaveJsonPath());
+        verify(userRepository).findAllByEmail(ownerEmails);
     }
 
     @Test
@@ -329,6 +340,11 @@ class RideRetrievalTest {
         RideRequest arrivalLeg = request(RideType.ARRIVAL, roundTripId);
         RideRequest departureLeg = request(RideType.DEPARTURE, roundTripId);
         List<RideRequest> requests = List.of(arrivalLeg, departureLeg, single);
+        when(single.getUserId()).thenReturn("missing@myumanitoba.ca");
+        var poster = new User("rider@myumanitoba.ca", "secret", "Jordan", "Lee", true);
+        poster.setAvatarColor("#D1C4E9");
+        var ownerEmails = List.of("rider@myumanitoba.ca", "missing@myumanitoba.ca");
+        when(userRepository.findAllByEmail(ownerEmails)).thenReturn(Map.of(poster.getEmail(), poster));
         when(rideRequestRepository.findFiltered(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(requests);
 
@@ -340,6 +356,7 @@ class RideRetrievalTest {
                 .andExpect(jsonPath("$.requests[0].departureId").value(single.getRequestId().toString()))
                 .andExpect(jsonPath("$.requests[0].arrivalId").value(nullValue()))
                 .andExpect(jsonPath("$.requests[0].arrivalTime").value(nullValue()))
+                .andExpect(jsonPath("$.requests[0].poster").doesNotHaveJsonPath())
                 .andExpect(jsonPath("$.requests[0].departureTime").value("16:30"))
                 .andExpect(jsonPath("$.requests[0].daysOfWeek[0]").value("TUESDAY"))
                 .andExpect(jsonPath("$.requests[1].rideType").value("roundTrip"))
@@ -348,6 +365,11 @@ class RideRetrievalTest {
                 .andExpect(jsonPath("$.requests[1].arrivalId").value(arrivalLeg.getRequestId().toString()))
                 .andExpect(jsonPath("$.requests[1].departureId").value(departureLeg.getRequestId().toString()))
                 .andExpect(jsonPath("$.requests[1].arrivalTime").value("08:30"))
-                .andExpect(jsonPath("$.requests[1].departureTime").value("16:30"));
+                .andExpect(jsonPath("$.requests[1].departureTime").value("16:30"))
+                .andExpect(jsonPath("$.requests[1].poster.firstName").value("Jordan"))
+                .andExpect(jsonPath("$.requests[1].poster.lastName").value("Lee"))
+                .andExpect(jsonPath("$.requests[1].poster.avatarColor").value("#D1C4E9"))
+                .andExpect(jsonPath("$.requests[1].poster.email").doesNotHaveJsonPath());
+        verify(userRepository).findAllByEmail(ownerEmails);
     }
 }
