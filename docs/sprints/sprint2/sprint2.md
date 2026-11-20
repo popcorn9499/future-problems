@@ -25,7 +25,7 @@ This sprint, our team focused on building out our core features and implementing
 
 The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application, and all tests are run upon pushes and pull requests through our CI pipeline.
 
-Our test methods have remained the same as outlined in [the testing status section of sprint1.md](../sprint1/Sprint1.md), we have continued to use flutter widget tests, Junit 5, SpringBoot tools, and Mockito.
+See our [testing documentation](../../Testing.md) for more details about our testing approach for GoBison.
 
 There are some testing gaps we are aware of, and would like to address in the next sprint.
 One gap in our frontend testing is the fact that the layouts are all tested at the same size, meaning we could miss overflow issues on smaller screen sizes. This gap exists mostly due to lack of awareness and then lack of time, as the team did not think or know about this until late into the sprint. To fix this, we should add widget tests that run on smaller screen sizes next sprint.
