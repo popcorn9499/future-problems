@@ -84,6 +84,12 @@ public class SecurityConfiguration {
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
 
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/conversation").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/conversations").authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/conversations/*/messages").authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/conversations/*/messages").authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/conversations/*/read").authenticated()
+
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me/profile")
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/profile")
@@ -93,7 +99,21 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/agreements")
                                                 .authenticated()
 
-                                                .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests", "/api/v1/rides/offers").authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/rides/requests",
+                                                                "/api/v1/rides/offers")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/offers/*")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/requests/*/round-trip", "/api/v1/rides/offers/*")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/v1/rides/requests/*",
+                                                                "/api/v1/rides/offers/*")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/rides/requests",
+                                                                "/api/v1/rides/offers")
+                                                .authenticated()
                                                 .anyRequest().denyAll())
 
                                 .exceptionHandling(exceptions -> exceptions

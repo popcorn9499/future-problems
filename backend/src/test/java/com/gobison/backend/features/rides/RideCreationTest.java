@@ -24,6 +24,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.http.MediaType;
 import tools.jackson.databind.ObjectMapper;
+import com.gobison.backend.features.rides.application.GetRideRequestsService;
+import com.gobison.backend.features.rides.application.RetrieveRideOffersService;
 
 import java.util.Optional;
 
@@ -61,6 +63,12 @@ class RideCreationTest {
 
     @MockitoBean
     Geocoder geocoder;
+
+    @MockitoBean
+    RetrieveRideOffersService retrieveRideOffersService;
+
+    @MockitoBean
+    GetRideRequestsService getRideRequestsService;
 
     private final String email = "ada@myumanitoba.ca";
 
@@ -144,6 +152,7 @@ class RideCreationTest {
                 body.replace("08:30", "24:00"),
                 body.replace(" Winnipeg ", " "),
                 body.replace("[\"FRIDAY\",\"MONDAY\",\"MONDAY\"]", "[]"),
+                body.replace("FRIDAY", "SATURDAY"),
                 body.replace("FRIDAY", "FUNDAY"),
                 body.replace("\"FRIDAY\"", "null"),
                 "{}",
@@ -155,7 +164,7 @@ class RideCreationTest {
                 .andExpect(status().isBadRequest());
         }
         for (String seats : new String[] {
-                "0", "-1", "null", "0.9", "-2.9", "2147483648", "\"invalid\""}) {
+                "0", "10", "-1", "null", "0.9", "-2.9", "2147483648", "\"invalid\""}) {
             mvc.perform(post("/api/v1/rides/offers")
                         .with(user(email))
                         .contentType(MediaType.APPLICATION_JSON)

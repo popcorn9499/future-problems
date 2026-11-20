@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 import java.time.DayOfWeek;
@@ -36,6 +37,7 @@ public record CreateRideOfferRequest(
 
         @NotNull
         @Min(1)
+        @Max(9)
         Integer passengerNum,
 
         Boolean askingForDrivers) {

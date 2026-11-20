@@ -1,6 +1,7 @@
 package com.gobison.backend.features.rides.presentation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
 import com.gobison.backend.features.rides.domain.model.RideOffer;
 import com.gobison.backend.features.rides.domain.model.RideType;
 
@@ -25,7 +26,8 @@ public record RideOfferResponse(
         String description,
         String status,
         int passengerNum,
-        boolean askingForDrivers) {
+        boolean askingForDrivers,
+        GeoLocation location) { // 1. Added location field
 
     public static RideOfferResponse from(List<RideOffer> savedLegs) {
         var arrival = savedLegs.stream()
@@ -54,6 +56,7 @@ public record RideOfferResponse(
                 rideOffer.getDescription(),
                 rideOffer.getStatus(),
                 rideOffer.getPassengerNum(),
-                rideOffer.isAskingForDrivers());
+                rideOffer.isAskingForDrivers(),
+                rideOffer.getLocation()); // 2. Mapped location from domain model
     }
 }

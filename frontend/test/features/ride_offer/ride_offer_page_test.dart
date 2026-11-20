@@ -642,6 +642,75 @@ void main() {
       );
     });
 
+     testWidgets(
+      'shows validation when departure time is before arrival time',
+      (WidgetTester tester) async {
+        await tester.pumpWidget(createTestWidget());
+        final dropdown = find.byType(DropdownButton<String>);
+        await tester.ensureVisible(dropdown);
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Round Trip').last);
+        await tester.pumpAndSettle();
+        await enterRequiredFields(tester);
+        await selectPassengerCount(tester, 2);
+        final mondayChip = find.widgetWithText(FilterChip, 'Mon');
+
+        await tester.ensureVisible(mondayChip);
+        await tester.tap(mondayChip);
+        await tester.pumpAndSettle();
+        var timeSelectors = find.text('Select time');
+
+        await tester.ensureVisible(timeSelectors.first);
+        await tester.tap(timeSelectors.first);
+        await tester.pumpAndSettle();
+
+        var timeFields = find.descendant(
+          of: find.byType(TimePickerDialog),
+          matching: find.byType(TextField),
+        );
+
+        await tester.enterText(timeFields.at(0), '05');
+        await tester.enterText(timeFields.at(1), '00');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('PM'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.descendant(
+            of: find.byType(TimePickerDialog),
+            matching: find.text('OK'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        timeSelectors = find.text('Select time');
+        await tester.ensureVisible(timeSelectors.first);
+        await tester.tap(timeSelectors.first);
+        await tester.pumpAndSettle();
+        timeFields = find.descendant(
+          of: find.byType(TimePickerDialog),
+          matching: find.byType(TextField),
+        );
+        await tester.enterText(timeFields.at(0), '04');
+        await tester.enterText(timeFields.at(1), '00');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('PM'));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.descendant(
+            of: find.byType(TimePickerDialog),
+            matching: find.text('OK'),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await submitForm(tester);
+        expect(
+          find.text('Departure time must be after arrival time.'),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('switching to arriving clears departure time', (
       WidgetTester tester,
     ) async {

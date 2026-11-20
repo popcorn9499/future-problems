@@ -67,6 +67,7 @@ public class CreateRideOfferService {
                     HttpStatus.BAD_REQUEST, "departureTime must be later than arrivalTime");
         }
 
+        RideDays.validate(request.daysOfWeek(), List.of());
         var location = geocoder.locate(request.streetAddress().trim(), request.city().trim());
 
         UUID roundTripId = roundTrip ? UUID.randomUUID() : null;
