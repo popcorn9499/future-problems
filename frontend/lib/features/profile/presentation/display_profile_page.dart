@@ -10,8 +10,10 @@ import 'edit_profile_page.dart';
 import '../profile_controller.dart';
 import '../profile_service.dart';
 
-typedef ProfileEditCallback =
-    Future<UserProfile?> Function(User user, UserProfile profile);
+typedef ProfileEditCallback = Future<UserProfile?> Function(
+  User user,
+  UserProfile profile,
+);
 
 class DisplayProfilePage extends StatefulWidget {
   const DisplayProfilePage({
@@ -124,7 +126,7 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
     }
 
     if (!mounted || updatedProfile == null) return;
-    final profile = updatedProfile!;
+    final profile = updatedProfile;
 
     setState(() {
       _profile = profile;
