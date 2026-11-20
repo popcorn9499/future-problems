@@ -25,9 +25,9 @@ This sprint, our team focused on building out our core features and implementing
 
 The team currently uses a combination of unit, integration, and frontend widget tests to verify the functionality of our application, and all tests are run upon pushes and pull requests through our CI pipeline.
 
-Our test methods have remained the same as outlined in [the testing status section of sprint1.md](../sprint1/sprint1.md), we have continued to use flutter widget tests, Junit 5, SpringBoot tools, and Mockito.
+Our test methods have remained the same as outlined in [the testing status section of sprint1.md](../sprint1/Sprint1.md), we have continued to use flutter widget tests, Junit 5, SpringBoot tools, and Mockito.
 
-There are some testing gaps we are aware of, and would like to address in the next sprint. 
+There are some testing gaps we are aware of, and would like to address in the next sprint.
 One gap in our frontend testing is the fact that the layouts are all tested at the same size, meaning we could miss overflow issues on smaller screen sizes. This gap exists mostly due to lack of awareness and then lack of time, as the team did not think or know about this until late into the sprint. To fix this, we should add widget tests that run on smaller screen sizes next sprint.
 
 Another gap exists, where a couple of features are missing integration tests that test different layers together. For example, the dashboard and creation of ride requests/offers do not have integration tests that use both the frontend and backend together. Again, this was due to lack of time this sprint and we will be sure to remedy this in sprint 3 by ensuring all features have integration tests.
@@ -47,6 +47,7 @@ In terms of coverage, our tests are covering a good percentage of code but we ac
 ## Cross-Team Testing
 
 We reviewed Group 3's application:
+
 - [Group 3 Review](https://github.com/laradeleon/the-story-machine/issues/95)
 
 //TODO: RESPOND TO OUR REVIEW
