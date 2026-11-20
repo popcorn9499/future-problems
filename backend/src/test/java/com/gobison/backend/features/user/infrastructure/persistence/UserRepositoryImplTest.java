@@ -209,7 +209,7 @@ class UserRepositoryImplTest {
     }
 
     @Test
-    void shouldUpdateProfileWithoutOverwritingAccountFields() {
+    void shouldUpdateProfileWithoutOverwritingCredentialsOrVerificationStatus() {
         User original = createTestUser("Original", "Name", true);
         userRepository.save(original);
 
@@ -217,7 +217,7 @@ class UserRepositoryImplTest {
                 original.getEmail(),
                 "ignored-password",
                 "Ignored",
-                "Name",
+                "Updated",
                 false
         );
         profileUpdate.setPronouns("Other");
@@ -229,7 +229,8 @@ class UserRepositoryImplTest {
 
         assertAll(
                 () -> assertEquals(original.getPassword(), updated.getPassword()),
-                () -> assertEquals(original.getFirstName(), updated.getFirstName()),
+                () -> assertEquals("Ignored", updated.getFirstName()),
+                () -> assertEquals("Updated", updated.getLastName()),
                 () -> assertTrue(updated.isVerified()),
                 () -> assertEquals("Other", updated.getPronouns()),
                 () -> assertEquals(25, updated.getAge()),

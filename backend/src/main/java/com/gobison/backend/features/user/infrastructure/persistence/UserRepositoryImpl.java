@@ -80,6 +80,8 @@ public class UserRepositoryImpl implements UserRepository {
                 .orElseThrow(() -> new EntityNotFoundException(
                         "User not found: " + user.getEmail()));
 
+        entity.setFirstName(user.getFirstName());
+        entity.setLastName(user.getLastName());
         entity.setPronouns(user.getPronouns());
         entity.setAge(user.getAge());
         entity.setDescription(user.getDescription());
