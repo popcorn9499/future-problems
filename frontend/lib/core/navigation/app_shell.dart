@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/user_avatar.dart';
 import '../../../core/models/user.dart';
+import '../../../core/models/user_profile.dart';
+import '../../../core/theme/avatar_color_option.dart';
 
 import 'package:gobison/core/navigation/no_animation_page_route.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
@@ -133,11 +135,31 @@ class _AppShellState extends State<AppShell> {
                         ),
 
                         const Spacer(),
-                        UserAvatar(
-                          firstName: widget.user.firstName,
-                          lastName: widget.user.lastName,
-                          radius: 21,
-                          onTap: widget.onProfileTap,
+                        ValueListenableBuilder<UserProfile?>(
+                          valueListenable: SessionService.profileNotifier,
+                          builder: (context, profile, _) {
+                            final currentProfile =
+                                profile?.userId == widget.user.id
+                                ? profile
+                                : null;
+                            return UserAvatar(
+                              firstName:
+                                  currentProfile?.firstName ??
+                                  widget.user.firstName,
+                              lastName:
+                                  currentProfile?.lastName ??
+                                  widget.user.lastName,
+                              radius: 21,
+                              onTap: widget.onProfileTap,
+                              backgroundColor:
+                                  AvatarColorOption.getBackgroundColor(
+                                    currentProfile?.avatarColor,
+                                  ),
+                              textColor: AvatarColorOption.getTextColor(
+                                currentProfile?.avatarColor,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

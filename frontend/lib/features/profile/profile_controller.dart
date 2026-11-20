@@ -97,7 +97,18 @@ class ProfileController extends ChangeNotifier {
         return;
       }
 
-      updatedProfile = await _profileService.updateProfile(changes: changes);
+      final responseProfile = await _profileService.updateProfile(
+        changes: changes,
+      );
+      updatedProfile = UserProfile(
+        userId: currentProfile.userId,
+        firstName: responseProfile.firstName,
+        lastName: responseProfile.lastName,
+        age: responseProfile.age,
+        pronouns: responseProfile.pronouns ?? editedProfile.pronouns,
+        description: responseProfile.description,
+        avatarColor: responseProfile.avatarColor,
+      );
     } catch (e) {
       errorMessage = _handleError(extractErrorCode(e));
     } finally {

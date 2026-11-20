@@ -16,14 +16,14 @@ public class UpdateProfileService {
 
 
     public User updateProfile(User user, UpdateProfileRequest request) {
-        if (request.hasAge() && request.getAge() == null) {
-            throw new FieldBlankException("age");
-        }
         requireNotBlank(request.hasAvatarColor(), request.getAvatarColor(), "avatarColor");
-        requireNotBlank(request.hasDescription(), request.getDescription(), "description");
         requireNotBlank(request.hasFirstName(), request.getFirstName(), "firstName");
-        requireNotBlank(request.hasLastName(), request.getLastName(), "lastName");
-        requireNotBlank(request.hasPronouns(), request.getPronouns(), "pronouns");
+        requireNonBlankWhenPresent(
+                request.hasDescription(), request.getDescription(), "description");
+        requireNonBlankWhenPresent(
+                request.hasLastName(), request.getLastName(), "lastName");
+        requireNonBlankWhenPresent(
+                request.hasPronouns(), request.getPronouns(), "pronouns");
 
         if (request.hasAge()) user.setAge(request.getAge());
         if (request.hasAvatarColor()) user.setAvatarColor(request.getAvatarColor());
@@ -37,6 +37,16 @@ public class UpdateProfileService {
 
     private void requireNotBlank(boolean supplied, String value, String field) {
         if (supplied && (value == null || value.isBlank())) {
+            throw new FieldBlankException(field);
+        }
+    }
+
+    private void requireNonBlankWhenPresent(
+            boolean supplied,
+            String value,
+            String field
+    ) {
+        if (supplied && value != null && value.isBlank()) {
             throw new FieldBlankException(field);
         }
     }

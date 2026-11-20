@@ -178,7 +178,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     final name =
         widget.user.firstName +
-        (widget.user.lastName!.trim().isNotEmpty
+        (widget.user.lastName?.trim().isNotEmpty == true
             ? ' ${widget.user.lastName}'
             : '');
 

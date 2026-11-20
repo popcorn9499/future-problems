@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,7 +37,8 @@ class UpdateProfileServiceTest {
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setFirstName("Augusta");
         request.setAvatarColor("#123ABC");
-        when(userRepository.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.update(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         User updated = service.updateProfile(user, request);
 
@@ -71,18 +73,28 @@ class UpdateProfileServiceTest {
     }
 
     @Test
-    void rejectsAgeWhenExplicitlySetToNull() {
+    void clearsOptionalFieldsWhenExplicitlySetNull() {
         User user = new User("ada@myumanitoba.ca", "hash", "Ada", "Lovelace", true);
+        user.setAge(36);
+        user.setPronouns("She/her");
+        user.setDescription("About Ada");
         UpdateProfileRequest request = new UpdateProfileRequest();
         request.setAge(null);
+        request.setLastName(null);
+        request.setPronouns(null);
+        request.setDescription(null);
+        when(userRepository.update(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        FieldBlankException exception = assertThrows(
-                FieldBlankException.class,
-                () -> service.updateProfile(user, request)
+        User updated = service.updateProfile(user, request);
+
+        assertAll(
+                () -> assertNull(updated.getAge()),
+                () -> assertNull(updated.getLastName()),
+                () -> assertNull(updated.getPronouns()),
+                () -> assertNull(updated.getDescription())
         );
-
-        assertEquals("age", exception.getField());
-        verifyNoInteractions(userRepository);
+        verify(userRepository).update(user);
     }
 
     private static Stream<Arguments> nullOrBlankStringFields() {
@@ -92,19 +104,13 @@ class UpdateProfileServiceTest {
                 Arguments.of(
                         "avatarColor", (Consumer<UpdateProfileRequest>) request -> request.setAvatarColor("  ")),
                 Arguments.of(
-                        "description", (Consumer<UpdateProfileRequest>) request -> request.setDescription(null)),
-                Arguments.of(
                         "description", (Consumer<UpdateProfileRequest>) request -> request.setDescription("  ")),
                 Arguments.of(
                         "firstName", (Consumer<UpdateProfileRequest>) request -> request.setFirstName(null)),
                 Arguments.of(
                         "firstName", (Consumer<UpdateProfileRequest>) request -> request.setFirstName("  ")),
                 Arguments.of(
-                        "lastName", (Consumer<UpdateProfileRequest>) request -> request.setLastName(null)),
-                Arguments.of(
                         "lastName", (Consumer<UpdateProfileRequest>) request -> request.setLastName("  ")),
-                Arguments.of(
-                        "pronouns", (Consumer<UpdateProfileRequest>) request -> request.setPronouns(null)),
                 Arguments.of(
                         "pronouns", (Consumer<UpdateProfileRequest>) request -> request.setPronouns("  "))
         );
