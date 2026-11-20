@@ -395,7 +395,7 @@ void main() {
           find.text('University of Manitoba'),
           findsOneWidget,
         );
-        expect(find.text('ARRIVAL TIME'), findsOneWidget);
+        expect(find.text('Arrive at campus by'), findsOneWidget);
         expect(find.text('7:45 AM'), findsOneWidget);
       },
     );
@@ -668,8 +668,8 @@ void main() {
           find.text('TWO LEGS · ONE ROUND TRIP'),
           findsOneWidget,
         );
-        expect(find.text('ARRIVAL TIME'), findsOneWidget);
-        expect(find.text('DEPARTURE TIME'), findsOneWidget);
+        expect(find.text('Arrive at campus by'), findsOneWidget);
+        expect(find.text('Leave campus at'), findsOneWidget);
       },
     );
 
@@ -698,10 +698,10 @@ void main() {
         ]);
 
         final arrivalPosition = tester.getTopLeft(
-          find.text('ARRIVAL TIME'),
+          find.text('Arrive at campus by'),
         );
         final departurePosition = tester.getTopLeft(
-          find.text('DEPARTURE TIME'),
+          find.text('Leave campus at'),
         );
 
         expect(

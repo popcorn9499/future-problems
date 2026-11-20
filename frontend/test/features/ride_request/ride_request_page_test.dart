@@ -108,8 +108,8 @@ void main() {
       expect(find.text('City *'), findsOneWidget);
       expect(find.text('Street Address *'), findsOneWidget);
       expect(find.text('Ride Type *'), findsOneWidget);
-      expect(find.text('Arriving at Campus'), findsOneWidget);
-      expect(find.text('Desired campus arrival time *'), findsOneWidget);
+      expect(find.text('To campus'), findsOneWidget);
+      expect(find.text('Arrive at campus by *'), findsOneWidget);
       expect(find.text('Select time'), findsOneWidget);
       expect(find.text('Days of the week *'), findsOneWidget);
       expect(find.text('Additional Description'), findsOneWidget);
@@ -386,7 +386,7 @@ void main() {
       testWidgets('allows selecting a departure time', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Departing from Campus');
+        await selectRideType(tester, 'From campus');
 
         await selectTime(tester);
         await confirmTimePicker(tester);
@@ -397,7 +397,7 @@ void main() {
       testWidgets('allows selecting both round trip times', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Round Trip');
+        await selectRideType(tester, 'Round trip');
 
         expect(find.text('Select time'), findsNWidgets(2));
 
@@ -416,7 +416,7 @@ void main() {
         WidgetTester tester
       ) async {
         await tester.pumpWidget(createTestWidget());
-        await selectRideType(tester, 'Round Trip');
+        await selectRideType(tester, 'Round trip');
         await enterRequiredFields(tester);
         final mondayChip = find.widgetWithText(FilterChip, 'Mon');
         await tester.ensureVisible(mondayChip);
@@ -458,7 +458,7 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
 
         expect(
-          find.text('Departure time must be after arrival time.'),
+          find.text('Your campus departure must be after your campus arrival.'),
           findsOneWidget,
         );
       },);
@@ -484,7 +484,7 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Please select an arrival time.'), findsOneWidget);
+        expect(find.text('Choose when you need to arrive at campus.'), findsOneWidget);
       });
 
       testWidgets('shows validation message when departure time is not selected', (
@@ -492,7 +492,7 @@ void main() {
       ) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Departing from Campus');
+        await selectRideType(tester, 'From campus');
 
         await enterRequiredFields(tester);
 
@@ -508,13 +508,13 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Please select a departure time.'), findsOneWidget);
+        expect(find.text('Choose when you want to leave campus.'), findsOneWidget);
       });
 
       testWidgets('requires both times for round trip', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Round Trip');
+        await selectRideType(tester, 'Round trip');
 
         await enterRequiredFields(tester);
 
@@ -530,7 +530,7 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Please select an arrival time.'), findsOneWidget);
+        expect(find.text('Choose when you need to arrive at campus.'), findsOneWidget);
       });
 
       testWidgets('validates departure time after arrival time is selected', (
@@ -538,7 +538,7 @@ void main() {
       ) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Round Trip');
+        await selectRideType(tester, 'Round trip');
 
         await enterRequiredFields(tester);
 
@@ -557,7 +557,7 @@ void main() {
         await tester.tap(submitButton);
         await tester.pumpAndSettle();
 
-        expect(find.text('Please select a departure time.'), findsOneWidget);
+        expect(find.text('Choose when you want to leave campus.'), findsOneWidget);
       });
     });
     testWidgets('reset clears selected arrival time', (WidgetTester tester) async {
@@ -571,13 +571,13 @@ void main() {
       await tapReset(tester);
 
       expect(find.text('Select time'), findsOneWidget);
-      expect(find.text('Arriving at Campus'), findsOneWidget);
+      expect(find.text('To campus'), findsOneWidget);
     });
 
     testWidgets('reset clears both round trip times and ride type', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 
-      await selectRideType(tester, 'Round Trip');
+      await selectRideType(tester, 'Round trip');
       await selectTime(tester, index: 0);
       await confirmTimePicker(tester);
       await selectTime(tester, index: 0);
@@ -587,10 +587,10 @@ void main() {
 
       await tapReset(tester);
 
-      expect(find.text('Arriving at Campus'), findsOneWidget);
+      expect(find.text('To campus'), findsOneWidget);
       expect(find.text('Select time'), findsOneWidget);
-      expect(find.text('Campus arrival time *'), findsNothing);
-      expect(find.text('Campus departure time *'), findsNothing);
+      expect(find.text('Arrive at campus by *'), findsOneWidget);
+      expect(find.text('Leave campus at *'), findsNothing);
     });
 
     testWidgets('reset clears validation errors', (WidgetTester tester) async {
@@ -614,10 +614,10 @@ void main() {
       testWidgets('defaults to arriving ride type', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        expect(find.text('Desired campus arrival time *'), findsOneWidget);
+        expect(find.text('Arrive at campus by *'), findsOneWidget);
         expect(find.text('Select time'), findsOneWidget);
 
-        expect(find.text('Desired campus departure time *'), findsNothing);
+        expect(find.text('Leave campus at *'), findsNothing);
       });
 
       testWidgets('displays departure time selector when departing is selected', (
@@ -625,11 +625,11 @@ void main() {
       ) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Departing from Campus');
+        await selectRideType(tester, 'From campus');
 
-        expect(find.text('Desired campus departure time *'), findsOneWidget);
+        expect(find.text('Leave campus at *'), findsOneWidget);
 
-        expect(find.text('Desired campus arrival time *'), findsNothing);
+        expect(find.text('Arrive at campus by *'), findsNothing);
 
         expect(find.text('Select time'), findsOneWidget);
       });
@@ -637,10 +637,10 @@ void main() {
       testWidgets('displays both time selectors for round trip', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Round Trip');
+        await selectRideType(tester, 'Round trip');
 
-        expect(find.text('Campus arrival time *'), findsOneWidget);
-        expect(find.text('Campus departure time *'), findsOneWidget);
+        expect(find.text('Arrive at campus by *'), findsOneWidget);
+        expect(find.text('Leave campus at *'), findsOneWidget);
 
         expect(find.text('Select time'), findsNWidgets(2));
       });
@@ -648,17 +648,17 @@ void main() {
       testWidgets('clears departure time when switching to arriving', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        await selectRideType(tester, 'Departing from Campus');
+        await selectRideType(tester, 'From campus');
 
         await selectTime(tester);
         await confirmTimePicker(tester);
 
-        await selectRideType(tester, 'Arriving at Campus');
+        await selectRideType(tester, 'To campus');
 
-        expect(find.text('Desired campus arrival time *'), findsOneWidget);
+        expect(find.text('Arrive at campus by *'), findsOneWidget);
 
         expect(find.text('Select time'), findsOneWidget);
-        expect(find.text('Desired campus departure time *'), findsNothing);
+        expect(find.text('Leave campus at *'), findsNothing);
       });
 
       testWidgets('clears arrival time when switching to departing', (WidgetTester tester) async {
@@ -667,13 +667,13 @@ void main() {
         await selectTime(tester);
         await confirmTimePicker(tester);
 
-        await selectRideType(tester, 'Departing from Campus');
+        await selectRideType(tester, 'From campus');
 
-        expect(find.text('Desired campus departure time *'), findsOneWidget);
+        expect(find.text('Leave campus at *'), findsOneWidget);
 
         expect(find.text('Select time'), findsOneWidget);
 
-        expect(find.text('Desired campus arrival time *'), findsNothing);
+        expect(find.text('Arrive at campus by *'), findsNothing);
       });
     });
 

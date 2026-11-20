@@ -774,8 +774,8 @@ class _RideTime extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = agreement.rideType == 'ARRIVAL'
-        ? 'ARRIVAL TIME'
-        : 'DEPARTURE TIME';
+        ? 'Arrive at campus by'
+        : 'Leave campus at';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,

@@ -88,8 +88,8 @@ void main() {
       expect(find.widgetWithText(TextField, 'City'), findsOneWidget);
       expect(find.text('Days of Week'), findsOneWidget);
       expect(find.text('Ride Type'), findsOneWidget);
-      expect(find.text('Departure Time'), findsOneWidget);
-      expect(find.text('Arrival Time'), findsOneWidget);
+      expect(find.text('Leave campus at'), findsOneWidget);
+      expect(find.text('Arrive at campus by'), findsOneWidget);
       expect(find.text('Status'), findsOneWidget);
       expect(find.text('Show Requests'), findsOneWidget);
       expect(find.text('Show Offers'), findsOneWidget);
@@ -114,13 +114,13 @@ void main() {
       expect(find.text('—'), findsNothing);
     });
 
-    testWidgets('shows roundTrip as Round trip', (WidgetTester tester) async {
+    testWidgets('shows campus directions and Round trip', (WidgetTester tester) async {
       await pumpMapPage(tester);
 
       await openRideTypeDropdown(tester);
 
-      expect(find.text('arriving'), findsWidgets);
-      expect(find.text('departing'), findsWidgets);
+      expect(find.text('To campus'), findsWidgets);
+      expect(find.text('From campus'), findsWidgets);
       expect(find.text('Round trip'), findsWidgets);
       expect(find.text('roundTrip'), findsNothing);
     });
@@ -130,7 +130,7 @@ void main() {
     ) async {
       await pumpMapPage(tester);
 
-      await selectRideType(tester, 'departing');
+      await selectRideType(tester, 'From campus');
 
       expect(selectedRideType(tester), 'departing');
       expect(find.text('Clear Filters'), findsOneWidget);
@@ -140,7 +140,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await pumpMapPage(tester);
-      await selectRideType(tester, 'departing');
+      await selectRideType(tester, 'From campus');
 
       await tester.tap(find.text('Clear Filters'));
       await settle(tester);

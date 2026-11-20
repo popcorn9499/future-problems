@@ -659,7 +659,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
           // 4. Departure Time Picker Button (HH:mm)
           _buildTimeFilterChip(
-            label: 'Departure',
+            label: 'Leave campus at',
             value: _selectedDepartureTime,
             onTap: () => _pickTime(isDeparture: true),
             onClear: () {
@@ -670,7 +670,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
           // 5. Arrival Time Picker Button (HH:mm)
           _buildTimeFilterChip(
-            label: 'Arrival',
+            label: 'Arrive at campus by',
             value: _selectedArrivalTime,
             onTap: () => _pickTime(isDeparture: false),
             onClear: () {
@@ -823,7 +823,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             ),
             const SizedBox(width: 6),
             Text(
-              value != null ? '$label: $value' : '$label Time',
+              value != null ? '$label $value' : label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: value != null ? FontWeight.w600 : FontWeight.normal,
@@ -1015,8 +1015,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   /// Anything not listed here (IDs, address, location) is not shown.
   static const Map<String, String> _detailFields = {
     'rideType': 'Ride type',
-    'departureTime': 'Departure time',
-    'arrivalTime': 'Arrival time',
+    'departureTime': 'Leave campus at',
+    'arrivalTime': 'Arrive at campus by',
     'daysOfWeek': 'Days of the week',
     'description': 'Description',
     'status': 'Status',
@@ -1030,10 +1030,13 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     'askingForDrivers',
   };
 
-  /// Display label for a ride type ("roundTrip" -> "Round trip")
   String _rideTypeLabel(dynamic rideType) {
-    if (rideType == 'roundTrip') return 'Round trip';
-    return _formatDetailValue(rideType);
+    return switch (rideType) {
+      'arriving' => 'To campus',
+      'departing' => 'From campus',
+      'roundTrip' => 'Round trip',
+      _ => _formatDetailValue(rideType),
+    };
   }
 
   /// null/missing -> '', lists -> "MONDAY, FRIDAY", booleans -> Yes/No
