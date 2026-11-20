@@ -89,6 +89,49 @@ void main() {
   }
 
   group('CarpoolMultiSourceMapPage filter bar', () {
+    testWidgets('places evenly sized filters at the top of the map', (
+      tester,
+    ) async {
+      await pumpMapPage(tester);
+
+      final selector = find.byWidgetPredicate(
+        (widget) => widget is SegmentedButton,
+      );
+      final controls = [
+        selector,
+        find.byType(TextField),
+        find.byType(DropdownButtonFormField<String?>),
+        for (final label in [
+          'Days of Week',
+          'Arrive at campus by',
+          'Leave campus at',
+        ])
+          find.ancestor(of: find.text(label), matching: find.byType(InkWell)).first,
+      ];
+
+      expect(find.byType(AppBar), findsNothing);
+      expect(tester.getTopLeft(selector).dy, closeTo(25, 1));
+      for (final control in controls) {
+        expect(tester.getSize(control).height, 44);
+      }
+
+      // Measure the painted surfaces as well as their outer layout boxes.
+      for (final field in [find.byType(EditableText), find.text('Any')]) {
+        final border = InputDecorator.containerOf(tester.element(field));
+        expect(border?.size.height, 44);
+      }
+      for (final button in [
+        find.widgetWithText(TextButton, 'All rides'),
+        find.widgetWithText(ElevatedButton, 'Apply'),
+      ]) {
+        final surface = find.descendant(
+          of: button,
+          matching: find.byType(Material),
+        );
+        expect(tester.getSize(surface.first).height, 44);
+      }
+    });
+
     testWidgets('shows all filter controls', (WidgetTester tester) async {
       await pumpMapPage(tester);
 
@@ -98,8 +141,10 @@ void main() {
       expect(find.text('Leave campus at'), findsOneWidget);
       expect(find.text('Arrive at campus by'), findsOneWidget);
       expect(find.text('Status'), findsNothing);
-      expect(find.text('Show Requests'), findsOneWidget);
-      expect(find.text('Show Offers'), findsOneWidget);
+      expect(find.text('All rides'), findsOneWidget);
+      expect(find.text('Requests'), findsOneWidget);
+      expect(find.text('Offers'), findsOneWidget);
+      expect(find.byType(Switch), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Apply'), findsOneWidget);
     });
 
@@ -479,28 +524,69 @@ void main() {
     });
   });
 
-  group('CarpoolMultiSourceMapPage show requests/offers toggles', () {
-    testWidgets('both toggles start on Yes', (WidgetTester tester) async {
-      await pumpMapPage(tester);
+  group('CarpoolMultiSourceMapPage listing selector', () {
+    testWidgets('loads the selected sources immediately and preserves city', (
+      tester,
+    ) async {
+      final calls = <Uri>[];
+      await pumpMapPage(
+        tester,
+        respond: (request) async {
+          calls.add(request.url);
+          return http.Response('{}', 200);
+        },
+      );
 
-      expect(find.text('Yes'), findsNWidgets(2));
-      expect(find.text('No'), findsNothing);
+      List<String> sources() =>
+          calls.map((uri) => uri.pathSegments.last).toList();
+      expect(sources(), ['requests', 'offers']);
+      expect(find.text('Clear Filters'), findsNothing);
+
+      await tester.tap(find.text('Requests'));
+      await settle(tester);
+      expect(sources().skip(2), ['requests']);
+      expect(find.text('Clear Filters'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Winnipeg');
+      calls.clear();
+      await tester.tap(find.text('Offers'));
+      await settle(tester);
+      expect(sources(), ['offers']);
+      expect(calls.single.queryParameters['city'], 'Winnipeg');
+
+      calls.clear();
+      await tester.tap(find.text('All rides'));
+      await settle(tester);
+      expect(sources(), ['requests', 'offers']);
+      expect(calls.map((uri) => uri.queryParameters['city']), [
+        'Winnipeg',
+        'Winnipeg',
+      ]);
+
+      await tester.tap(find.text('Offers'));
+      await settle(tester);
+      calls.clear();
+      await tester.tap(find.text('Clear Filters'));
+      await settle(tester);
+      expect(sources(), ['requests', 'offers']);
+      expect(calls.every((uri) => !uri.queryParameters.containsKey('city')), isTrue);
+      expect(find.text('Clear Filters'), findsNothing);
     });
 
-    testWidgets('turning off Show Requests changes it to No', (
-      WidgetTester tester,
+    testWidgets('wraps the driver switch below the selector on narrow screens', (
+      tester,
     ) async {
       await pumpMapPage(tester);
-
-      final requestsSwitch = find.descendant(
-        of: find.widgetWithText(InputDecorator, 'Show Requests'),
-        matching: find.byType(Switch),
-      );
-      await tester.tap(requestsSwitch);
+      tester.view.physicalSize = const Size(440, 1100);
       await settle(tester);
 
-      expect(find.text('No'), findsOneWidget);
-      expect(find.text('Yes'), findsOneWidget);
+      final all = find.text('All rides');
+      final offers = find.text('Offers');
+      final drivers = find.text('Looking for other drivers');
+      expect(all.hitTestable(), findsOneWidget);
+      expect(offers.hitTestable(), findsOneWidget);
+      expect(tester.getCenter(drivers).dy, greaterThan(tester.getCenter(all).dy));
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -528,11 +614,7 @@ void main() {
             ),
     );
 
-    final filter = find.widgetWithText(FilterChip, 'Looking for other drivers');
-    final offersSwitch = find.descendant(
-      of: find.widgetWithText(InputDecorator, 'Show Offers'),
-      matching: find.byType(Switch),
-    );
+    final filter = find.byType(Switch);
     Future<void> openCluster() async {
       final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
       await tester.tap(find.byWidget(marker.child));
@@ -547,14 +629,15 @@ void main() {
       await settle(tester);
     }
 
-    expect(tester.widget<FilterChip>(filter).selected, isFalse);
+    expect(tester.widget<Switch>(filter).value, isFalse);
     await openCluster();
     expect(find.text('2 offers · 1 request'), findsOneWidget);
     expect(find.text('Other city'), findsOneWidget);
     await closeCluster();
 
-    await tester.tap(filter);
+    await tester.tap(find.text('Looking for other drivers'));
     await settle(tester);
+    expect(tester.widget<Switch>(filter).value, isTrue);
     await openCluster();
     expect(find.text('1 offer · 1 request'), findsOneWidget);
     expect(find.text('Rideshare city'), findsOneWidget);
@@ -564,19 +647,25 @@ void main() {
 
     await tester.tap(find.text('Clear Filters'));
     await settle(tester);
-    expect(tester.widget<FilterChip>(filter).selected, isFalse);
+    expect(tester.widget<Switch>(filter).value, isFalse);
     await openCluster();
     expect(find.text('2 offers · 1 request'), findsOneWidget);
     await closeCluster();
 
     await tester.tap(filter);
     await settle(tester);
-    await tester.tap(offersSwitch);
+    await tester.tap(find.text('Offers'));
+    await settle(tester);
+    expect(tester.widget<Switch>(filter).value, isTrue);
+    await tester.tap(find.text('All rides'));
+    await settle(tester);
+    expect(tester.widget<Switch>(filter).value, isTrue);
+    await tester.tap(find.text('Requests'));
     await settle(tester);
     expect(filter, findsNothing);
-    await tester.tap(offersSwitch);
+    await tester.tap(find.text('Offers'));
     await settle(tester);
-    expect(tester.widget<FilterChip>(filter).selected, isFalse);
+    expect(tester.widget<Switch>(filter).value, isFalse);
   });
 
   group('CarpoolMultiSourceMapPage error dialog', () {
@@ -791,15 +880,12 @@ void main() {
       expect(find.text('Couldn’t load rides'), findsOneWidget);
     });
 
-    testWidgets('turning off both sources shows no error', (
+    testWidgets('an empty offers view shows no error', (
       WidgetTester tester,
     ) async {
       await pumpMapPage(tester);
 
-      final switches = find.byType(Switch);
-      await tester.tap(switches.at(0));
-      await settle(tester);
-      await tester.tap(switches.at(1));
+      await tester.tap(find.text('Offers'));
       await settle(tester);
 
       expect(find.textContaining('Couldn’t load'), findsNothing);

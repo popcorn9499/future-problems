@@ -27,6 +27,8 @@ const bool kHideExactLocations = true;
 
 typedef _MapLoadError = ({String source, String detail, bool sessionExpired});
 
+enum _ListingView { all, requests, offers }
+
 class CarpoolMultiSourceMapPage extends StatefulWidget {
   const CarpoolMultiSourceMapPage({super.key, required this.user});
   final User user;
@@ -85,8 +87,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   TimeOfDay? _selectedDepartureTime;
   TimeOfDay? _selectedArrivalTime;
 
-  bool _showRequests = true;
-  bool _showOffers = true;
+  _ListingView _listingView = _ListingView.all;
   bool _onlyOffersLookingForDrivers = false;
 
   static const List<String> _daysOfWeekOptions = [
@@ -137,6 +138,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedRideType != null ||
       _selectedDepartureTime != null ||
       _selectedArrivalTime != null ||
+      _listingView != _ListingView.all ||
       _onlyOffersLookingForDrivers;
 
   /// Formats selected days in canonical calendar order (e.g., "MONDAY,TUESDAY,THURSDAY")
@@ -156,6 +158,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedRideType = null;
       _selectedDepartureTime = null;
       _selectedArrivalTime = null;
+      _listingView = _ListingView.all;
       _onlyOffersLookingForDrivers = false;
     });
     _loadMapMarkers();
@@ -407,9 +410,11 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     List<_MapLoadError> errors,
   ) async {
     final List<MapRideItem> items = [];
+    final listingView = _listingView;
+    final onlyOffersLookingForDrivers = _onlyOffersLookingForDrivers;
 
     // 1. Fetch Live Requests with active filters
-    if (_showRequests == true) {
+    if (listingView != _ListingView.offers) {
       try {
         final requestsData = await _rideRequestService.retrieveRideRequests(
           city: _selectedCity?.trim(),
@@ -458,7 +463,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     }
 
     // 2. Fetch Live Offers with active filters
-    if (_showOffers == true) {
+    if (listingView != _ListingView.requests) {
       try {
         final offersData = await _rideOfferService.retrieveRideOffers(
           city: _selectedCity?.trim(),
@@ -473,7 +478,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             (offersData is List ? offersData : []);
 
         for (var off in offersList) {
-          if (_onlyOffersLookingForDrivers && off['askingForDrivers'] != true) {
+          if (onlyOffersLookingForDrivers && off['askingForDrivers'] != true) {
             continue;
           }
           if (_selectedRideType != null && //============================================================== FIX THIS
@@ -520,7 +525,36 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     return ordered.join(', ');
   }
 
-  /// Builds the horizontal/wrapped filter bar above the map
+  static const double _filterHeight = 44;
+  static const _filterRadius = BorderRadius.all(Radius.circular(8));
+  static const _filterPadding = EdgeInsets.symmetric(horizontal: 12);
+  static const _filterTextStyle = TextStyle(fontSize: 14);
+
+  Color get _filterSelectedFill => Theme.of(context).colorScheme.secondaryContainer;
+  Color get _filterOutline => Theme.of(context).colorScheme.outline;
+
+  InputDecoration _filterInput(String label, {bool selected = false}) {
+    final border = OutlineInputBorder(
+      borderRadius: _filterRadius,
+      borderSide: BorderSide(color: _filterOutline),
+    );
+    const selectedBorder = OutlineInputBorder(
+      borderRadius: _filterRadius,
+      borderSide: BorderSide(color: AppColors.primary),
+    );
+    return InputDecoration(
+      labelText: label,
+      labelStyle: _filterTextStyle,
+      isDense: false,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      border: border,
+      enabledBorder: selected ? selectedBorder : border,
+      focusedBorder: selectedBorder,
+      filled: selected,
+      fillColor: _filterSelectedFill,
+    );
+  }
+
   Widget _buildFilterBar() {
     final bool hasDays = _selectedDaysOfWeek.isNotEmpty;
 
@@ -543,16 +577,79 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
         runSpacing: 10,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  height: _filterHeight,
+                  child: SegmentedButton<_ListingView>(
+                    segments: [
+                      for (final (view, label) in const [
+                        (_ListingView.all, 'All rides'),
+                        (_ListingView.requests, 'Requests'),
+                        (_ListingView.offers, 'Offers'),
+                      ])
+                        ButtonSegment(
+                          value: view,
+                          label: SizedBox(
+                            height: _filterHeight,
+                            child: Center(widthFactor: 1, child: Text(label)),
+                          ),
+                        ),
+                    ],
+                    selected: {_listingView},
+                    showSelectedIcon: false,
+                    style: ButtonStyle(
+                      shape: const WidgetStatePropertyAll(
+                        RoundedRectangleBorder(borderRadius: _filterRadius),
+                      ),
+                      side: WidgetStatePropertyAll(
+                        BorderSide(color: _filterOutline),
+                      ),
+                      padding: const WidgetStatePropertyAll(_filterPadding),
+                      textStyle: const WidgetStatePropertyAll(_filterTextStyle),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      backgroundColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.selected)
+                            ? _filterSelectedFill
+                            : null,
+                      ),
+                    ),
+                    onSelectionChanged: (selection) {
+                      final view = selection.single;
+                      if (view == _listingView) return;
+                      setState(() {
+                        _listingView = view;
+                        if (view == _ListingView.requests) {
+                          _onlyOffersLookingForDrivers = false;
+                        }
+                      });
+                      _loadMapMarkers();
+                    },
+                  ),
+                ),
+                if (_listingView != _ListingView.requests) _buildDriverSwitch(),
+              ],
+            ),
+          ),
           // 1. City Text Input
           SizedBox(
             width: 170,
+            height: _filterHeight,
             child: TextField(
               controller: _cityController,
-              decoration: InputDecoration(
-                labelText: 'City',
+              style: _filterTextStyle,
+              textAlignVertical: TextAlignVertical.center,
+              decoration: _filterInput(
+                'City',
+                selected: _selectedCity?.isNotEmpty == true,
+              ).copyWith(
                 hintText: 'e.g. Winnipeg',
-                isDense: true,
-                border: const OutlineInputBorder(),
+                suffixIconConstraints: const BoxConstraints(minWidth: 36),
                 suffixIcon: (_selectedCity != null && _selectedCity!.isNotEmpty)
                     ? IconButton(
                         icon: const Icon(Icons.clear, size: 18),
@@ -579,54 +676,22 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             ),
           ),
 
-          // 2. Multi-Select Days of Week Control
-          InkWell(
+          _buildFilterPicker(
+            label: _getDaysButtonLabel(),
+            icon: Icons.calendar_today,
+            selected: hasDays,
             onTap: _pickDaysOfWeek,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: hasDays ? AppColors.primary : Colors.grey.shade500,
-                ),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 16,
-                    color: hasDays ? AppColors.primary : Colors.grey.shade700,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _getDaysButtonLabel(),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: hasDays ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  if (hasDays)
-                    GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedDaysOfWeek.clear());
-                        _loadMapMarkers();
-                      },
-                      child: const Icon(Icons.close, size: 16),
-                    )
-                  else
-                    const Icon(Icons.arrow_drop_down, size: 20),
-                ],
-              ),
-            ),
+            onClear: () {
+              setState(() => _selectedDaysOfWeek.clear());
+              _loadMapMarkers();
+            },
+            showDropdownIndicator: true,
           ),
 
           // 3. Ride Type Dropdown (arriving, departing, roundTrip + null to clear)
           SizedBox(
             width: 155,
+            height: _filterHeight,
             child: DropdownButtonFormField<String?>(
               // Key forces the field to reset when Clear Filters changes the value
               key: ValueKey('rideType-$_selectedRideType'),
@@ -634,10 +699,11 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
               isDense: true,
               isExpanded:
                   true, // fit items to the 155px width instead of overflowing
-              decoration: const InputDecoration(
-                labelText: 'Ride Type',
-                border: OutlineInputBorder(),
+              decoration: _filterInput(
+                'Ride Type',
+                selected: _selectedRideType != null,
               ),
+              style: Theme.of(context).textTheme.bodyMedium?.merge(_filterTextStyle),
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,
@@ -688,86 +754,16 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
               },
             ),
 
-          SizedBox(
-            width: 160,
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Show Requests',
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _showRequests ? 'Yes' : 'No',
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  Switch(
-                    value: _showRequests,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _showRequests = value;
-                        _loadMapMarkers();
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          SizedBox(
-            width: 160,
-            child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: 'Show Offers',
-                border: OutlineInputBorder(),
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _showOffers ? 'Yes' : 'No',
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  Switch(
-                    value: _showOffers,
-                    onChanged: (bool value) {
-                      setState(() {
-                        _showOffers = value;
-                        if (!value) _onlyOffersLookingForDrivers = false;
-                      });
-                      _loadMapMarkers();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          if (_showOffers)
-            FilterChip(
-              label: const Text('Looking for other drivers'),
-              selected: _onlyOffersLookingForDrivers,
-              onSelected: (value) {
-                setState(() => _onlyOffersLookingForDrivers = value);
-                _loadMapMarkers();
-              },
-            ),
-
           // 7. Apply Search (for the City input) & Clear All
           ElevatedButton.icon(
             onPressed: _loadMapMarkers,
+            style: ElevatedButton.styleFrom(
+              fixedSize: const Size.fromHeight(_filterHeight),
+              shape: const RoundedRectangleBorder(borderRadius: _filterRadius),
+              padding: _filterPadding,
+              textStyle: _filterTextStyle,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
             icon: const Icon(Icons.search, size: 18),
             label: const Text('Apply'),
           ),
@@ -783,47 +779,96 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     );
   }
 
+  Widget _buildDriverSwitch() {
+    void changeSelection(bool value) {
+      setState(() => _onlyOffersLookingForDrivers = value);
+      _loadMapMarkers();
+    }
+
+    return MergeSemantics(
+      child: InkWell(
+        excludeFromSemantics: true,
+        onTap: () => changeSelection(!_onlyOffersLookingForDrivers),
+        borderRadius: _filterRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: SizedBox(
+            height: _filterHeight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Flexible(
+                  child: Text('Looking for other drivers', style: _filterTextStyle),
+                ),
+                const SizedBox(width: 8),
+                Switch(
+                  value: _onlyOffersLookingForDrivers,
+                  onChanged: changeSelection,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTimeFilterChip({
     required String label,
     required TimeOfDay? value,
     required VoidCallback onTap,
     required VoidCallback onClear,
+  }) => _buildFilterPicker(
+    label: value != null ? '$label · ${value.format(context)}' : label,
+    icon: Icons.access_time,
+    selected: value != null,
+    onTap: onTap,
+    onClear: onClear,
+  );
+
+  Widget _buildFilterPicker({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+    required VoidCallback onClear,
+    bool showDropdownIndicator = false,
   }) {
+    final color = selected
+        ? AppColors.primary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: _filterRadius,
       child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        height: _filterHeight,
+        padding: _filterPadding,
         decoration: BoxDecoration(
-          border: Border.all(
-            color: value != null ? AppColors.primary : Colors.grey.shade500,
-          ),
-          borderRadius: BorderRadius.circular(4),
+          color: selected ? _filterSelectedFill : null,
+          border: Border.all(color: selected ? AppColors.primary : _filterOutline),
+          borderRadius: _filterRadius,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.access_time,
-              size: 18,
-              color: value != null ? AppColors.primary : Colors.grey.shade700,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              value != null ? '$label · ${value.format(context)}' : label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: value != null ? FontWeight.w600 : FontWeight.normal,
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: _filterTextStyle,
               ),
             ),
-            if (value != null) ...[
+            if (selected) ...[
               const SizedBox(width: 4),
               GestureDetector(
                 onTap: onClear,
-                child: const Icon(Icons.close, size: 16),
+                child: Icon(Icons.close, size: 16, color: color),
               ),
-            ],
+            ] else if (showDropdownIndicator)
+              Icon(Icons.arrow_drop_down, size: 20, color: color),
           ],
         ),
       ),
@@ -1491,7 +1536,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.sizeOf(context);
     if (TickerMode.of(context) &&
         ModalRoute.isCurrentOf(context) != false &&
         _hasLoadError &&
@@ -1500,11 +1544,9 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(),
-      body: Center(
-        child: SizedBox(
-          width: screenSize.width * 0.85,
-          height: screenSize.height * 0.85,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
           child: Column(
             children: [
               _buildFilterBar(),
@@ -1563,11 +1605,15 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                               userAgentPackageName: 'net.popicraft.gobison',
                             ),
                             MarkerLayer(markers: _buildMarkers()),
-                            SimpleAttributionWidget(
-                              source: Text('OpenStreetMap contributors'),
-                              onTap: () => launchUrl(
-                                Uri.parse(
-                                  'https://openstreetmap.org/copyright',
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: SimpleAttributionWidget(
+                                  source: const Text('OpenStreetMap contributors'),
+                                  onTap: () => launchUrl(
+                                    Uri.parse('https://openstreetmap.org/copyright'),
+                                  ),
                                 ),
                               ),
                             ),
