@@ -74,11 +74,13 @@ In terms of coverage, our tests are covering an acceptable percentage of code bu
 
 ## CI/CD Status
 
-## Live Deployment
-
-[See our app live here](https://gobison.popicraft.net/)
+[CI Documentation](../../Ci.md)
 
 [Deployment documentation](../../Deployment.md)
+
+## Live Deployment
+
+[Deployment link](https://gobison.popicraft.net/)
 
 ## Cross-Team Testing
 
