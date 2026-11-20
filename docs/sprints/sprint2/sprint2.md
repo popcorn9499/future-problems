@@ -58,7 +58,7 @@ We reviewed Group 3's application:
 
 ## Architecture
 
-//TODO: LINK TO NEW ARCHITECTURE DIAGRAM
+![Sprint 2 architecture diagram](architecture_sprint2.png)
 
 ## Reflection & Risk
 
