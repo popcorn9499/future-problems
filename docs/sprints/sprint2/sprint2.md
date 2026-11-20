@@ -92,15 +92,9 @@ In terms of coverage, our tests are covering an acceptable percentage of code bu
 
 ### Our Feedback
 
-[Review received from group 1](https://github.com/popcorn9499/future-problems/issues/216)
+One piece of feedback we received in this [Git issue](https://github.com/popcorn9499/future-problems/issues/230) from our reviewers that we are classifying as accepted, is that we should make improvements to our profile editing. They pointed out an issue where changes made to the user's profile details are not reflected in the frontend. So a user would edit their profile, and upon saving, it would appear that the changes were not saved. We have already fixed this issue and now the user's changes will appear in the frontend immediately.
 
-Unfortunately, our deployment was down when the reviewing group tried to test our application and therefore they could only give very minimal feedback.
-
-They were only able to leave us two pieces of feedback, both of which we classify as 'accepted' and believe should result in project work.
-
-Firstly, they suggested improvements to the error message shown when deployment is failing in any way. The only message they were shown was 'unable to load your account' with a try again button, which provides little information. Going ahead, we need to account for any server or deployment issues, and display more meaningful error messages for users. It was suggested that in this case, we could have a message that instead states "The service is temporarily unavailable. Please try again later." which we think is a great idea.
-
-The second reccomendation that we consider accepted is to document known issues. It has come to our attention that there could be small windows of time where the host will reboot, meaning users cannot access GoBison through our deployment. This should absolutely be noted in our deployment documentation and in our README, so future reviewers and graders can be informed.
+In a another [Git issue](https://github.com/popcorn9499/future-problems/issues/232), the team reviewing us suggested we indicate which requests belong to the user and grey out the message button for those requests. However we have built our map so users will never see their own requests or offers and can instead view them in the dashboard. As such, we are rejecting that feedback and instead will find a way to make it clear in the frontend that your personal requests/offers won’t be shown in the map.
 
 ## API Documentation
 
