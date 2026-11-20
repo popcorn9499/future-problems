@@ -198,11 +198,11 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
         }
 
         if (departureTime != null) {
-            predicates.add(cb.equal(root.get("departureTime"), departureTime));
+            predicates.add(withinTimeWindow(cb, root.get("departureTime"), departureTime));
         }
 
         if (arrivalTime != null) {
-            predicates.add(cb.equal(root.get("arrivalTime"), arrivalTime));
+            predicates.add(withinTimeWindow(cb, root.get("arrivalTime"), arrivalTime));
         }
 
         query.where(predicates.toArray(new Predicate[0]));
@@ -212,5 +212,16 @@ public class RideRequestRepositoryImpl implements RideRequestRepository {
                 .stream()
                 .map(RideRequestEntity::toDomain)
                 .toList();
+    }
+
+    private static Predicate withinTimeWindow(
+            CriteriaBuilder builder, Path<LocalTime> field, LocalTime selectedTime) {
+        var window = RideTimeWindow.around(selectedTime);
+        if (window.crossesMidnight()) {
+            return builder.or(
+                    builder.greaterThanOrEqualTo(field, window.start()),
+                    builder.lessThanOrEqualTo(field, window.end()));
+        }
+        return builder.between(field, window.start(), window.end());
     }
 }
