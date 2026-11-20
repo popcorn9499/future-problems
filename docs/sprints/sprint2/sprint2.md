@@ -46,11 +46,21 @@ In terms of coverage, our tests are covering a good percentage of code but we ac
 
 ## Cross-Team Testing
 
-We reviewed Group 3's application:
+### Our Review:
 
-- [Group 3 Review](https://github.com/laradeleon/the-story-machine/issues/95)
+[Review completed for group 3](https://github.com/laradeleon/the-story-machine/issues/95)
 
-//TODO: RESPOND TO OUR REVIEW
+### Our Feedback:
+
+[Review received from group 1](https://github.com/popcorn9499/future-problems/issues/216)
+
+Unfortunately, our deployment was down when the reviewing group tried to test our application and therefore they could only give very minimal feedback.
+
+They were only able to leave us two pieces of feedback, both of which we classify as 'accepted' and believe should result in project work.
+
+Firstly, they suggested improvements to the error message shown when deployment is failing in any way. The only message they were shown was 'unable to load your account' with a try again button, which provides little information. Going ahead, we need to account for any server or deployment issues, and display more meaningful error messages for users. It was suggested that in this case, we could have a message that instead states "The service is temporarily unavailable. Please try again later." which we think is a great idea.
+
+The second reccomendation that we consider accepted is to document known issues. It has come to our attention that there could be small windows of time where the host will reboot, meaning users cannot access GoBison through our deployment. This should absolutely be noted in our deployment documentation and in our README, so future reviewers and graders can be informed.
 
 ## API Documentation
 
