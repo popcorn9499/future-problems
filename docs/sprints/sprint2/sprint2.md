@@ -15,6 +15,8 @@ This sprint, our team focused on building out our core features and implementing
 - Implemented live chat functionality for users to talk to eachother
 - Added regression tests to our automated test suite
 - Added linting to our CI pipeline
+- Improved CD to only run after the CI pipeline finishes.
+- Deployment runs in its own contained database running via Docker
 
 ## Regression Testing
 
