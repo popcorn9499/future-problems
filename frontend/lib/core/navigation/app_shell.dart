@@ -89,7 +89,7 @@ class _AppShellState extends State<AppShell> {
 
     final pages = [
       widget.dashboardPage,
-      widget.inboxPage,
+      _selectedIndex == 1 ? widget.inboxPage : const SizedBox.shrink(),
       widget.rideRequestPage,
       widget.rideOfferPage,
       widget.mapPage,

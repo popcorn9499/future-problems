@@ -1,9 +1,72 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/features/messages/messaging_api_mock.dart';
 import 'package:gobison/features/messages/models/conversation.dart';
 import 'package:gobison/features/messages/messaging_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
+  for (final status in [201, 409]) {
+    test(
+      'opens a conversation when the create endpoint returns $status',
+      () async {
+        final service = MessagingService(
+          client: MockClient((request) async {
+            if (request.method == 'POST') {
+              expect(request.url.path, '/api/v1/conversation');
+              expect(jsonDecode(request.body), {
+                'participantId': 'rider@example.com',
+              });
+              return http.Response(
+                status == 201 ? '{"conversationId":"thread"}' : '',
+                status,
+              );
+            }
+
+            expect(request.method, 'GET');
+            expect(request.url.path, '/api/v1/conversations');
+            return http.Response(
+              '{"conversations":[{"conversationId":"thread",'
+              '"participant":{"userId":"rider@example.com","firstName":"Rider"}}]}',
+              200,
+            );
+          }),
+        );
+        addTearDown(service.close);
+
+        final conversation = await service.startConversation(
+          ' Rider@example.com ',
+        );
+        expect(conversation.conversationId, 'thread');
+        expect(conversation.participant.displayName, 'Rider');
+        expect(conversation.lastMessage, isEmpty);
+      },
+    );
+  }
+
+  test('loads history when only the response has a conversation ID', () async {
+    final service = MessagingService(
+      client: MockClient(
+        (request) async => http.Response(
+          '{"conversationId":"thread","messages":[{"messageId":"message",'
+          '"senderId":"rider@example.com","content":"Hello",'
+          '"sentAt":"2026-11-19T12:00:00Z"}]}',
+          200,
+        ),
+      ),
+    );
+    addTearDown(service.close);
+
+    final messages = await service.getConversationMessages(
+      'thread',
+      currentUserId: 'me@example.com',
+    );
+    expect(messages.single.conversationId, 'thread');
+    expect(messages.single.content, 'Hello');
+  });
+
   group('MessagingService with the mock API', () {
     late MessagingService service;
 

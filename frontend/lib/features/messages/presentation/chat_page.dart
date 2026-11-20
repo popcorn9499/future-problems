@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/avatar_color_option.dart';
@@ -26,6 +28,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final _composerController = TextEditingController();
   final _scrollController = ScrollController();
+  late final Timer _pollTimer;
 
   @override
   void initState() {
@@ -33,9 +36,34 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _loadConversationMessages();
     });
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(_pollConversation()),
+    );
+  }
+
+  bool _isVisible() =>
+      mounted &&
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+      ModalRoute.of(context)?.isCurrent == true;
+
+  Future<void> _pollConversation() async {
+    final nearBottom =
+        !_scrollController.hasClients ||
+        _scrollController.position.extentAfter <= 80;
+    final hasNewMessages = await widget.controller.pollConversation(
+      conversationId: widget.conversation.conversationId,
+      currentUserId: widget.currentUserId,
+      isVisible: _isVisible,
+    );
+    if (hasNewMessages && nearBottom && _isVisible()) _scrollToBottom();
   }
 
   Future<void> _loadConversationMessages() async {
+    if (widget.controller.isLoadingConversation ||
+        widget.controller.isSending) {
+      return;
+    }
     await widget.controller.loadConversationMessages(
       conversationId: widget.conversation.conversationId,
       currentUserId: widget.currentUserId,
@@ -46,7 +74,11 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _send() async {
     final content = _composerController.text.trim();
-    if (content.isEmpty || widget.controller.isSending) return;
+    if (content.isEmpty ||
+        widget.controller.isSending ||
+        widget.controller.isLoadingConversation) {
+      return;
+    }
 
     final sent = await widget.controller.sendMessage(
       conversationId: widget.conversation.conversationId,
@@ -75,6 +107,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _pollTimer.cancel();
     _composerController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -91,6 +124,17 @@ class _ChatPageState extends State<ChatPage> {
           backgroundColor: AppColors.background,
           foregroundColor: AppColors.textPrimary,
           surfaceTintColor: Colors.transparent,
+          actions: [
+            IconButton(
+              tooltip: 'Refresh conversation',
+              onPressed:
+                  widget.controller.isLoadingConversation ||
+                      widget.controller.isSending
+                  ? null
+                  : _loadConversationMessages,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
           titleSpacing: 0,
           title: Row(
             children: [
@@ -160,7 +204,7 @@ class _ChatPageState extends State<ChatPage> {
             _MessageComposer(
               controller: _composerController,
               sending: widget.controller.isSending,
-              onSend: _send,
+              onSend: widget.controller.isLoadingConversation ? null : _send,
             ),
           ],
         ),
@@ -247,7 +291,7 @@ class _MessageComposer extends StatelessWidget {
 
   final TextEditingController controller;
   final bool sending;
-  final VoidCallback onSend;
+  final VoidCallback? onSend;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -266,7 +310,7 @@ class _MessageComposer extends StatelessWidget {
               minLines: 1,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              onSubmitted: (_) => onSend(),
+              onSubmitted: (_) => onSend?.call(),
               decoration: InputDecoration(
                 hintText: 'Write a message…',
                 filled: true,

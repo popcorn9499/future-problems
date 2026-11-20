@@ -5,8 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../core/models/user.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../core/models/user.dart';
+import '../../core/theme/app_colors.dart';
+import '../messages/messaging_controller.dart';
+import '../messages/messaging_service.dart';
+import '../messages/models/conversation.dart';
+import '../messages/presentation/chat_page.dart';
 import '../ride_offer/ride_offer_service.dart';
 import '../ride_request/ride_request_service.dart';
 
@@ -43,6 +47,7 @@ class MapRideItem {
 class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   late final RideOfferService _rideOfferService;
   late final RideRequestService _rideRequestService;
+  final _messagingService = MessagingService();
 
   // Loaded rides; markers (single + grouped) are built from these on every
   // zoom change so grouping always matches what's on screen.
@@ -119,6 +124,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   @override
   void dispose() {
     _cityController.dispose();
+    _messagingService.close();
     super.dispose();
   }
 
@@ -836,91 +842,155 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   }
 
   /// Displays a bottom sheet popup showing all fields from the selected ride item
-  void _showRideDetailsModal(
+  Future<void> _showRideDetailsModal(
     String title,
     Color headerColor,
     Map<String, dynamic> details, {
     required bool isOffer,
-  }) {
+  }) async {
     // Offer-only fields are left out for ride requests
     final fields = _detailFields.entries
         .where((field) => isOffer || !_offerOnlyFields.contains(field.key))
         .toList();
 
-    showModalBottomSheet(
+    final ownerId = details['userId'];
+    final recipientId = ownerId is String ? ownerId.trim() : '';
+    final canMessage =
+        recipientId.isNotEmpty &&
+        recipientId.toLowerCase() != widget.user.id.toLowerCase();
+    var isOpeningChat = false;
+    String? chatError;
+
+    final conversation = await showModalBottomSheet<Conversation>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              height: MediaQuery.sizeOf(context).height * 0.5,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.location_pin, color: headerColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: headerColor,
+      builder: (_) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          Future<void> openChat() async {
+            if (isOpeningChat) return;
+            setSheetState(() {
+              isOpeningChat = true;
+              chatError = null;
+            });
+            try {
+              final chat = await _messagingService.startConversation(
+                recipientId,
+              );
+              if (sheetContext.mounted &&
+                  ModalRoute.of(sheetContext)?.isCurrent == true) {
+                Navigator.of(sheetContext).pop(chat);
+              }
+            } catch (_) {
+              if (!sheetContext.mounted ||
+                  ModalRoute.of(sheetContext)?.isCurrent != true) {
+                return;
+              }
+              setSheetState(() {
+                isOpeningChat = false;
+                chatError = 'Could not open the chat. Try again.';
+              });
+            }
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                height: MediaQuery.sizeOf(sheetContext).height * 0.5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_pin, color: headerColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: headerColor,
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  Expanded(
-                    child: ListView(
-                      children: fields.map((field) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  '${field.value}:',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(sheetContext),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: ListView(
+                        children: fields.map((field) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    '${field.value}:',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  field.key == 'rideType'
-                                      ? _rideTypeLabel(details['rideType'])
-                                      : _formatDetailValue(details[field.key]),
-                                  style: const TextStyle(color: Colors.black87),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    field.key == 'rideType'
+                                        ? _rideTypeLabel(details['rideType'])
+                                        : _formatDetailValue(
+                                            details[field.key],
+                                          ),
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  ),
-                ],
+                    if (chatError != null) Text(chatError!),
+                    if (canMessage)
+                      FilledButton(
+                        onPressed: isOpeningChat ? null : openChat,
+                        child: Text(
+                          isOpeningChat ? 'Opening chat…' : 'Message',
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
+    if (!mounted || conversation == null) return;
+
+    final controller = MessagingController(messagingService: _messagingService);
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => ChatPage(
+            conversation: conversation,
+            currentUserId: widget.user.id,
+            controller: controller,
+          ),
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   /// Helper to build a hover-reactive Marker

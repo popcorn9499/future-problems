@@ -6,9 +6,11 @@ import 'models/conversation.dart';
 
 class MessagingController extends ChangeNotifier {
   MessagingController({MessagingService? messagingService})
-    : _messagingService = messagingService ?? MessagingService();
+    : _messagingService = messagingService ?? MessagingService(),
+      _ownsMessagingService = messagingService == null;
 
   final MessagingService _messagingService;
+  final bool _ownsMessagingService;
 
   /// Inbox rows: one preview per conversation, with its latest message.
   List<Conversation> inbox = [];
@@ -23,6 +25,8 @@ class MessagingController extends ChangeNotifier {
   bool get usingMockData => _messagingService.usingMockData;
 
   bool _disposed = false;
+  bool _isPollingConversation = false;
+  int _conversationRevision = 0;
 
   Future<void> loadInbox() async {
     isLoadingInbox = true;
@@ -42,6 +46,7 @@ class MessagingController extends ChangeNotifier {
     required String conversationId,
     required String currentUserId,
   }) async {
+    _conversationRevision++;
     isLoadingConversation = true;
     chatErrorMessage = null;
     _notify();
@@ -52,14 +57,7 @@ class MessagingController extends ChangeNotifier {
       );
       _notify();
       try {
-        await _messagingService.markConversationAsRead(conversationId);
-        inbox = inbox
-            .map(
-              (conversation) => conversation.conversationId == conversationId
-                  ? conversation.copyWith(unreadCount: 0)
-                  : conversation,
-            )
-            .toList();
+        await _markConversationAsRead(conversationId);
       } catch (error) {
         chatErrorMessage = _userMessage(error, 'read');
       }
@@ -69,6 +67,75 @@ class MessagingController extends ChangeNotifier {
       isLoadingConversation = false;
       _notify();
     }
+  }
+
+  Future<bool> pollConversation({
+    required String conversationId,
+    required String currentUserId,
+    required bool Function() isVisible,
+  }) async {
+    if (_disposed ||
+        _isPollingConversation ||
+        isLoadingConversation ||
+        isSending ||
+        !isVisible()) {
+      return false;
+    }
+
+    _isPollingConversation = true;
+    final revision = _conversationRevision;
+    var hasNewMessages = false;
+    try {
+      final messages = await _messagingService.getConversationMessages(
+        conversationId,
+        currentUserId: currentUserId,
+      );
+      if (_disposed || revision != _conversationRevision || !isVisible()) {
+        return false;
+      }
+
+      final previousIds = conversationMessages
+          .map((message) => message.messageId)
+          .toSet();
+      hasNewMessages = messages.any(
+        (message) => !previousIds.contains(message.messageId),
+      );
+      final changed = !listEquals(
+        conversationMessages
+            .map((message) => (message.messageId, message.readAt))
+            .toList(),
+        messages.map((message) => (message.messageId, message.readAt)).toList(),
+      );
+      if (changed) {
+        conversationMessages = messages;
+        _notify();
+      }
+
+      if (messages.any(
+        (message) =>
+            message.senderId != currentUserId && message.readAt == null,
+      )) {
+        await _markConversationAsRead(conversationId);
+        _notify();
+      }
+    } catch (_) {
+      // Keep the current history visible and retry on the next poll.
+    } finally {
+      _isPollingConversation = false;
+    }
+    return hasNewMessages;
+  }
+
+  Future<void> _markConversationAsRead(String conversationId) async {
+    await _messagingService.markConversationAsRead(conversationId);
+    if (_disposed) return;
+    inbox = inbox
+        .map(
+          (conversation) => conversation.conversationId == conversationId
+              ? conversation.copyWith(unreadCount: 0)
+              : conversation,
+        )
+        .toList();
   }
 
   Future<bool> sendMessage({
@@ -83,6 +150,7 @@ class MessagingController extends ChangeNotifier {
       return false;
     }
 
+    _conversationRevision++;
     isSending = true;
     chatErrorMessage = null;
     _notify();
@@ -149,6 +217,7 @@ class MessagingController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (_ownsMessagingService) _messagingService.close();
     super.dispose();
   }
 }
