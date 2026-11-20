@@ -120,7 +120,7 @@ The second reccomendation that we consider accepted is to document known issues.
 
 ### What part of the current testing, CI, or CD process creates the most friction, and what might improve it?
 
-**Ruitian**: Up until recently we didn’t realize you can chain action files against each other. This meant that if ci failed if we didn’t have those checks in the deploy file things might deploy that are broken. We solved this later by ensuring deploy only runs when the actions prior that are used to test everything pass. This created a lot of potential for friction however was resolved relatively easily by reading the documentation for github actions.
+**Ruitian**: Up until recently we didn’t realize you can chain action files against each other. This meant that if ci failed if we didn’t have those checks in the deploy file things might deploy that are broken. We solved this later by ensuring deploy only runs when the actions prior that are used to test everything pass. This created a lot of potential for friction however was resolved relatively easily by reading the documentation for github actions. I checked three GitHub Actions runs to make sure the backend, frontend, and browser tests all passed on the same commit. An automatic summary of those results would save time when we prepare the next sprint report.
 
 ### What is the most important technical risk or uncertainty going into the final iteration?
 
