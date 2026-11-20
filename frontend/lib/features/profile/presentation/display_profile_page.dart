@@ -53,6 +53,13 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
   }
 
   @override
+  void didUpdateWidget(covariant DisplayProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user != widget.user) _user = widget.user;
+    if (oldWidget.profile != widget.profile) _profile = widget.profile;
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
