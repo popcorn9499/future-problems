@@ -82,8 +82,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   String? _selectedCity;
   final List<String> _selectedDaysOfWeek = [];
   String? _selectedRideType;
-  String? _selectedDepartureTime; // HH:mm
-  String? _selectedArrivalTime; // HH:mm
+  TimeOfDay? _selectedDepartureTime;
+  TimeOfDay? _selectedArrivalTime;
 
   bool _showRequests = true;
   bool _showOffers = true;
@@ -239,18 +239,23 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       },
     );
 
-    if (picked != null) {
-      final String formatted =
-          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    if (picked != null && mounted) {
       setState(() {
         if (isDeparture) {
-          _selectedDepartureTime = formatted;
+          _selectedDepartureTime = picked;
         } else {
-          _selectedArrivalTime = formatted;
+          _selectedArrivalTime = picked;
         }
       });
       _loadMapMarkers();
     }
+  }
+
+  String? _apiFilterTime(TimeOfDay? time) {
+    if (time == null) return null;
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 
   /// Calls the service to get data, then converts items into UI Markers
@@ -407,8 +412,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           city: _selectedCity?.trim(),
           daysOfWeek: _formattedDaysOfWeekParam,
           //rideType: _selectedRideType, ============================================================== FIX THIS
-          departureTime: _selectedDepartureTime,
-          arrivalTime: _selectedArrivalTime,
+          departureTime: _apiFilterTime(_selectedDepartureTime),
+          arrivalTime: _apiFilterTime(_selectedArrivalTime),
         );
         final requestsList =
             requestsData['requests'] ??
@@ -456,8 +461,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           city: _selectedCity?.trim(),
           daysOfWeek: _formattedDaysOfWeekParam,
           //rideType: _selectedRideType,  ============================================================== FIX THIS
-          departureTime: _selectedDepartureTime,
-          arrivalTime: _selectedArrivalTime,
+          departureTime: _apiFilterTime(_selectedDepartureTime),
+          arrivalTime: _apiFilterTime(_selectedArrivalTime),
         );
         final offersList =
             offersData['offers'] ??
@@ -643,33 +648,39 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                 ),
               ],
               onChanged: (value) {
-                setState(() => _selectedRideType = value);
+                setState(() {
+                  _selectedRideType = value;
+                  if (value == 'arriving') _selectedDepartureTime = null;
+                  if (value == 'departing') _selectedArrivalTime = null;
+                });
                 _loadMapMarkers();
               },
             ),
           ),
 
-          // 4. Departure Time Picker Button (HH:mm)
-          _buildTimeFilterChip(
-            label: 'Leave campus at',
-            value: _selectedDepartureTime,
-            onTap: () => _pickTime(isDeparture: true),
-            onClear: () {
-              setState(() => _selectedDepartureTime = null);
-              _loadMapMarkers();
-            },
-          ),
+          // 4. Arrival Time Picker Button (HH:mm)
+          if (_selectedRideType != 'departing')
+            _buildTimeFilterChip(
+              label: 'Arrive at campus by',
+              value: _selectedArrivalTime,
+              onTap: () => _pickTime(isDeparture: false),
+              onClear: () {
+                setState(() => _selectedArrivalTime = null);
+                _loadMapMarkers();
+              },
+            ),
 
-          // 5. Arrival Time Picker Button (HH:mm)
-          _buildTimeFilterChip(
-            label: 'Arrive at campus by',
-            value: _selectedArrivalTime,
-            onTap: () => _pickTime(isDeparture: false),
-            onClear: () {
-              setState(() => _selectedArrivalTime = null);
-              _loadMapMarkers();
-            },
-          ),
+          // 5. Departure Time Picker Button (HH:mm)
+          if (_selectedRideType != 'arriving')
+            _buildTimeFilterChip(
+              label: 'Leave campus at',
+              value: _selectedDepartureTime,
+              onTap: () => _pickTime(isDeparture: true),
+              onClear: () {
+                setState(() => _selectedDepartureTime = null);
+                _loadMapMarkers();
+              },
+            ),
 
           SizedBox(
             width: 160,
@@ -757,7 +768,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   Widget _buildTimeFilterChip({
     required String label,
-    required String? value,
+    required TimeOfDay? value,
     required VoidCallback onTap,
     required VoidCallback onClear,
   }) {
@@ -783,7 +794,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             ),
             const SizedBox(width: 6),
             Text(
-              value != null ? '$label $value' : label,
+              value != null ? '$label · ${value.format(context)}' : label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: value != null ? FontWeight.w600 : FontWeight.normal,
@@ -809,9 +820,16 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     Map<String, dynamic> details, {
     required bool isOffer,
   }) async {
-    // Offer-only fields are left out for ride requests
+    final rideType = details['rideType'];
     final fields = _detailFields.entries
         .where((field) => isOffer || !_offerOnlyFields.contains(field.key))
+        .where(
+          (field) => switch (field.key) {
+            'arrivalTime' => rideType != 'departing',
+            'departureTime' => rideType != 'arriving',
+            _ => true,
+          },
+        )
         .toList();
 
     final ownerId = details['userId'];
@@ -975,8 +993,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   /// Anything not listed here (IDs, address, location) is not shown.
   static const Map<String, String> _detailFields = {
     'rideType': 'Ride type',
-    'departureTime': 'Leave campus at',
     'arrivalTime': 'Arrive at campus by',
+    'departureTime': 'Leave campus at',
     'daysOfWeek': 'Days of the week',
     'description': 'Description',
     'passengerNum': 'Maximum Passengers',

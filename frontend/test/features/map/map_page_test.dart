@@ -85,12 +85,47 @@ void main() {
       expect(find.widgetWithText(TextField, 'City'), findsOneWidget);
       expect(find.text('Days of Week'), findsOneWidget);
       expect(find.text('Ride Type'), findsOneWidget);
-      expect(find.text('Leave campus at'), findsOneWidget);
-      expect(find.text('Arrive at campus by'), findsOneWidget);
+      expect(find.text('Campus departure'), findsOneWidget);
+      expect(find.text('Campus arrival'), findsOneWidget);
       expect(find.text('Status'), findsNothing);
       expect(find.text('Show Requests'), findsOneWidget);
       expect(find.text('Show Offers'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Apply'), findsOneWidget);
+    });
+
+    testWidgets('formats and clears selected campus times', (tester) async {
+      final queries = <Map<String, String>>[];
+      await pumpMapPage(
+        tester,
+        respond: (request) async {
+          queries.add(request.url.queryParameters);
+          return http.Response('{}', 200);
+        },
+      );
+
+      for (final (label, parameter) in [
+        ('Campus departure', 'departureTime'),
+        ('Campus arrival', 'arrivalTime'),
+      ]) {
+        await tester.tap(find.text(label));
+        await settle(tester);
+        await tester.tap(find.text('OK'));
+        await settle(tester);
+
+        final selected = find.text('$label · 8:30 AM');
+        expect(selected, findsOneWidget);
+        expect(queries.last[parameter], '08:30');
+
+        final chip = find.ancestor(of: selected, matching: find.byType(InkWell));
+        await tester.tap(
+          find.descendant(of: chip.first, matching: find.byIcon(Icons.close)),
+        );
+        await settle(tester);
+
+        expect(find.text(label), findsOneWidget);
+        expect(selected, findsNothing);
+        expect(queries.last.containsKey(parameter), isFalse);
+      }
     });
 
     testWidgets('does not show Clear Filters when no filters are set', (
@@ -103,6 +138,45 @@ void main() {
   });
 
   group('CarpoolMultiSourceMapPage ride type dropdown', () {
+    testWidgets('hides and clears times that do not match the direction', (
+      tester,
+    ) async {
+      final queries = <Map<String, String>>[];
+      await pumpMapPage(
+        tester,
+        respond: (request) async {
+          queries.add(request.url.queryParameters);
+          return http.Response('{}', 200);
+        },
+      );
+
+      await tester.tap(find.text('Campus departure'));
+      await settle(tester);
+      await tester.tap(find.text('OK'));
+      await settle(tester);
+      expect(queries.last['departureTime'], '08:30');
+
+      await selectRideType(tester, 'To campus');
+      expect(find.text('Campus arrival'), findsOneWidget);
+      expect(find.textContaining('Campus departure'), findsNothing);
+      expect(queries.last.containsKey('departureTime'), isFalse);
+
+      await tester.tap(find.text('Campus arrival'));
+      await settle(tester);
+      await tester.tap(find.text('OK'));
+      await settle(tester);
+      expect(queries.last['arrivalTime'], '08:30');
+
+      await selectRideType(tester, 'From campus');
+      expect(find.text('Campus departure'), findsOneWidget);
+      expect(find.textContaining('Campus arrival'), findsNothing);
+      expect(queries.last.containsKey('arrivalTime'), isFalse);
+
+      await selectRideType(tester, 'Round trip');
+      expect(find.text('Campus arrival'), findsOneWidget);
+      expect(find.text('Campus departure'), findsOneWidget);
+    });
+
     testWidgets('defaults to Any', (WidgetTester tester) async {
       await pumpMapPage(tester);
 
@@ -149,7 +223,11 @@ void main() {
 
 
   for (final source in ['requests', 'offers']) {
-    testWidgets('hides status in ride $source details', (tester) async {
+    testWidgets('hides status and inapplicable times in $source details', (
+      tester,
+    ) async {
+      final isArrival = source == 'requests';
+      final rideType = isArrival ? 'arriving' : 'departing';
       await pumpMapPage(
         tester,
         respond: (request) async {
@@ -158,7 +236,8 @@ void main() {
             return http.Response('{}', 200);
           }
           return http.Response(
-            '{"$source":[{"status":"OPEN","rideType":"arriving",'
+            '{"$source":[{"status":"OPEN","rideType":"$rideType",'
+            '"arrivalTime":"08:30","departureTime":"16:30",'
             '"location":{"latitude":49.8951,"longitude":-97.1384}}]}',
             200,
           );
@@ -174,9 +253,22 @@ void main() {
 
       final sheet = find.byType(BottomSheet);
       expect(
-        find.descendant(of: sheet, matching: find.text('To campus')),
+        find.descendant(
+          of: sheet,
+          matching: find.text(isArrival ? 'To campus' : 'From campus'),
+        ),
         findsOneWidget,
       );
+      final arrivalLabel = find.descendant(
+        of: sheet,
+        matching: find.text('Arrive at campus by:'),
+      );
+      final departureLabel = find.descendant(
+        of: sheet,
+        matching: find.text('Leave campus at:'),
+      );
+      expect(arrivalLabel, isArrival ? findsOneWidget : findsNothing);
+      expect(departureLabel, isArrival ? findsNothing : findsOneWidget);
       expect(find.descendant(of: sheet, matching: find.text('Status:')), findsNothing);
       expect(find.descendant(of: sheet, matching: find.text('OPEN')), findsNothing);
     });
