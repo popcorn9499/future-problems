@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
 import 'package:gobison/core/services/session_service.dart';
+import 'package:gobison/core/theme/app_colors.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/map/map_page.dart';
 import 'package:http/http.dart' as http;
@@ -21,8 +22,17 @@ void main() {
     verified: true,
   );
 
-  Widget createTestWidget() {
-    return const MaterialApp(home: CarpoolMultiSourceMapPage(user: testUser));
+  Widget createTestWidget({double? sheetWidth}) {
+    return MaterialApp(
+      theme: sheetWidth == null
+          ? null
+          : ThemeData(
+              bottomSheetTheme: BottomSheetThemeData(
+                constraints: BoxConstraints(maxWidth: sheetWidth),
+              ),
+            ),
+      home: const CarpoolMultiSourceMapPage(user: testUser),
+    );
   }
 
   /// Uses a desktop-sized screen so the whole filter bar fits above the map
@@ -85,8 +95,8 @@ void main() {
       expect(find.widgetWithText(TextField, 'City'), findsOneWidget);
       expect(find.text('Days of Week'), findsOneWidget);
       expect(find.text('Ride Type'), findsOneWidget);
-      expect(find.text('Campus departure'), findsOneWidget);
-      expect(find.text('Campus arrival'), findsOneWidget);
+      expect(find.text('Leave campus at'), findsOneWidget);
+      expect(find.text('Arrive at campus by'), findsOneWidget);
       expect(find.text('Status'), findsNothing);
       expect(find.text('Show Requests'), findsOneWidget);
       expect(find.text('Show Offers'), findsOneWidget);
@@ -104,8 +114,8 @@ void main() {
       );
 
       for (final (label, parameter) in [
-        ('Campus departure', 'departureTime'),
-        ('Campus arrival', 'arrivalTime'),
+        ('Leave campus at', 'departureTime'),
+        ('Arrive at campus by', 'arrivalTime'),
       ]) {
         await tester.tap(find.text(label));
         await settle(tester);
@@ -150,31 +160,31 @@ void main() {
         },
       );
 
-      await tester.tap(find.text('Campus departure'));
+      await tester.tap(find.text('Leave campus at'));
       await settle(tester);
       await tester.tap(find.text('OK'));
       await settle(tester);
       expect(queries.last['departureTime'], '08:30');
 
       await selectRideType(tester, 'To campus');
-      expect(find.text('Campus arrival'), findsOneWidget);
-      expect(find.textContaining('Campus departure'), findsNothing);
+      expect(find.text('Arrive at campus by'), findsOneWidget);
+      expect(find.textContaining('Leave campus at'), findsNothing);
       expect(queries.last.containsKey('departureTime'), isFalse);
 
-      await tester.tap(find.text('Campus arrival'));
+      await tester.tap(find.text('Arrive at campus by'));
       await settle(tester);
       await tester.tap(find.text('OK'));
       await settle(tester);
       expect(queries.last['arrivalTime'], '08:30');
 
       await selectRideType(tester, 'From campus');
-      expect(find.text('Campus departure'), findsOneWidget);
-      expect(find.textContaining('Campus arrival'), findsNothing);
+      expect(find.text('Leave campus at'), findsOneWidget);
+      expect(find.textContaining('Arrive at campus by'), findsNothing);
       expect(queries.last.containsKey('arrivalTime'), isFalse);
 
       await selectRideType(tester, 'Round trip');
-      expect(find.text('Campus arrival'), findsOneWidget);
-      expect(find.text('Campus departure'), findsOneWidget);
+      expect(find.text('Arrive at campus by'), findsOneWidget);
+      expect(find.text('Leave campus at'), findsOneWidget);
     });
 
     testWidgets('defaults to Any', (WidgetTester tester) async {
@@ -274,6 +284,141 @@ void main() {
     });
   }
 
+  for (final (kind, source) in [('request', 'requests'), ('offer', 'offers')]) {
+    testWidgets('shows the compact $kind schedule and actions', (
+      tester,
+    ) async {
+      await pumpMapPage(
+        tester,
+        respond: (request) async => request.url.path.endsWith('/$source')
+            ? http.Response(
+                '{"$source":[{"rideType":"roundTrip","userId":"another-user",'
+                '"arrivalTime":"07:15","departureTime":"16:30",'
+                '"daysOfWeek":["MONDAY","WEDNESDAY","SATURDAY"],'
+                '"description":"Meet by the entrance","passengerNum":3,"askingForDrivers":false,'
+                '"location":{"latitude":49.8951,"longitude":-97.1384}}]}',
+                200,
+              )
+            : http.Response('{}', 200),
+      );
+      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      await tester.tap(find.byWidget(marker.child));
+      await settle(tester);
+
+      expect(find.text('Ride $kind'), findsOneWidget);
+      expect(find.text('7:15 AM'), findsOneWidget);
+      expect(find.text('4:30 PM'), findsOneWidget);
+      expect(find.text('Days'), findsOneWidget);
+      expect(find.text('Sa'), findsOneWidget);
+      expect(find.text('Su'), findsNothing);
+
+      BoxDecoration bubbleDecoration(String label) {
+        final bubble = find.ancestor(
+          of: find.text(label),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Container &&
+                widget.decoration is BoxDecoration &&
+                (widget.decoration as BoxDecoration).shape == BoxShape.circle,
+          ),
+        );
+        return tester.widget<Container>(bubble.first).decoration! as BoxDecoration;
+      }
+
+      expect(bubbleDecoration('M').color, AppColors.primary);
+      expect(bubbleDecoration('T').color, Colors.transparent);
+      final offerFieldMatcher = kind == 'offer' ? findsOneWidget : findsNothing;
+      expect(find.text('Maximum Passengers:'), offerFieldMatcher);
+      expect(find.text('Asking for drivers:'), offerFieldMatcher);
+      expect(find.text('Ride notes'), findsOneWidget);
+      expect(find.text('Meet by the entrance'), findsOneWidget);
+
+      final message = find.widgetWithText(OutlinedButton, 'Message');
+      final join = find.widgetWithText(FilledButton, 'Ask to Join Ride');
+      expect(tester.widget<OutlinedButton>(message).onPressed, isNotNull);
+      expect(tester.widget<FilledButton>(join).onPressed, isNotNull);
+      expect(tester.getCenter(message).dy, tester.getCenter(join).dy);
+      await tester.tap(join);
+      await settle(tester);
+      expect(find.text('Ride $kind'), findsOneWidget);
+      expect(message.hitTestable(), findsOneWidget);
+      expect(find.byType(AlertDialog), findsNothing);
+
+      await tester.pumpWidget(createTestWidget(sheetWidth: 240));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(message.hitTestable(), findsOneWidget);
+      expect(join.hitTestable(), findsOneWidget);
+      expect(tester.getCenter(message).dy, lessThan(tester.getCenter(join).dy));
+    });
+  }
+
+  for (final mixed in [true, false]) {
+    testWidgets('groups nearby rides when mixed is $mixed', (tester) async {
+      const requestRide = '{"rideType":"arriving","city":"Winnipeg",'
+          '"arrivalTime":"07:15","daysOfWeek":["MONDAY","WEDNESDAY"],'
+          '"location":{"latitude":49.8951,"longitude":-97.1384}}';
+      await pumpMapPage(
+        tester,
+        respond: (request) async {
+          if (request.url.path.endsWith('/requests')) {
+            return http.Response(
+              mixed
+                  ? '{"requests":[$requestRide]}'
+                  : '{"requests":[$requestRide,$requestRide]}',
+              200,
+            );
+          }
+          return http.Response(mixed ? '{"offers":[$requestRide]}' : '{}', 200);
+        },
+      );
+      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      await tester.tap(find.byWidget(marker.child));
+      await settle(tester);
+
+      expect(find.text('Rides in this area'), findsOneWidget);
+      expect(find.text(mixed ? '1 offer · 1 request' : '0 offers · 2 requests'),
+          findsOneWidget);
+      expect(find.text(mixed ? 'Ride requests (1)' : 'Ride requests (2)'),
+          findsOneWidget);
+      expect(find.text('Ride offers (1)'), mixed ? findsOneWidget : findsNothing);
+      expect(find.text('Ride offers (0)'), findsNothing);
+      expect(find.text('To campus'), findsNWidgets(2));
+      expect(find.text('7:15 AM'), findsNWidgets(2));
+
+      final city = find.text('Winnipeg').first;
+      final row = find.ancestor(of: city, matching: find.byType(InkWell)).first;
+      final bubbles = find.descendant(of: row, matching: find.byType(Wrap));
+      final direction = find.descendant(
+        of: row,
+        matching: find.text('To campus'),
+      );
+      final time = find.descendant(of: row, matching: find.text('7:15 AM'));
+      final chevron = find.descendant(
+        of: row,
+        matching: find.byIcon(Icons.chevron_right),
+      );
+      expect(find.descendant(of: bubbles, matching: find.text('M')), findsOneWidget);
+      expect(tester.getCenter(bubbles).dy, closeTo(tester.getCenter(row).dy, 0.1));
+      expect(tester.getTopLeft(bubbles).dx, greaterThan(tester.getTopRight(city).dx));
+      expect(tester.getTopLeft(time).dx, greaterThan(tester.getTopRight(bubbles).dx));
+      expect(tester.getTopRight(time).dx, tester.getTopLeft(chevron).dx - 12);
+      expect(tester.getTopRight(chevron).dx, tester.getTopRight(row).dx - 12);
+
+      await tester.pumpWidget(createTestWidget(sheetWidth: 320));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(tester.getTopLeft(bubbles).dy, greaterThan(tester.getBottomLeft(direction).dy));
+      expect(tester.getTopRight(time).dx, tester.getTopLeft(chevron).dx - 12);
+      expect(tester.getTopRight(chevron).dx, tester.getTopRight(row).dx - 12);
+
+      expect(find.text('Winnipeg'), findsNWidgets(2));
+      expect(find.textContaining(' — Winnipeg'), findsNothing);
+      await tester.tap(city);
+      await settle(tester);
+      expect(find.text('Ride request'), findsOneWidget);
+    });
+  }
+
   group('CarpoolMultiSourceMapPage days of week picker', () {
     testWidgets('opens a dialog with every day', (WidgetTester tester) async {
       await pumpMapPage(tester);
@@ -365,6 +510,73 @@ void main() {
 
       expect(find.text('OpenStreetMap contributors'), findsOneWidget);
     });
+  });
+
+  testWidgets('filters offers looking for drivers and keeps requests visible', (
+    tester,
+  ) async {
+    const location = '"location":{"latitude":49.8951,"longitude":-97.1384}';
+    await pumpMapPage(
+      tester,
+      respond: (request) async => request.url.path.endsWith('/requests')
+          ? http.Response('{"requests":[{"city":"Request city",$location}]}', 200)
+          : http.Response(
+              '{"offers":['
+              '{"city":"Rideshare city","askingForDrivers":true,$location},'
+              '{"city":"Other city","askingForDrivers":false,$location}]}',
+              200,
+            ),
+    );
+
+    final filter = find.widgetWithText(FilterChip, 'Looking for other drivers');
+    final offersSwitch = find.descendant(
+      of: find.widgetWithText(InputDecorator, 'Show Offers'),
+      matching: find.byType(Switch),
+    );
+    Future<void> openCluster() async {
+      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      await tester.tap(find.byWidget(marker.child));
+      await settle(tester);
+    }
+
+    Future<void> closeCluster() async {
+      await tester.tap(find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byIcon(Icons.close),
+      ));
+      await settle(tester);
+    }
+
+    expect(tester.widget<FilterChip>(filter).selected, isFalse);
+    await openCluster();
+    expect(find.text('2 offers · 1 request'), findsOneWidget);
+    expect(find.text('Other city'), findsOneWidget);
+    await closeCluster();
+
+    await tester.tap(filter);
+    await settle(tester);
+    await openCluster();
+    expect(find.text('1 offer · 1 request'), findsOneWidget);
+    expect(find.text('Rideshare city'), findsOneWidget);
+    expect(find.text('Request city'), findsOneWidget);
+    expect(find.text('Other city'), findsNothing);
+    await closeCluster();
+
+    await tester.tap(find.text('Clear Filters'));
+    await settle(tester);
+    expect(tester.widget<FilterChip>(filter).selected, isFalse);
+    await openCluster();
+    expect(find.text('2 offers · 1 request'), findsOneWidget);
+    await closeCluster();
+
+    await tester.tap(filter);
+    await settle(tester);
+    await tester.tap(offersSwitch);
+    await settle(tester);
+    expect(filter, findsNothing);
+    await tester.tap(offersSwitch);
+    await settle(tester);
+    expect(tester.widget<FilterChip>(filter).selected, isFalse);
   });
 
   group('CarpoolMultiSourceMapPage error dialog', () {

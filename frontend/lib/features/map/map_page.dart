@@ -87,6 +87,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   bool _showRequests = true;
   bool _showOffers = true;
+  bool _onlyOffersLookingForDrivers = false;
 
   static const List<String> _daysOfWeekOptions = [
     'MONDAY',
@@ -135,7 +136,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedDaysOfWeek.isNotEmpty ||
       _selectedRideType != null ||
       _selectedDepartureTime != null ||
-      _selectedArrivalTime != null;
+      _selectedArrivalTime != null ||
+      _onlyOffersLookingForDrivers;
 
   /// Formats selected days in canonical calendar order (e.g., "MONDAY,TUESDAY,THURSDAY")
   String? get _formattedDaysOfWeekParam {
@@ -154,6 +156,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedRideType = null;
       _selectedDepartureTime = null;
       _selectedArrivalTime = null;
+      _onlyOffersLookingForDrivers = false;
     });
     _loadMapMarkers();
   }
@@ -470,6 +473,9 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             (offersData is List ? offersData : []);
 
         for (var off in offersList) {
+          if (_onlyOffersLookingForDrivers && off['askingForDrivers'] != true) {
+            continue;
+          }
           if (_selectedRideType != null && //============================================================== FIX THIS
               off['rideType'] != _selectedRideType) {
             continue;
@@ -739,14 +745,25 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                     onChanged: (bool value) {
                       setState(() {
                         _showOffers = value;
-                        _loadMapMarkers();
+                        if (!value) _onlyOffersLookingForDrivers = false;
                       });
+                      _loadMapMarkers();
                     },
                   ),
                 ],
               ),
             ),
           ),
+
+          if (_showOffers)
+            FilterChip(
+              label: const Text('Looking for other drivers'),
+              selected: _onlyOffersLookingForDrivers,
+              onSelected: (value) {
+                setState(() => _onlyOffersLookingForDrivers = value);
+                _loadMapMarkers();
+              },
+            ),
 
           // 7. Apply Search (for the City input) & Clear All
           ElevatedButton.icon(
@@ -831,6 +848,11 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           },
         )
         .toList();
+    final notes = _formatDetailValue(details['description']).trim();
+    final savedDays = details['daysOfWeek'];
+    final days = savedDays is List
+        ? savedDays.whereType<String>().toSet()
+        : <String>{};
 
     final ownerId = details['userId'];
     final recipientId = ownerId is String ? ownerId.trim() : '';
@@ -877,24 +899,28 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                height: MediaQuery.sizeOf(sheetContext).height * 0.5,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85,
+                ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Icon(Icons.location_pin, color: headerColor),
                         const SizedBox(width: 8),
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: headerColor,
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: headerColor,
+                            ),
                           ),
                         ),
-                        const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.pop(sheetContext),
@@ -902,50 +928,91 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                       ],
                     ),
                     const Divider(),
-                    Expanded(
+                    Flexible(
                       child: ListView(
-                        children: fields.map((field) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    '${field.value}:',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                        shrinkWrap: true,
+                        children: [
+                          for (final field in fields)
+                            if (field.key == 'daysOfWeek') ...[
+                              if (days.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Days',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    field.key == 'rideType'
-                                        ? _rideTypeLabel(details['rideType'])
-                                        : _formatDetailValue(
-                                            details[field.key],
-                                          ),
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ),
+                                const SizedBox(height: 6),
+                                _buildDayBubbles(sheetContext, days),
+                                const SizedBox(height: 6),
                               ],
+                            ] else if (_formatDetailValue(details[field.key])
+                                    .trim()
+                                    .isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        '${field.value}:',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        switch (field.key) {
+                                          'rideType' => _rideTypeLabel(rideType),
+                                          'arrivalTime' || 'departureTime' =>
+                                            _formatRideTime(
+                                              sheetContext,
+                                              details[field.key],
+                                            ),
+                                          _ => _formatDetailValue(details[field.key]),
+                                        },
+                                        style: const TextStyle(color: Colors.black87),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          if (notes.isNotEmpty) ...[
+                            const Divider(height: 24),
+                            const Text(
+                              'Ride notes',
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                          );
-                        }).toList(),
+                            const SizedBox(height: 4),
+                            Text(notes),
+                          ],
+                        ],
                       ),
                     ),
                     if (chatError != null) Text(chatError!),
-                    if (canMessage)
-                      FilledButton(
-                        onPressed: isOpeningChat ? null : openChat,
-                        child: Text(
-                          isOpeningChat ? 'Opening chat…' : 'Message',
-                        ),
+                    if (canMessage) ...[
+                      const Divider(height: 24),
+                      OverflowBar(
+                        alignment: MainAxisAlignment.end,
+                        overflowAlignment: OverflowBarAlignment.end,
+                        spacing: 12,
+                        overflowSpacing: 8,
+                        children: [
+                          OutlinedButton(
+                            onPressed: isOpeningChat ? null : openChat,
+                            child: Text(
+                              isOpeningChat ? 'Opening chat…' : 'Message',
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: () {},
+                            child: const Text('Ask to Join Ride'),
+                          ),
+                        ],
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -995,8 +1062,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     'rideType': 'Ride type',
     'arrivalTime': 'Arrive at campus by',
     'departureTime': 'Leave campus at',
-    'daysOfWeek': 'Days of the week',
-    'description': 'Description',
+    'daysOfWeek': 'Days',
     'passengerNum': 'Maximum Passengers',
     'askingForDrivers': 'Asking for drivers',
   };
@@ -1016,6 +1082,66 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     };
   }
 
+  Widget _buildDayBubbles(
+    BuildContext context,
+    Set<String> activeDays, {
+    double scale = 1,
+  }) {
+    final compact = MediaQuery.sizeOf(context).width < 600;
+    final size = (compact ? 28.0 : 32.0) * scale;
+    final spacing = (compact ? 5.0 : 7.0) * scale;
+    final days = [
+      ('MONDAY', 'M'),
+      ('TUESDAY', 'T'),
+      ('WEDNESDAY', 'W'),
+      ('THURSDAY', 'T'),
+      ('FRIDAY', 'F'),
+      if (activeDays.contains('SATURDAY')) ('SATURDAY', 'Sa'),
+      if (activeDays.contains('SUNDAY')) ('SUNDAY', 'Su'),
+    ];
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: [
+        for (final (day, letter) in days)
+          Container(
+            width: size,
+            height: size,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: activeDays.contains(day) ? AppColors.primary : Colors.transparent,
+              border: Border.all(
+                color: activeDays.contains(day) ? AppColors.primary : AppColors.border,
+              ),
+            ),
+            child: Text(
+              letter,
+              style: TextStyle(
+                fontSize: math.max(9.0, (compact ? 12.0 : 13.0) * scale),
+                fontWeight: FontWeight.w600,
+                color: activeDays.contains(day) ? Colors.white : AppColors.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _formatRideTime(BuildContext context, Object? value) {
+    if (value is! String) return '';
+    final parts = value.split(':');
+    if (parts.length < 2) return value;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || hour < 0 || hour > 23 ||
+        minute == null || minute < 0 || minute > 59) {
+      return value;
+    }
+    return TimeOfDay(hour: hour, minute: minute).format(context);
+  }
+
   /// null/missing -> '', lists -> "MONDAY, FRIDAY", booleans -> Yes/No
   String _formatDetailValue(dynamic value) {
     if (value == null) return '';
@@ -1029,7 +1155,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   void _openDetails(MapRideItem item) {
     _showRideDetailsModal(
-      item.isOffer ? 'Ride Offer Details' : 'Ride Request Details',
+      item.isOffer ? 'Ride offer' : 'Ride request',
       _colorFor(item),
       item.details,
       isOffer: item.isOffer,
@@ -1194,8 +1320,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   /// Menu listing every ride inside a grouped marker
   void _showClusterPicker(_RideCluster cluster) {
-    final offers = cluster.items.where((i) => i.isOffer).length;
-    final requests = cluster.items.length - offers;
+    final requests = cluster.items.where((item) => !item.isOffer).toList();
+    final offers = cluster.items.where((item) => item.isOffer).toList();
 
     showModalBottomSheet(
       context: context,
@@ -1221,7 +1347,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '${cluster.items.length} rides in this area',
+                          'Rides in this area',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1238,57 +1364,124 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
-                    '$offers offer${offers == 1 ? '' : 's'} · '
-                    '$requests request${requests == 1 ? '' : 's'}',
+                    '${offers.length} offer${offers.length == 1 ? '' : 's'} · '
+                    '${requests.length} request${requests.length == 1 ? '' : 's'}',
                     style: TextStyle(color: Colors.grey.shade700),
                   ),
                 ),
                 const Divider(),
                 Flexible(
-                  child: ListView.separated(
+                  child: ListView(
                     shrinkWrap: true,
-                    itemCount: cluster.items.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (_, index) {
-                      final item = cluster.items[index];
-                      final d = item.details;
-                      final color = _colorFor(item);
-
-                      final days = (d['daysOfWeek'] is List)
-                          ? (d['daysOfWeek'] as List)
-                                .map((day) => day.toString().substring(0, 3))
-                                .join(', ')
-                          : '';
-                      final times = [
-                        if (d['departureTime'] != null)
-                          'Departs ${d['departureTime']}',
-                        if (d['arrivalTime'] != null)
-                          'Arrives ${d['arrivalTime']}',
-                      ].join(' · ');
-
-                      return ListTile(
-                        leading: Icon(Icons.location_pin, color: color),
-                        title: Text(
-                          '${item.isOffer ? 'Ride Offer' : 'Ride Request'}'
-                          ' — ${d['city'] ?? ''}',
-                        ),
-                        subtitle: Text(
-                          [
-                            _rideTypeLabel(d['rideType']),
-                            days,
-                            times,
-                          ].where((s) => s.isNotEmpty).join(' • '),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          Navigator.pop(sheetContext);
-                          _openDetails(item);
-                        },
-                      );
-                    },
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                    children: [
+                      for (final (label, items) in [
+                        ('Ride requests', requests),
+                        ('Ride offers', offers),
+                      ])
+                        if (items.isNotEmpty) ...[
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Theme.of(sheetContext).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$label (${items.length})',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          for (final item in items) ...[
+                            _clusterRideRow(sheetContext, item),
+                            const Divider(height: 1),
+                          ],
+                        ],
+                    ],
                   ),
                 ),
               ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _clusterRideRow(BuildContext sheetContext, MapRideItem item) {
+    final details = item.details;
+    final rideType = details['rideType'];
+    final city = _formatDetailValue(details['city']).trim();
+    final times = [
+      if (rideType != 'departing')
+        _formatRideTime(sheetContext, details['arrivalTime']),
+      if (rideType != 'arriving')
+        _formatRideTime(sheetContext, details['departureTime']),
+    ].where((time) => time.isNotEmpty).join(' · ');
+    final direction = _rideTypeLabel(rideType);
+    final savedDays = details['daysOfWeek'];
+    final days = savedDays is List
+        ? savedDays.whereType<String>().toSet()
+        : <String>{};
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 540;
+        final bubbles = days.isEmpty
+            ? null
+            : _buildDayBubbles(context, days, scale: 0.8);
+        final textTheme = Theme.of(context).textTheme;
+        return Semantics(
+          button: true,
+          child: InkWell(
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _openDetails(item);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Icon(Icons.location_pin, color: _colorFor(item)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          city.isEmpty ? 'Location unavailable' : city,
+                          style: textTheme.bodyLarge,
+                        ),
+                        if (direction.isNotEmpty)
+                          Text(direction, style: textTheme.bodyMedium),
+                        if (!wide && bubbles != null) ...[
+                          const SizedBox(height: 6),
+                          bubbles,
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (wide && bubbles != null) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: bubbles,
+                      ),
+                    ),
+                  ],
+                  if (times.isNotEmpty) ...[
+                    const SizedBox(width: 12),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 112),
+                      child: Text(times, textAlign: TextAlign.end),
+                    ),
+                  ],
+                  const SizedBox(width: 12),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
             ),
           ),
         );
