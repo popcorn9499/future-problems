@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -89,6 +90,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   _ListingView _listingView = _ListingView.all;
   bool _onlyOffersLookingForDrivers = false;
+  Timer? _cityFilterTimer;
 
   static const List<String> _daysOfWeekOptions = [
     'MONDAY',
@@ -127,6 +129,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   @override
   void dispose() {
+    _cityFilterTimer?.cancel();
     _cityController.dispose();
     _messagingService.close();
     super.dispose();
@@ -266,6 +269,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   /// Calls the service to get data, then converts items into UI Markers
   Future<void> _loadMapMarkers() async {
+    _cityFilterTimer?.cancel();
     if (_sessionExpired) return;
     final generation = ++_loadGeneration;
     setState(() {
@@ -671,7 +675,11 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                 setState(() {
                   _selectedCity = value.trim().isEmpty ? null : value.trim();
                 });
-                // API is only called on Enter or Apply, not on every keystroke
+                _cityFilterTimer?.cancel();
+                _cityFilterTimer = Timer(
+                  const Duration(milliseconds: 350),
+                  _loadMapMarkers,
+                );
               },
             ),
           ),
@@ -753,20 +761,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                 _loadMapMarkers();
               },
             ),
-
-          // 7. Apply Search (for the City input) & Clear All
-          ElevatedButton.icon(
-            onPressed: _loadMapMarkers,
-            style: ElevatedButton.styleFrom(
-              fixedSize: const Size.fromHeight(_filterHeight),
-              shape: const RoundedRectangleBorder(borderRadius: _filterRadius),
-              padding: _filterPadding,
-              textStyle: _filterTextStyle,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            icon: const Icon(Icons.search, size: 18),
-            label: const Text('Apply'),
-          ),
 
           if (_hasActiveFilters)
             TextButton.icon(

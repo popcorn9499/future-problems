@@ -122,7 +122,6 @@ void main() {
       }
       for (final button in [
         find.widgetWithText(TextButton, 'All rides'),
-        find.widgetWithText(ElevatedButton, 'Apply'),
       ]) {
         final surface = find.descendant(
           of: button,
@@ -145,7 +144,28 @@ void main() {
       expect(find.text('Requests'), findsOneWidget);
       expect(find.text('Offers'), findsOneWidget);
       expect(find.byType(Switch), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Apply'), findsOneWidget);
+      expect(find.text('Apply'), findsNothing);
+    });
+
+    testWidgets('updates city results after typing pauses', (tester) async {
+      final cities = <String?>[];
+      await pumpMapPage(
+        tester,
+        respond: (request) async {
+          cities.add(request.url.queryParameters['city']);
+          return http.Response('{}', 200);
+        },
+      );
+
+      final city = find.byType(TextField);
+      await tester.enterText(city, 'Win');
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.enterText(city, 'Winnipeg');
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(cities, [null, null]);
+
+      await settle(tester);
+      expect(cities, [null, null, 'Winnipeg', 'Winnipeg']);
     });
 
     testWidgets('formats and clears selected campus times', (tester) async {
@@ -669,7 +689,7 @@ void main() {
   });
 
   group('CarpoolMultiSourceMapPage error dialog', () {
-    testWidgets('Apply shows sign-in on the first unauthorized response', (
+    testWidgets('a filter change shows sign-in on the first unauthorized response', (
       tester,
     ) async {
       useLargeScreen(tester);
@@ -703,7 +723,7 @@ void main() {
           expect(find.byType(AlertDialog), findsNothing);
 
           expired = true;
-          await tester.tap(find.widgetWithText(ElevatedButton, 'Apply'));
+          await tester.enterText(find.byType(TextField), 'Winnipeg');
           await settle(tester);
         },
         () => MockClient((request) async {
