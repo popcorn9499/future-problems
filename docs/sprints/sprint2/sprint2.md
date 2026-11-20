@@ -32,13 +32,17 @@ One gap in our frontend testing is the fact that the layouts are all tested at t
 
 Another gap exists, where a couple of features are missing integration tests that test different layers together. For example, the dashboard and creation of ride requests/offers do not have integration tests that use both the frontend and backend together. Again, this was due to lack of time this sprint and we will be sure to remedy this in sprint 3 by ensuring all features have integration tests.
 
+A specific area that is weakly tested is our ride logic (creation of ride offers and requests). The persistence files for this feature have a low coverage percentage meaning we know some areas have not been tested. This gap exists again due to time constraints, but we will make sure to prioritize fixing this in the coming weeks.
+
 We also currently have no tests that measure performance, so we do not yet know how the app and database will respond to higher amounts of traffic and queries. Our dashboard logic makes a lot of queries to the database, and could possibly return a very large amount of data to the frontend, so this could be a high-risk area that's untested. This gap exists as we considered other types of tests to be the priority this iteration. Next sprint, we will make sure to add tests to measure our app's performance.
 
 Another area which might be considered a testing gap is accessbility. Flutter has built in tools for testing accessibility, which can measure how well the app is meeting accessbility guidelines for contrast, sizes, and labels that we did not get to utilize this sprint. The reason that this gap exists is that we hadn't even considered that this was a possible test type until the end of the sprint, and we were not aware flutter had tools for this. We would like to implement some tests using them during the next iteration.
 
-In terms of coverage, our tests are covering a good percentage of code but we acknowledge that this only means the lines/branches ran, and not that all inputs and behaviour are being thoroughly tested. We will aim to include a wider variety of test types and test more possible behaviours next sprint.
+In terms of coverage, our tests are covering an acceptable percentage of code but we acknowledge that this only means the lines/branches ran, and not that all inputs and behaviour are being thoroughly tested. We also acknowledge that certain areas have coverage percentages that should be improved. We will aim to include a wider variety of test types and test more possible behaviours next sprint.
 
-// TODO: ADD COVERAGE REPORTS
+![frontend coverage report](frontend_coverage_sprint2.png)
+
+![backend coverage report](backend_coverage_sprint2.png)
 
 ## CI/CD Status
 
