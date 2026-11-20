@@ -9,9 +9,8 @@ import 'models/chat_message.dart';
 import 'models/conversation.dart';
 
 class MessagingService {
-  MessagingService({http.Client? client, MessagingApiMock? mock})
-    : _client = client ?? createAuthClient(),
-      _mock = mock;
+  MessagingService({http.Client? client, this._mock})
+    : _client = client ?? createAuthClient();
 
   final http.Client _client;
   final MessagingApiMock? _mock;

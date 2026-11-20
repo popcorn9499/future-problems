@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/models/user.dart';
+import '../../../core/models/user_profile.dart';
 import '../../../core/models/ride_agreement.dart';
+import '../../../core/services/session_service.dart';
 import '../../ride_request/presentation/edit_ride_request_dialog.dart';
 import '../../ride_offer/ride_offer_service.dart';
 import '../../ride_request/ride_request_service.dart';
@@ -1090,28 +1093,46 @@ class _MemberChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 13,
-            backgroundColor: AppColors.primary,
-            child: Text(
-              member.initials,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+          ValueListenableBuilder<UserProfile?>(
+            valueListenable: SessionService.profileNotifier,
+            builder: (context, profile, _) {
+              final avatarColor = isCurrentUser ? profile?.avatarColor : null;
+              return CircleAvatar(
+                radius: 13,
+                backgroundColor: isCurrentUser
+                    ? AvatarColorOption.getBackgroundColor(avatarColor)
+                    : AppColors.primary,
+                child: Text(
+                  member.initials,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: isCurrentUser
+                        ? AvatarColorOption.getTextColor(avatarColor)
+                        : Colors.white,
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 7),
-          Text(
-            member.fullName,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isCurrentUser
-                  ? AppColors.primary
-                  : AppColors.textPrimary,
-            ),
+          ValueListenableBuilder<UserProfile?>(
+            valueListenable: SessionService.profileNotifier,
+            builder: (context, profile, _) {
+              final fullName = isCurrentUser && profile != null
+                  ? '${profile.firstName} ${profile.lastName ?? ''}'.trim()
+                  : member.fullName;
+              return Text(
+                fullName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isCurrentUser
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
+                ),
+              );
+            },
           ),
           if (isCurrentUser) ...[
             const SizedBox(width: 5),

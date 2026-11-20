@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../features/auth/auth_service.dart';
 import '../models/user.dart';
 import '../models/user_profile.dart';
@@ -15,6 +17,8 @@ class SessionData {
 }
 
 class SessionService {
+  static final ValueNotifier<UserProfile?> profileNotifier =
+      ValueNotifier<UserProfile?>(null);
   static String? _accessToken;
   static User? _currentUser;
   static UserProfile? _currentProfile;
@@ -52,6 +56,7 @@ class SessionService {
         pronouns: 'She/her',
         description: 'My car is quite messy, but I\'ll get you to campus safe!',
       );
+      profileNotifier.value = _mockProfile;
 
       return SessionData(
         accessToken: 'mock-jwt-token',
@@ -79,6 +84,7 @@ class SessionService {
         firstName: user.firstName,
         lastName: user.lastName,
       );
+      profileNotifier.value = _currentProfile;
       return SessionData(user: user, profile: _currentProfile!);
     }
   }
@@ -110,6 +116,45 @@ class SessionService {
     _accessToken = accessToken;
     _currentUser = user;
     _currentProfile = profile;
+    profileNotifier.value = profile;
+  }
+
+  static void updateCachedProfile(UserProfile profile) {
+    final currentUser = _currentUser;
+    final normalizedProfile = UserProfile(
+      userId: currentUser?.id ?? profile.userId,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      age: profile.age,
+      pronouns: profile.pronouns,
+      description: profile.description,
+      avatarColor: profile.avatarColor,
+    );
+
+    _currentProfile = normalizedProfile;
+    profileNotifier.value = normalizedProfile;
+    if (currentUser != null) {
+      _currentUser = User(
+        id: currentUser.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: currentUser.email,
+        verified: currentUser.verified,
+        isDeleted: currentUser.isDeleted,
+      );
+    }
+
+    if (_mockUser != null) {
+      _mockUser = User(
+        id: _mockUser!.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: _mockUser!.email,
+        verified: _mockUser!.verified,
+        isDeleted: _mockUser!.isDeleted,
+      );
+      _mockProfile = normalizedProfile;
+    }
   }
 
   static Future<void> saveAccessToken({required String accessToken}) async {
@@ -119,12 +164,14 @@ class SessionService {
   static Future<void> saveUser({required User user}) async {
     _currentUser = user;
     _currentProfile = null;
+    profileNotifier.value = null;
   }
 
   static Future<void> clearSession() async {
     _accessToken = null;
     _currentUser = null;
     _currentProfile = null;
+    profileNotifier.value = null;
   }
 
   static Future<void> setVerification({required bool isVerified}) async {

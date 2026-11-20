@@ -3,9 +3,11 @@ import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 import 'package:gobison/features/map/map_page.dart';
 
+import '../../../core/models/user_profile.dart';
 import 'login_page.dart';
 import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
+import '../../profile/profile_service.dart';
 import '../../messages/presentation/inbox_page.dart';
 import '../../../core/navigation/app_shell.dart';
 
@@ -29,8 +31,24 @@ class _SessionGateState extends State<SessionGate> {
   @override
   void initState() {
     super.initState();
-    _sessionFuture = (widget.sessionService ?? SessionService())
+    _sessionFuture = _loadSession();
+  }
+
+  Future<SessionData?> _loadSession() async {
+    final session = await (widget.sessionService ?? SessionService())
         .loadCurrentSession();
+    if (session == null) return null;
+
+    try {
+      final profile = await ProfileService().getCurrentProfile(
+        userId: session.user.id,
+      );
+      SessionService.updateCachedProfile(profile);
+      return SessionService.cachedSession ?? session;
+    } catch (_) {
+      // Keep the session usable if profile details cannot be fetched.
+      return session;
+    }
   }
 
   @override
@@ -56,9 +74,7 @@ class _SessionGateState extends State<SessionGate> {
                     key: const Key('session-retry-button'),
                     onPressed: () {
                       setState(() {
-                        _sessionFuture =
-                            (widget.sessionService ?? SessionService())
-                                .loadCurrentSession();
+                        _sessionFuture = _loadSession();
                       });
                     },
                     child: const Text('Try again'),
@@ -94,12 +110,13 @@ class _SessionGateState extends State<SessionGate> {
           mapPage: CarpoolMultiSourceMapPage(user: session.user),
 
           onProfileTap: () {
+            final currentSession = SessionService.cachedSession ?? session;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => DisplayProfilePage(
-                  user: session.user,
-                  profile: session.profile,
-                  currentUserId: session.user.id,
+                  user: currentSession.user,
+                  profile: currentSession.profile,
+                  currentUserId: currentSession.user.id,
                   onAccountDeleted: () {
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute<void>(
@@ -108,16 +125,13 @@ class _SessionGateState extends State<SessionGate> {
                       (route) => false,
                     );
                   },
-                  onEdit: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => EditProfilePage(
-                          user: session.user,
-                          profile: session.profile,
+                  onEditProfile: (user, profile) => Navigator.of(context)
+                      .push<UserProfile>(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              EditProfilePage(user: user, profile: profile),
                         ),
                       ),
-                    );
-                  },
                 ),
               ),
             );
