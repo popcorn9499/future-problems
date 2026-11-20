@@ -129,7 +129,7 @@ Confirm the certificate files exist and Apache can read them. Apache must serve 
 (cd frontend && flutter pub get && flutter analyze --no-fatal-infos && flutter test --coverage)
 ```
 
-
 ## Design choices
-We decided against running the backend and frontend in a docker container as it felt like extra overhead for the backend which is just running a java file. 
+
+We decided against running the backend and frontend in a docker container as it felt like extra overhead for the backend which is just running a java file.
 As well for frontend we just need a server to serve files over http and a ssl certificate which was already preconfigured to some extent.
