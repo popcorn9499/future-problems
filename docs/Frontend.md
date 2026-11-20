@@ -97,10 +97,9 @@ The frontend is organized into separate components to keep UI code, application 
 
 ### Authentication
 
-Handles user registration, login, and authentication-related interactions with the backend.
+Handles user registration, login, logout, account deletion, and authentication-related interactions with the backend.
 
 #### Registration
-
 - Allows users to create an account.
 - Collects the required registration information.
 - Validates user input before submitting registration requests.
@@ -108,37 +107,83 @@ Handles user registration, login, and authentication-related interactions with t
 - Supports university email address requirements.
 
 #### Login
-
 - Allows registered users to log in.
 - Validates login form input.
 - Sends authentication requests to the backend.
 - Handles authentication errors and displays appropriate feedback.
 
 #### Session Management
-
 - Checks for an existing authenticated session.
 - Determines whether the user should be directed to the home page or login page.
 - Supports session-based navigation.
+- Allows users to log out of their account.
+- Clears the user's authenticated session upon logout.
+
+#### Account Management
+- Allows users to delete their accounts.
+- Supports submitting account deletion requests.
+- Handles account deletion responses and errors.
+- Provides appropriate feedback to users following an account deletion attempt.
 
 ### User Profile
 
 Handles displaying and editing the authenticated user's profile information.
 
 #### View Profile
-
 - Retrieves the current user's profile from the backend.
 - Displays available profile information.
 
 #### Edit Profile
-
 - Allows users to update their first name, last name, age, pronouns, and description.
 - Validates profile input before submitting changes.
 - Sends updates to the backend using the profile API.
 - Submits only fields that have changed.
 - Handles API errors and displays appropriate feedback.
 
+#### Profile Customization
+- Allows users to customize their profile avatar color.
+
+### Ride Requests and Ride Offers
+
+Allows users to create and submit ride requests and ride offers through the application.
+
+#### Create Ride Request
+- Allows users to request a ride from a specified location to their destination, such as their residence to campus.
+- Collects the required ride details.
+- Supports submitting ride requests through the backend API.
+
+#### Create Ride Offer
+- Allows users to offer rides to other users, such as offering to drop passengers off at home.
+- Collects the required ride offer details.
+- Supports submitting ride offers through the backend API.
+
+### Messaging
+
+Provides a messaging interface for users to communicate with one another regarding rides and agreements.
+
+- Displays conversations and messages between users.
+- Supports viewing messages exchanged between the authenticated user and another user.
+- Integrates with the messaging interface and backend messaging functionality.
+- Supports test data for displaying messages during development.
+- Displays actual conversations when connected to the appropriate backend data.
+
+### Dashboard
+
+Provides an overview of the user's ride listings and ride agreements.
+
+#### My Listings
+- Displays ride requests and ride offers created by the authenticated user.
+- Allows users to view their previously posted listings.
+- Displays relevant listing information.
+
+#### My Agreements
+- Displays rides that the user has agreed to participate in.
+- Shows relevant ride details and information about the listing creator.
+- Displays passenger information associated with the ride where applicable.
+- Provides details about the ride request or ride offer, including the creator and other relevant participants.
+
 ### Application UI
 
-- Provides a centralized application theme and color configuration.
-- Uses reusable UI components, including the GoBison logo.
-- Provides login, registration, and profile-related screens.
+- Provides a centralized application interface and navigation structure.
+- Supports navigation between the application's main features.
+- Provides a consistent user experience across application pages.
