@@ -1,4 +1,4 @@
-# Sprint 1
+# Sprint 2
 
 ## Sprint Summary
 
@@ -17,6 +17,34 @@ This sprint, our team focused on building out our core features and implementing
 - Added linting to our CI pipeline
 
 ## Regression Testing
+
+We run the full regression suite on every push and pull request. Changes to
+shared features such as login can affect several workflows, and the full
+suite is practical to run. On commit `39791f2`, the longest workflow took
+three minutes.
+
+- Backend CI runs Maven tests for the API, services, and database layer.
+  For example, the logout test checks that the old session receives HTTP 401
+  when it tries to access the account again.
+- Flutter CI runs static analysis, unit tests, and widget tests, including
+  tests for the dashboard, ride requests, and ride offers.
+- Flutter Integration Tests checks registration and email verification in
+  Chrome using a mock backend.
+
+If a test fails, the developer can find the failed assertion in the GitHub
+Actions log and reproduce it locally. Pushing a fix runs the suite again.
+
+All three workflows passed on `dev` commit `39791f2`.
+
+| Workflow | Total duration | Line coverage |
+| --- | --- | --- |
+| [Backend CI #397](https://github.com/popcorn9499/future-problems/actions/runs/44673216329) | 1 min 21 sec | 89.0% (1,720 of 1,932 lines) |
+| [Flutter CI #402](https://github.com/popcorn9499/future-problems/actions/runs/44673216079) | 2 min 16 sec | 83.9% (3,069 of 3,660 lines) |
+| [Flutter Integration Tests #326](https://github.com/popcorn9499/future-problems/actions/runs/44673216106) | 3 min | Not collected |
+
+The map page had 43.6% line coverage. The Flutter suite did not exercise
+opening ride details from the map. A useful next test would select a ride
+and check that its details appear.
 
 ## Testing Status & Gaps
 
@@ -92,7 +120,7 @@ The second reccomendation that we consider accepted is to document known issues.
 
 ### What part of the current testing, CI, or CD process creates the most friction, and what might improve it?
 
-**Ruitian**: Up until recently we didn’t realize you can chain action files against each other. This meant that if ci failed if we didn’t have those checks in the deploy file things might deploy that are broken. We solved this later by ensuring deploy only runs when the actions prior that are used to test everything pass. This created a lot of potential for friction however was resolved relatively easily by reading the documentation for github actions.
+**Ruitian**: Up until recently we didn’t realize you can chain action files against each other. This meant that if ci failed if we didn’t have those checks in the deploy file things might deploy that are broken. We solved this later by ensuring deploy only runs when the actions prior that are used to test everything pass. This created a lot of potential for friction however was resolved relatively easily by reading the documentation for github actions. I checked three GitHub Actions runs to make sure the backend, frontend, and browser tests all passed on the same commit. An automatic summary of those results would save time when we prepare the next sprint report.
 
 ### What is the most important technical risk or uncertainty going into the final iteration?
 
