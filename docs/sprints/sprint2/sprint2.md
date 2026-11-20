@@ -12,7 +12,7 @@ This sprint, our team focused on building out our core features and implementing
 - Implemented a map that displays all open ride offers and requests nearby
 - Allow users to edit and delete their ride agreements
 - Allow users to delete their account
-- Implemented live chat functionality for users to talk to eachother (they can initiate a conversation from a posting they're interesting in joining)
+- Implemented live chat functionality for users to talk to eachother
 - Added regression tests to our automated test suite
 - Added linting to our CI pipeline
 
@@ -36,7 +36,7 @@ We also currently have no tests that measure performance, so we do not yet know 
 
 Another area which might be considered a testing gap is accessbility. Flutter has built in tools for testing accessibility, which can measure how well the app is meeting accessbility guidelines for contrast, sizes, and labels that we did not get to utilize this sprint. The reason that this gap exists is that we hadn't even considered that this was a possible test type until the end of the sprint, and we were not aware flutter had tools for this. We would like to implement some tests using them during the next iteration.
 
-In terms of coverage, our tests are covering a good percentage of code but we acknowledge that this only means the lines ran, and not that all inputs and behaviour are being thoroughly tested. We will aim to include a wider variety of test types and test more possible behaviours next sprint.
+In terms of coverage, our tests are covering a good percentage of code but we acknowledge that this only means the lines/branches ran, and not that all inputs and behaviour are being thoroughly tested. We will aim to include a wider variety of test types and test more possible behaviours next sprint.
 
 // TODO: ADD COVERAGE REPORTS
 
@@ -86,9 +86,15 @@ The second reccomendation that we consider accepted is to document known issues.
 
 ### What part of the current testing, CI, or CD process creates the most friction, and what might improve it?
 
+**Ruitian**: Up until recently we didn’t realize you can chain action files against each other. This meant that if ci failed if we didn’t have those checks in the deploy file things might deploy that are broken. We solved this later by ensuring deploy only runs when the actions prior that are used to test everything pass. This created a lot of potential for friction however was resolved relatively easily by reading the documentation for github actions.
+
 ### What is the most important technical risk or uncertainty going into the final iteration?
 
 **Sasha**: There are some areas of uncertainty and technical risk in our project going into the final sprint. The ability to actually join other people’s postings is not implemented yet, nor is the ability for the creator of a posting to approve people joining. This is a possible risk going forward, as this implementation could affect surrounding features in ways we have not thought of yet and it’s arguably one of the most important workflows of our application. There is also some uncertainty surrounding how this might be implemented since there were some previously unconsidered rules and semantics surrounding this feature that came up this sprint, and it is also not fully decided how exactly we want to handle this functionality (e.g. should we have a notifications page, or should requests to join appear in the user's dashboard).
+
+**Logan**: Our application backend currently validates that the schema is correct but has no way to update unless a user intervenes. This poses a huge risk of deploying something that then breaks the backend server from running until a human intervenes. This can create a lot of headaches and should be resolved as soon as possible.
+
+**Carina**: One technical uncertainty going into the final iteration is how users can post a ride when our address lookup can’t find their pickup location. We’ve tested a range of address types, and the app already distinguishes an invalid address from a temporary lookup failure, but in the event a user is unable to enter their address, we don’t have an alternative way for them to do so. We could consider a fallback such as letting users select a pickup point on a map so they can still post a ride request even if the pickup fails.
 
 #### Work the team is proud of
 
