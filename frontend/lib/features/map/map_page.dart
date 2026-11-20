@@ -1,12 +1,15 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../../core/models/user.dart';
+import '../../core/navigation/no_animation_page_route.dart';
+import '../../core/services/session_service.dart';
 import '../../core/theme/app_colors.dart';
+import '../auth/presentation/login_page.dart';
 import '../messages/messaging_controller.dart';
 import '../messages/messaging_service.dart';
 import '../messages/models/conversation.dart';
@@ -21,6 +24,8 @@ import 'package:url_launcher/url_launcher.dart';
 ///         (but stable) offset, so the exact location is hidden.
 /// false = exact pins are shown.
 const bool kHideExactLocations = true;
+
+typedef _MapLoadError = ({String source, String detail, bool sessionExpired});
 
 class CarpoolMultiSourceMapPage extends StatefulWidget {
   const CarpoolMultiSourceMapPage({super.key, required this.user});
@@ -68,9 +73,10 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   bool _isLoading = true;
 
-  // Error shown on screen when a live API call fails (null = no error)
   String? _errorMessage;
-  final List<String> _loadErrors = [];
+  bool _sessionExpired = false;
+  bool _errorDialogOpen = false;
+  int _loadGeneration = 0;
 
   // Active Filter States (null / empty = omitted from API request)
   String? _selectedCity;
@@ -255,15 +261,20 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   /// Calls the service to get data, then converts items into UI Markers
   Future<void> _loadMapMarkers() async {
+    if (_sessionExpired) return;
+    final generation = ++_loadGeneration;
     setState(() {
       _isLoading = true;
       _rideItems.clear();
       _errorMessage = null;
     });
-    _loadErrors.clear();
+    final errors = <_MapLoadError>[];
 
     try {
-      final rideItems = await fetchMapRides();
+      final rideItems = await _fetchMapRides(errors);
+      if (!mounted || _sessionExpired) return;
+      final expired = errors.any((error) => error.sessionExpired);
+      if (!expired && generation != _loadGeneration) return;
 
       for (final item in rideItems) {
         if (!item.isOffer) {
@@ -274,137 +285,125 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       setState(() {
         _rideItems.addAll(rideItems);
         _isLoading = false;
-        _errorMessage = _loadErrors.isEmpty ? null : _loadErrors.join('\n');
+        _sessionExpired = expired;
+        if (errors.isNotEmpty && !_sessionExpired) {
+          _errorMessage = errors.length > 1 &&
+                  errors.every((error) => error.detail == errors.first.detail)
+              ? errors.first.detail
+              : errors
+                  .map(
+                    (error) => '${error.source} couldn’t load. ${error.detail}',
+                  )
+                  .join('\n\n');
+        }
       });
     } catch (e) {
+      if (!mounted || _sessionExpired) return;
+      final error = _describeError(e, 'Rides');
+      if (!error.sessionExpired && generation != _loadGeneration) return;
       setState(() {
         _isLoading = false;
-        _errorMessage = _describeError(e, 'rides');
+        _sessionExpired = error.sessionExpired;
+        _errorMessage = error.sessionExpired ? null : error.detail;
       });
     }
   }
 
-  /// Turns an exception from the ride services into a message for the user.
-  /// Pulls the HTTP status code and any server message out of the error,
-  /// then falls back to a readable message based on the API docs.
-  String _describeError(Object error, String source) {
-    int? statusCode;
-    String? serverMessage;
-    final dynamic e = error;
-
-    // If the service throws an exception object with a statusCode/body field
-    try {
-      final code = e.statusCode;
-      if (code is int) statusCode = code;
-    } catch (_) {}
-    try {
-      final body = e.body;
-      if (body is String) serverMessage = _extractServerMessage(body);
-      if (body is Map) {
-        serverMessage = (body['message'] ?? body['error'])?.toString();
-      }
-    } catch (_) {}
-
-    // Otherwise, look for a status code and JSON body inside the error text
-    final text = error.toString();
-    statusCode ??= int.tryParse(
-      RegExp(r'\b([45]\d\d)\b').firstMatch(text)?.group(1) ?? '',
+  _MapLoadError _describeError(Object error, String source) {
+    // The ride services include the status before the response body.
+    final status = int.tryParse(
+      RegExp(r'^Exception: Retrieving ride (?:requests|offers) failed \(([45]\d\d)\):')
+              .firstMatch(error.toString())
+              ?.group(1) ??
+          '',
     );
-    serverMessage ??= _extractServerMessage(text);
+    if (status == 401) return (source: source, detail: '', sessionExpired: true);
 
-    final String fallback;
-    switch (statusCode) {
-      case 400:
-        fallback = 'One or more filters are invalid (ride type, day of week, or time format).';
-        break;
-      case 401:
-        fallback =
-            'Your session is missing or has expired. Please log in again.';
-        break;
-      case 500:
-        fallback = 'The server ran into a problem. Please try again later.';
-        break;
-      case null:
-        fallback = 'Could not reach the server. Check your connection.';
-        break;
-      default:
-        fallback = 'The request failed.';
-    }
-
-    final prefix = statusCode != null
-        ? 'Error loading $source (HTTP $statusCode)'
-        : 'Error loading $source';
-    return '$prefix: ${serverMessage ?? fallback}';
+    final detail = switch (status) {
+      400 => 'Check your filters and try again.',
+      403 => 'You don’t have permission to view these rides.',
+      final int code when code >= 500 =>
+        'The server is having trouble. Please try again later.',
+      _ when error is http.ClientException =>
+        'Check your connection and try again.',
+      _ => 'Please try again.',
+    };
+    return (source: source, detail: detail, sessionExpired: false);
   }
 
-  /// Finds a JSON object in [text] and returns its "message" or "error" field
-  String? _extractServerMessage(String text) {
-    final start = text.indexOf('{');
-    final end = text.lastIndexOf('}');
-    if (start == -1 || end <= start) return null;
-    try {
-      final decoded = jsonDecode(text.substring(start, end + 1));
-      if (decoded is Map) {
-        final msg = decoded['message'] ?? decoded['error'];
-        if (msg != null && msg.toString().trim().isNotEmpty) {
-          return msg.toString();
-        }
+  bool get _hasLoadError => _sessionExpired || _errorMessage != null;
+
+  void _scheduleErrorDialog() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _errorDialogOpen ||
+          !_hasLoadError ||
+          !TickerMode.of(context) ||
+          ModalRoute.of(context)?.isCurrent == false) {
+        return;
       }
-    } catch (_) {}
-    return null;
+      _showErrorDialog();
+    });
   }
 
-  /// Red banner shown at the top of the map when a request fails
-  Widget _buildErrorBanner() {
-    return Positioned(
-      top: 12,
-      left: 12,
-      right: 12,
-      child: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.red.shade50,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.red.shade300),
-            borderRadius: BorderRadius.circular(8),
+  Future<void> _showErrorDialog() async {
+    _errorDialogOpen = true;
+    final generation = _loadGeneration;
+    final expired = _sessionExpired;
+    final message = expired
+        ? 'Sign in again to continue using GoBison.'
+        : _errorMessage!;
+    final retry = await showDialog<bool>(
+      context: context,
+      barrierDismissible: !expired,
+      builder: (dialogContext) => PopScope(
+        canPop: !expired,
+        child: AlertDialog(
+          alignment: Alignment.center,
+          constraints: const BoxConstraints(maxWidth: 400),
+          scrollable: true,
+          title: Text(expired ? 'Your session has ended' : 'Couldn’t load rides'),
+          content: Text(
+            message,
+            style: Theme.of(dialogContext).textTheme.bodyLarge,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Icon(Icons.error_outline, color: Colors.red.shade700),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(color: Colors.red.shade900, fontSize: 13),
-                  ),
-                ),
-              ),
+          actions: [
+            if (!expired)
               TextButton(
-                onPressed: _loadMapMarkers,
-                child: const Text('Retry'),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Dismiss'),
               ),
-              IconButton(
-                tooltip: 'Dismiss',
-                icon: const Icon(Icons.close, size: 18),
-                onPressed: () => setState(() => _errorMessage = null),
-              ),
-            ],
-          ),
+            FilledButton(
+              onPressed: expired
+                  ? _signIn
+                  : () => Navigator.of(dialogContext).pop(true),
+              child: Text(expired ? 'Sign in' : 'Retry'),
+            ),
+          ],
         ),
       ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _errorDialogOpen = false;
+      if (generation == _loadGeneration) _errorMessage = null;
+    });
+    if (retry == true && generation == _loadGeneration) await _loadMapMarkers();
+  }
+
+  Future<void> _signIn() async {
+    await SessionService.clearSession();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      NoAnimationPageRoute(builder: (_) => const LoginPage()),
+      (_) => false,
     );
   }
 
   /// Fetches ride requests and offers from the API and resolves all coordinates
-  Future<List<MapRideItem>> fetchMapRides() async {
+  Future<List<MapRideItem>> _fetchMapRides(
+    List<_MapLoadError> errors,
+  ) async {
     final List<MapRideItem> items = [];
 
     // 1. Fetch Live Requests with active filters
@@ -451,7 +450,9 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           }
         }
       } catch (e) {
-        _loadErrors.add(_describeError(e, 'ride requests'));
+        final error = _describeError(e, 'Ride requests');
+        errors.add(error);
+        if (error.sessionExpired) return items;
       }
     }
 
@@ -499,7 +500,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           }
         }
       } catch (e) {
-        _loadErrors.add(_describeError(e, 'ride offers'));
+        errors.add(_describeError(e, 'Ride offers'));
       }
     }
 
@@ -1318,6 +1319,12 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.sizeOf(context);
+    if (TickerMode.of(context) &&
+        ModalRoute.isCurrentOf(context) != false &&
+        _hasLoadError &&
+        !_errorDialogOpen) {
+      _scheduleErrorDialog();
+    }
 
     return Scaffold(
       appBar: AppBar(),
@@ -1395,11 +1402,9 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                         ),
                         if (_isLoading)
                           const Center(child: CircularProgressIndicator()),
-                        if (!_isLoading && _errorMessage != null)
-                          _buildErrorBanner(),
                         if (!_isLoading &&
                             _rideItems.isEmpty &&
-                            _errorMessage == null)
+                            !_hasLoadError)
                           Positioned(
                             bottom: 16,
                             left: 16,

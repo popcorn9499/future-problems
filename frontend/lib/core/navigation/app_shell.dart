@@ -94,7 +94,7 @@ class _AppShellState extends State<AppShell> {
       _selectedIndex == 1 ? widget.inboxPage : const SizedBox.shrink(),
       widget.rideRequestPage,
       widget.rideOfferPage,
-      widget.mapPage,
+      TickerMode(enabled: _selectedIndex == 4, child: widget.mapPage),
     ];
 
     return Scaffold(
