@@ -137,7 +137,6 @@ class RideRequestService {
     String? rideType,
     String? departureTime,
     String? arrivalTime,
-    String? status,
   }) async {
     final queryParams = <String, String>{};
 
@@ -155,9 +154,6 @@ class RideRequestService {
     }
     if (arrivalTime != null && arrivalTime.isNotEmpty) {
       queryParams['arrivalTime'] = arrivalTime;
-    }
-    if (status != null && status.isNotEmpty) {
-      queryParams['status'] = status;
     }
 
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/rides/requests')

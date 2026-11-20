@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gobison/core/models/user.dart';
@@ -65,10 +66,6 @@ void main() {
       .widget<DropdownButton<String?>>(find.byType(DropdownButton<String?>))
       .value;
 
-  String? selectedStatus(WidgetTester tester) => tester
-      .widget<DropdownButton<String>>(find.byType(DropdownButton<String>))
-      .value;
-
   Future<void> openRideTypeDropdown(WidgetTester tester) async {
     await tester.tap(find.byType(DropdownButton<String?>));
     await settle(tester);
@@ -90,7 +87,7 @@ void main() {
       expect(find.text('Ride Type'), findsOneWidget);
       expect(find.text('Leave campus at'), findsOneWidget);
       expect(find.text('Arrive at campus by'), findsOneWidget);
-      expect(find.text('Status'), findsOneWidget);
+      expect(find.text('Status'), findsNothing);
       expect(find.text('Show Requests'), findsOneWidget);
       expect(find.text('Show Offers'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Apply'), findsOneWidget);
@@ -150,40 +147,40 @@ void main() {
     });
   });
 
-  group('CarpoolMultiSourceMapPage status dropdown', () {
-    testWidgets('defaults to OPEN with no Default option', (
-      WidgetTester tester,
-    ) async {
-      await pumpMapPage(tester);
 
-      expect(selectedStatus(tester), 'OPEN');
-      expect(find.text('Default (OPEN)'), findsNothing);
-    });
+  for (final source in ['requests', 'offers']) {
+    testWidgets('hides status in ride $source details', (tester) async {
+      await pumpMapPage(
+        tester,
+        respond: (request) async {
+          expect(request.url.queryParameters.containsKey('status'), isFalse);
+          if (!request.url.path.endsWith('/$source')) {
+            return http.Response('{}', 200);
+          }
+          return http.Response(
+            '{"$source":[{"status":"OPEN","rideType":"arriving",'
+            '"location":{"latitude":49.8951,"longitude":-97.1384}}]}',
+            200,
+          );
+        },
+      );
 
-    testWidgets('only offers OPEN and CLOSED', (WidgetTester tester) async {
-      await pumpMapPage(tester);
-
-      await tester.tap(find.byType(DropdownButton<String>));
+      final marker = tester
+          .widget<MarkerLayer>(find.byType(MarkerLayer))
+          .markers
+          .single;
+      await tester.tap(find.byWidget(marker.child));
       await settle(tester);
 
-      expect(find.text('CLOSED'), findsWidgets);
-      expect(find.text('Default (OPEN)'), findsNothing);
+      final sheet = find.byType(BottomSheet);
+      expect(
+        find.descendant(of: sheet, matching: find.text('To campus')),
+        findsOneWidget,
+      );
+      expect(find.descendant(of: sheet, matching: find.text('Status:')), findsNothing);
+      expect(find.descendant(of: sheet, matching: find.text('OPEN')), findsNothing);
     });
-
-    testWidgets('choosing CLOSED counts as an active filter', (
-      WidgetTester tester,
-    ) async {
-      await pumpMapPage(tester);
-
-      await tester.tap(find.byType(DropdownButton<String>));
-      await settle(tester);
-      await tester.tap(find.text('CLOSED').last);
-      await settle(tester);
-
-      expect(selectedStatus(tester), 'CLOSED');
-      expect(find.text('Clear Filters'), findsOneWidget);
-    });
-  });
+  }
 
   group('CarpoolMultiSourceMapPage days of week picker', () {
     testWidgets('opens a dialog with every day', (WidgetTester tester) async {

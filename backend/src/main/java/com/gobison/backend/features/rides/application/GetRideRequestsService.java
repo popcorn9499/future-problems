@@ -37,8 +37,7 @@ public class GetRideRequestsService {
             String daysOfWeekParam,
             String rideTypeParam,
             String departureTimeParam,
-            String arrivalTimeParam,
-            String statusParam) {
+            String arrivalTimeParam) {
 
         // 1. Authentication check
         var user = userRepository.findByEmail(email)
@@ -89,9 +88,6 @@ public class GetRideRequestsService {
             }
         }
 
-        // Default status to OPEN if not provided
-        String status = (statusParam == null || statusParam.isBlank()) ? "OPEN" : statusParam.trim();
-
         // 3. Query repository (excluding current user's email)
         return rideRequestRepository.findFiltered(
                 user.getEmail(),
@@ -100,7 +96,7 @@ public class GetRideRequestsService {
                 rideType,
                 departureTime,
                 arrivalTime,
-                status
+                "OPEN"
         );
     }
 }

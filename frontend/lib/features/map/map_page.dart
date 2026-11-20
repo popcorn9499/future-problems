@@ -84,8 +84,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   String? _selectedRideType;
   String? _selectedDepartureTime; // HH:mm
   String? _selectedArrivalTime; // HH:mm
-  static const String _defaultStatus = 'OPEN';
-  String _selectedStatus = _defaultStatus;
 
   bool _showRequests = true;
   bool _showOffers = true;
@@ -105,8 +103,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     'departing',
     'roundTrip',
   ];
-
-  static const List<String> _statusOptions = ['OPEN', 'CLOSED'];
 
   LatLng _mapCenter = const LatLng(
     49.8951,
@@ -139,8 +135,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedDaysOfWeek.isNotEmpty ||
       _selectedRideType != null ||
       _selectedDepartureTime != null ||
-      _selectedArrivalTime != null ||
-      _selectedStatus != _defaultStatus;
+      _selectedArrivalTime != null;
 
   /// Formats selected days in canonical calendar order (e.g., "MONDAY,TUESDAY,THURSDAY")
   String? get _formattedDaysOfWeekParam {
@@ -159,7 +154,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedRideType = null;
       _selectedDepartureTime = null;
       _selectedArrivalTime = null;
-      _selectedStatus = _defaultStatus;
     });
     _loadMapMarkers();
   }
@@ -415,7 +409,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           //rideType: _selectedRideType, ============================================================== FIX THIS
           departureTime: _selectedDepartureTime,
           arrivalTime: _selectedArrivalTime,
-          status: _selectedStatus,
         );
         final requestsList =
             requestsData['requests'] ??
@@ -465,7 +458,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           //rideType: _selectedRideType,  ============================================================== FIX THIS
           departureTime: _selectedDepartureTime,
           arrivalTime: _selectedArrivalTime,
-          status: _selectedStatus,
         );
         final offersList =
             offersData['offers'] ??
@@ -677,38 +669,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
               setState(() => _selectedArrivalTime = null);
               _loadMapMarkers();
             },
-          ),
-
-          // 6. Status Dropdown (Fixed width, no screen stretching)
-          SizedBox(
-            width: 160, // Set your preferred fixed width here
-            child: DropdownButtonFormField<String>(
-              key: ValueKey('status-$_selectedStatus'),
-              initialValue: _selectedStatus,
-              isDense: true,
-              isExpanded: true, // Crucial: prevents text/arrow layout issues inside a fixed width
-              decoration: const InputDecoration(
-                labelText: 'Status',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 12,
-                ),
-              ),
-              items: _statusOptions
-                  .map(
-                    (status) => DropdownMenuItem<String>(
-                      value: status,
-                      child: Text(status, overflow: TextOverflow.ellipsis),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() => _selectedStatus = value);
-                _loadMapMarkers();
-              },
-            ),
           ),
 
           SizedBox(
@@ -1019,7 +979,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     'arrivalTime': 'Arrive at campus by',
     'daysOfWeek': 'Days of the week',
     'description': 'Description',
-    'status': 'Status',
     'passengerNum': 'Maximum Passengers',
     'askingForDrivers': 'Asking for drivers',
   };

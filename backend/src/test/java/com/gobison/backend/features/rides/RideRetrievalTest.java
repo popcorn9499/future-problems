@@ -155,6 +155,23 @@ class RideRetrievalTest {
     }
 
     @Test
+    void ignoresLegacyClosedStatusOnBothBrowseEndpoints() throws Exception {
+        account(true);
+
+        mvc.perform(get("/api/v1/rides/offers").with(user(email))
+                        .param("status", "CLOSED"))
+                .andExpect(status().isOk());
+        verify(rideOfferRepository).findFilteredOffers(
+                email, null, List.of(), null, null, null, null, "OPEN");
+
+        mvc.perform(get("/api/v1/rides/requests").with(user(email))
+                        .param("status", "CLOSED"))
+                .andExpect(status().isOk());
+        verify(rideRequestRepository).findFiltered(
+                email, null, List.of(), null, null, null, "OPEN");
+    }
+
+    @Test
     void treatsBlankParamsAsUnset() throws Exception {
         account(true);
 
@@ -162,8 +179,7 @@ class RideRetrievalTest {
                         .param("daysOfWeek", " ")
                         .param("rideType", "")
                         .param("departureTime", " ")
-                        .param("arrivalTime", "")
-                        .param("status", "  "))
+                        .param("arrivalTime", ""))
                 .andExpect(status().isOk());
 
         verify(rideOfferRepository).findFilteredOffers(
@@ -179,8 +195,7 @@ class RideRetrievalTest {
                         .param("daysOfWeek", "monday, FRIDAY,")
                         .param("rideType", " Arriving ")
                         .param("departureTime", "16:30")
-                        .param("arrivalTime", " 08:30 ")
-                        .param("status", " CLOSED "))
+                        .param("arrivalTime", " 08:30 "))
                 .andExpect(status().isOk());
 
         verify(rideOfferRepository).findFilteredOffers(
@@ -191,7 +206,7 @@ class RideRetrievalTest {
                 null,
                 LocalTime.of(16, 30),
                 LocalTime.of(8, 30),
-                "CLOSED");
+                "OPEN");
     }
 
     @Test
