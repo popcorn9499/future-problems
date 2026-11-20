@@ -145,7 +145,20 @@ void main() {
         avatarColor: '#E9DFD2',
       );
 
-      expect(controller.updatedProfile, same(updatedProfile));
+      expect(controller.updatedProfile, isNotNull);
+      expect(controller.updatedProfile!.userId, updatedProfile.userId);
+      expect(controller.updatedProfile!.firstName, updatedProfile.firstName);
+      expect(controller.updatedProfile!.lastName, updatedProfile.lastName);
+      expect(controller.updatedProfile!.age, updatedProfile.age);
+      expect(controller.updatedProfile!.pronouns, updatedProfile.pronouns);
+      expect(
+        controller.updatedProfile!.description,
+        updatedProfile.description,
+      );
+      expect(
+        controller.updatedProfile!.avatarColor,
+        updatedProfile.avatarColor,
+      );
       expect(controller.errorMessage, isNull);
       expect(controller.isLoading, isFalse);
       expect(receivedChanges, {'firstName': 'Rebecca'});

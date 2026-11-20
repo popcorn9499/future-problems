@@ -12,6 +12,31 @@ class ProfileService {
 
   final http.Client _client;
 
+  Future<UserProfile> getCurrentProfile({required String userId}) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me/profile');
+    final response = await _client.get(
+      uri,
+      headers: const {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return UserProfile(
+        userId: userId,
+        firstName: json['firstName'] as String,
+        lastName: json['lastName'] as String?,
+        age: json['age'] as int?,
+        pronouns: json['pronouns'] as String? ?? json['gender'] as String?,
+        description: json['description'] as String?,
+        avatarColor: json['avatarColor'] as String? ?? '#E9DFD2',
+      );
+    }
+
+    throw Exception(
+      'Profile lookup failed (${response.statusCode}): ${response.body}',
+    );
+  }
+
   Future<UserProfile> updateProfile({
     required Map<String, dynamic> changes,
   }) async {

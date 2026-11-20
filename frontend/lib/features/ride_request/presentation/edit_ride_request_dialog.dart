@@ -5,11 +5,18 @@ import '../../ride_offer/ride_offer_service.dart';
 import '../ride_request_service.dart';
 
 class EditRideRequestDialog extends StatefulWidget {
-  const EditRideRequestDialog({super.key, required this.legs, required RideRequestService service})
-      : service = service, offerService = null;
+  const EditRideRequestDialog({
+    super.key,
+    required this.legs,
+    required this.service,
+  }) : offerService = null;
 
-  const EditRideRequestDialog.offer({super.key, required this.legs, required RideOfferService service})
-      : offerService = service, service = null;
+  const EditRideRequestDialog.offer({
+    super.key,
+    required this.legs,
+    required RideOfferService service,
+  }) : offerService = service,
+       service = null;
 
   final List<Map<String, dynamic>> legs;
   final RideRequestService? service;
@@ -21,7 +28,10 @@ class EditRideRequestDialog extends StatefulWidget {
 
 class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   static const weekdays = [
-    'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY',
+    'MONDAY',
+    'TUESDAY',
+    'WEDNESDAY',
+    'THURSDAY',
     'FRIDAY',
   ];
   static final timeFormat = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
@@ -33,10 +43,14 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   late String description = first['description'] as String? ?? '';
   late final legacyDays = [
     for (final day in const ['SATURDAY', 'SUNDAY'])
-      if (widget.legs.any((leg) => (leg['daysOfWeek'] as List).contains(day))) day,
+      if (widget.legs.any((leg) => (leg['daysOfWeek'] as List).contains(day)))
+        day,
   ];
   late final availableDays = [...weekdays, ...legacyDays];
-  late final days = {...List<String>.from(first['daysOfWeek'] as List), ...legacyDays};
+  late final days = {
+    ...List<String>.from(first['daysOfWeek'] as List),
+    ...legacyDays,
+  };
   late String? arrival = _time('arriving', 'arrivalTime');
   late String? departure = _time('departing', 'departureTime');
 
@@ -67,7 +81,9 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
       validator: (text) {
         final input = text?.trim() ?? '';
         if (time) {
-          return timeFormat.hasMatch(input) ? null : 'Use HH:mm, for example 08:30.';
+          return timeFormat.hasMatch(input)
+              ? null
+              : 'Use HH:mm, for example 08:30.';
         }
         if (input.isEmpty) return 'Required';
         return input.length > 255 ? 'Use at most 255 characters.' : null;
@@ -78,9 +94,11 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   Future<void> _save() async {
     if (saving || !form.currentState!.validate()) return;
 
-    final needsWeekday = !weekdays.any(days.contains) && widget.legs.any(
-      (leg) => !(leg['daysOfWeek'] as List).any(days.contains),
-    );
+    final needsWeekday =
+        !weekdays.any(days.contains) &&
+        widget.legs.any(
+          (leg) => !(leg['daysOfWeek'] as List).any(days.contains),
+        );
     if (days.isEmpty || needsWeekday) {
       setState(() => error = 'Choose at least one day for each leg.');
       return;
@@ -135,7 +153,8 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
         error = switch (extractErrorCode(e)) {
           401 => 'Your session expired. Sign in again.',
           403 => 'You do not have permission to edit this $kind.',
-          404 || 409 => 'This $kind has changed or can no longer be edited. Close and refresh.',
+          404 || 409 =>
+            'This $kind has changed or can no longer be edited. Close and refresh.',
           422 => 'Address not found. Check the city and street address.',
           _ => 'Unable to save your changes. Please try again.',
         };
@@ -148,7 +167,9 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     return PopScope(
       canPop: !saving,
       child: AlertDialog(
-        title: Text(first['roundTripId'] == null ? 'Edit ride $kind' : 'Edit both legs'),
+        title: Text(
+          first['roundTripId'] == null ? 'Edit ride $kind' : 'Edit both legs',
+        ),
         scrollable: true,
         content: SizedBox(
           width: 420,
@@ -160,9 +181,19 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                 _field('City', city, (value) => city = value),
                 _field('Street address', street, (value) => street = value),
                 if (arrival != null)
-                  _field('Arrival (HH:mm)', arrival!, (value) => arrival = value, time: true),
+                  _field(
+                    'Arrival (HH:mm)',
+                    arrival!,
+                    (value) => arrival = value,
+                    time: true,
+                  ),
                 if (departure != null)
-                  _field('Departure (HH:mm)', departure!, (value) => departure = value, time: true),
+                  _field(
+                    'Departure (HH:mm)',
+                    departure!,
+                    (value) => departure = value,
+                    time: true,
+                  ),
                 const SizedBox(height: 12),
                 const Text('Days of the week'),
                 Wrap(
@@ -172,47 +203,61 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                       FilterChip(
                         label: Text(day.substring(0, 3)),
                         selected: days.contains(day),
-                        onSelected: saving ? null : (selected) {
-                          setState(() {
-                            if (selected) {
-                              days.add(day);
-                            } else {
-                              days.remove(day);
-                            }
-                          });
-                        },
+                        onSelected: saving
+                            ? null
+                            : (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    days.add(day);
+                                  } else {
+                                    days.remove(day);
+                                  }
+                                });
+                              },
                       ),
                   ],
                 ),
-              if (widget.offerService != null) ...[
+                if (widget.offerService != null) ...[
+                  TextFormField(
+                    initialValue: seats,
+                    enabled: !saving,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Available seats',
+                    ),
+                    onChanged: (value) => seats = value,
+                    validator: (value) {
+                      final count = int.tryParse(
+                        value?.trim() ?? '',
+                        radix: 10,
+                      );
+                      if (count == null || count < 1 || count > 9) {
+                        return 'Enter 1 to 9 seats.';
+                      }
+                      return null;
+                    },
+                  ),
+                  SwitchListTile(
+                    title: const Text('Looking for a driver'),
+                    value: askingForDrivers,
+                    onChanged: saving
+                        ? null
+                        : (value) => setState(() => askingForDrivers = value),
+                  ),
+                ],
                 TextFormField(
-                  initialValue: seats,
-                  enabled: !saving,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Available seats'),
-                  onChanged: (value) => seats = value,
-                  validator: (value) {
-                    final count = int.tryParse(value?.trim() ?? '', radix: 10);
-                    if (count == null || count < 1 || count > 9) {
-                      return 'Enter 1 to 9 seats.';
-                    }
-                    return null;
-                  },
-                ),
-                SwitchListTile(
-                  title: const Text('Looking for a driver'),
-                  value: askingForDrivers,
-                  onChanged: saving ? null : (value) => setState(() => askingForDrivers = value),
-                ),
-              ],
-              TextFormField(
-                initialValue: description,
+                  initialValue: description,
                   decoration: const InputDecoration(labelText: 'Description'),
                   enabled: !saving,
                   onChanged: (value) => description = value,
                 ),
                 if (error != null)
-                  Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(
+                    error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
               ],
             ),
           ),

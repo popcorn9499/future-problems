@@ -2,11 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
+import '../../../core/services/session_service.dart';
 import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/user_avatar.dart';
+import 'edit_profile_page.dart';
 import '../profile_controller.dart';
 import '../profile_service.dart';
+
+typedef ProfileEditCallback = Future<UserProfile?> Function(
+  User user,
+  UserProfile profile,
+);
 
 class DisplayProfilePage extends StatefulWidget {
   const DisplayProfilePage({
@@ -15,6 +22,7 @@ class DisplayProfilePage extends StatefulWidget {
     required this.profile,
     required this.currentUserId,
     this.onEdit,
+    this.onEditProfile,
     this.onAccountDeleted,
   });
 
@@ -22,6 +30,7 @@ class DisplayProfilePage extends StatefulWidget {
   final UserProfile profile;
   final String currentUserId;
   final VoidCallback? onEdit;
+  final ProfileEditCallback? onEditProfile;
   final VoidCallback? onAccountDeleted;
 
   @override
@@ -30,13 +39,24 @@ class DisplayProfilePage extends StatefulWidget {
 
 class _DisplayProfilePageState extends State<DisplayProfilePage> {
   late final ProfileController _controller;
+  late User _user;
+  late UserProfile _profile;
 
   bool get _isOwnProfile => widget.profile.userId == widget.currentUserId;
 
   @override
   void initState() {
     super.initState();
+    _user = widget.user;
+    _profile = widget.profile;
     _controller = ProfileController(ProfileService());
+  }
+
+  @override
+  void didUpdateWidget(covariant DisplayProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user != widget.user) _user = widget.user;
+    if (oldWidget.profile != widget.profile) _profile = widget.profile;
   }
 
   @override
@@ -97,6 +117,38 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
     }
   }
 
+  Future<void> _editProfile() async {
+    late final UserProfile? updatedProfile;
+    if (widget.onEditProfile != null) {
+      updatedProfile = await widget.onEditProfile!.call(_user, _profile);
+    } else if (widget.onEdit != null) {
+      widget.onEdit!.call();
+      return;
+    } else {
+      updatedProfile = await Navigator.of(context).push<UserProfile>(
+        MaterialPageRoute(
+          builder: (_) => EditProfilePage(user: _user, profile: _profile),
+        ),
+      );
+    }
+
+    if (!mounted || updatedProfile == null) return;
+    final profile = updatedProfile;
+
+    setState(() {
+      _profile = profile;
+      _user = User(
+        id: _user.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: _user.email,
+        verified: _user.verified,
+        isDeleted: _user.isDeleted,
+      );
+    });
+    SessionService.updateCachedProfile(profile);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -115,24 +167,24 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
                         const SizedBox(height: 16),
                         Center(
                           child: UserAvatar(
-                            firstName: widget.user.firstName,
-                            lastName: widget.user.lastName,
+                            firstName: _user.firstName,
+                            lastName: _user.lastName,
                             radius: 50,
                             backgroundColor:
                                 AvatarColorOption.getBackgroundColor(
-                                  widget.profile.avatarColor,
+                                  _profile.avatarColor,
                                 ),
                             textColor: AvatarColorOption.getTextColor(
-                              widget.profile.avatarColor,
+                              _profile.avatarColor,
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
                         Center(
                           child: Text(
-                            widget.profile.firstName +
-                                (widget.profile.lastName != null
-                                    ? ' ${widget.profile.lastName}'
+                            _profile.firstName +
+                                (_profile.lastName != null
+                                    ? ' ${_profile.lastName}'
                                     : ''),
                             style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(fontWeight: FontWeight.bold),
@@ -142,31 +194,19 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
                           const SizedBox(height: 16),
                           Center(
                             child: OutlinedButton.icon(
-                              onPressed: widget.onEdit,
+                              onPressed: _editProfile,
                               icon: const Icon(Icons.edit_outlined),
                               label: const Text('Edit Profile'),
                             ),
                           ),
                         ],
                         const SizedBox(height: 32),
-                        if (_hasText(widget.profile.description))
-                          _section(
-                            context,
-                            'About Me',
-                            widget.profile.description!,
-                          ),
-                        if (widget.profile.age != null)
-                          _section(
-                            context,
-                            'Age',
-                            widget.profile.age.toString(),
-                          ),
-                        if (_hasText(widget.profile.pronouns))
-                          _section(
-                            context,
-                            'Pronouns',
-                            widget.profile.pronouns!,
-                          ),
+                        if (_hasText(_profile.description))
+                          _section(context, 'About Me', _profile.description!),
+                        if (_profile.age != null)
+                          _section(context, 'Age', _profile.age.toString()),
+                        if (_hasText(_profile.pronouns))
+                          _section(context, 'Pronouns', _profile.pronouns!),
                       ],
                     ),
                   ),
