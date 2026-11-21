@@ -137,8 +137,10 @@ class RideRequestService {
     String? rideType,
     String? departureTime,
     String? arrivalTime,
+    bool includeOwn = false,
   }) async {
     final queryParams = <String, String>{};
+    if (includeOwn) queryParams['includeOwn'] = 'true';
 
     if (city != null && city.isNotEmpty) {
       queryParams['city'] = city;

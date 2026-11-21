@@ -140,7 +140,8 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
             LocalTime arrivalTime,
             String status) {
 
-        StringBuilder jpql = new StringBuilder("SELECT e FROM RideOfferEntity e WHERE e.userEmail != :userEmail");
+        StringBuilder jpql = new StringBuilder("SELECT e FROM RideOfferEntity e")
+                .append(userEmail == null ? " WHERE 1 = 1" : " WHERE e.userEmail != :userEmail");
         var departureWindow = departureTime == null ? null : RideTimeWindow.around(departureTime);
         var arrivalWindow = arrivalTime == null ? null : RideTimeWindow.around(arrivalTime);
 
@@ -171,7 +172,9 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
         }
 
         var query = entityManager.createQuery(jpql.toString(), RideOfferEntity.class);
-        query.setParameter("userEmail", userEmail);
+        if (userEmail != null) {
+            query.setParameter("userEmail", userEmail);
+        }
 
         if (status != null && !status.isBlank()) {
             query.setParameter("status", status.trim());

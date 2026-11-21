@@ -124,9 +124,11 @@ class RideOfferService {
     String? rideType,
     String? departureTime,
     String? arrivalTime,
+    bool includeOwn = false,
   }) async {
     // Build a map of query parameters, omitting null or empty values
     final queryParams = <String, String>{};
+    if (includeOwn) queryParams['includeOwn'] = 'true';
 
     if (city != null && city.isNotEmpty) {
       queryParams['city'] = city;

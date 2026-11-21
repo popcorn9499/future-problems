@@ -1,11 +1,14 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/ride_agreement.dart';
 import '../../../core/services/session_service.dart';
+import '../../../core/navigation/dashboard_ride_navigation.dart';
 import '../../ride_request/presentation/edit_ride_request_dialog.dart';
 import '../../ride_offer/ride_offer_service.dart';
 import '../../ride_request/ride_request_service.dart';
@@ -53,6 +56,12 @@ class _DashboardPageState extends State<DashboardPage> {
   late final _requests = widget.rideRequestService ?? RideRequestService();
   late final _offers = widget.rideOfferService ?? RideOfferService();
   bool _busy = false;
+  final _rideScrollController = ScrollController();
+  final _focusedRideKey = GlobalKey();
+  late final Future<void> _initialLoad;
+  ValueListenable<DashboardRideTarget?>? _rideTarget;
+  DashboardRideTarget? _focusedRide;
+  int _focusGeneration = 0;
 
   @override
   void initState() {
@@ -60,13 +69,98 @@ class _DashboardPageState extends State<DashboardPage> {
 
     _dashboardService = widget.dashboardService ?? DashboardService();
     _dashboardController = DashboardController(_dashboardService);
-    _dashboardController.loadAgreements();
+    _initialLoad = _dashboardController.loadAgreements();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final target = DashboardRideNavigation.maybeOf(context)?.target;
+    if (target == _rideTarget) return;
+    _rideTarget?.removeListener(_onRideTarget);
+    _rideTarget = target;
+    _rideTarget?.addListener(_onRideTarget);
+    _onRideTarget();
   }
 
   @override
   void dispose() {
+    _rideTarget?.removeListener(_onRideTarget);
+    _rideScrollController.dispose();
     _dashboardController.dispose();
     super.dispose();
+  }
+
+  void _onRideTarget() {
+    final generation = ++_focusGeneration;
+    final target = _rideTarget?.value;
+    if (target != null) unawaited(_focusRide(target, generation));
+  }
+
+  bool _matchesRide(RideAgreement ride, DashboardRideTarget target) {
+    return ride.listingType == target.kind.name.toUpperCase() &&
+        (target.roundTripId != null
+            ? ride.roundTripId == target.roundTripId
+            : ride.listingId == target.listingId);
+  }
+
+  Future<void> _focusRide(DashboardRideTarget target, int generation) async {
+    bool current() => mounted && generation == _focusGeneration;
+    bool containsTarget(Iterable<RideAgreement> rides) =>
+        rides.any((ride) => _matchesRide(ride, target));
+
+    await _initialLoad;
+    if (!current()) return;
+    final controller = _dashboardController;
+    if (!containsTarget(controller.agreements)) {
+      await controller.loadAgreements();
+      if (!current()) return;
+    }
+    if (!containsTarget(controller.agreements)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This ride could not be found in Dashboard.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _focusedRide = target;
+      if (!containsTarget(controller.getFilteredAgreements({}, kind: _kind))) {
+        _kind = TicketFilter.all;
+      }
+      if (!containsTarget(controller.getFilteredAgreements(_selectedDays, kind: _kind))) {
+        _selectedDays.clear();
+      }
+    });
+    await WidgetsBinding.instance.endOfFrame;
+    if (!current() || !_rideScrollController.hasClients) return;
+
+    // A far-off card is built lazily. Scan in viewport-sized steps until it
+    // has a context, then use its actual height to center it.
+    if (_focusedRideKey.currentContext == null) {
+      _rideScrollController.jumpTo(0);
+      await WidgetsBinding.instance.endOfFrame;
+      while (current() &&
+          _rideScrollController.hasClients &&
+          _focusedRideKey.currentContext == null) {
+        final position = _rideScrollController.position;
+        final next = (position.pixels + position.viewportDimension * 0.8)
+            .clamp(0.0, position.maxScrollExtent)
+            .toDouble();
+        if (next <= position.pixels) break;
+        _rideScrollController.jumpTo(next);
+        await WidgetsBinding.instance.endOfFrame;
+      }
+    }
+    if (!current()) return;
+    final cardContext = _focusedRideKey.currentContext;
+    if (cardContext != null) {
+      await Scrollable.ensureVisible(
+        cardContext,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 250),
+      );
+    }
   }
 
   List<List<RideAgreement>> _groupAgreements(
@@ -257,6 +351,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 850),
           child: ListView.separated(
+            controller: _rideScrollController,
             padding: EdgeInsets.all(
               MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
             ),
@@ -311,6 +406,10 @@ class _DashboardPageState extends State<DashboardPage> {
               }
 
               final group = groupedAgreements[index - 1];
+              final target = _focusedRide;
+              final key = target != null && group.any((ride) => _matchesRide(ride, target))
+                  ? _focusedRideKey
+                  : null;
 
               final ride = group.first;
               final ticket = group.length == 1
@@ -318,11 +417,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   : _RoundTripGroup(agreements: group, currentUserId: widget.user.email);
               if (!ride.createdByCurrentUser || (ride.listingType != 'REQUEST' && ride.listingType != 'OFFER') ||
                   group.every((leg) => leg.status.toUpperCase() == 'CANCELLED')) {
-                return ticket;
+                return KeyedSubtree(key: key, child: ticket);
               }
 
               final editable = _editableLegs(ride);
               return Column(
+                key: key,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ticket,

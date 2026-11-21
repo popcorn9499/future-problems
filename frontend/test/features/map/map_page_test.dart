@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
+import 'package:gobison/core/navigation/dashboard_ride_navigation.dart';
 import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/core/theme/app_colors.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
@@ -111,6 +113,10 @@ void main() {
 
       expect(find.byType(AppBar), findsNothing);
       expect(tester.getTopLeft(selector).dy, closeTo(25, 1));
+      final myPosts = find.widgetWithText(FilterChip, 'Show my posts');
+      final departure = find.text('Leave campus at');
+      expect(tester.getCenter(myPosts).dy, tester.getCenter(departure).dy);
+      expect(tester.getTopLeft(myPosts).dx, greaterThan(tester.getTopRight(departure).dx));
       for (final control in controls) {
         expect(tester.getSize(control).height, 44);
       }
@@ -628,6 +634,148 @@ void main() {
       expect(find.text('Days of Week'), findsOneWidget);
       expect(find.text('Clear Filters'), findsNothing);
     });
+  });
+
+  testWidgets('shows exact owner pins and opens the dashboard target', (
+    tester,
+  ) async {
+    useLargeScreen(tester);
+    final queries = <Uri>[];
+    await http.runWithClient(
+      () async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AppShell(
+              user: testUser,
+              dashboardPage: Builder(
+                builder: (context) => ValueListenableBuilder<DashboardRideTarget?>(
+                  valueListenable: DashboardRideNavigation.maybeOf(context)!.target,
+                  builder: (_, target, _) => Text(
+                    '${target?.kind.name} ${target?.listingId}',
+                  ),
+                ),
+              ),
+              inboxPage: const SizedBox.shrink(),
+              rideRequestPage: const SizedBox.shrink(),
+              rideOfferPage: const SizedBox.shrink(),
+              mapPage: const CarpoolMultiSourceMapPage(user: testUser),
+              onProfileTap: () {},
+            ),
+          ),
+        );
+        await settle(tester);
+        await tester.tap(find.byIcon(Icons.map_outlined));
+        await settle(tester);
+      },
+      () => MockClient((request) async {
+        if (!request.url.path.startsWith('/api/v1/rides/')) {
+          return http.Response('', 404);
+        }
+        queries.add(request.url);
+        if (request.url.path.endsWith('/offers')) return http.Response('{}', 200);
+        const location = '"location":{"latitude":49.8951,"longitude":-97.1384}';
+        final own = request.url.queryParameters['includeOwn'] == 'true'
+            ? ',{"requestId":"mine","userId":"${testUser.email}",'
+                '"rideType":"arriving","arrivalTime":"08:30",$location}'
+            : '';
+        return http.Response('{"requests":[{"requestId":"other",$location}$own]}', 200);
+      }),
+    );
+
+    List<Marker> markers() =>
+        tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers;
+    final chip = find.widgetWithText(FilterChip, 'Show my posts');
+    expect(tester.widget<FilterChip>(chip).selected, isFalse);
+    expect(markers(), hasLength(1));
+    expect(queries.every((uri) => !uri.queryParameters.containsKey('includeOwn')), isTrue);
+
+    await tester.enterText(find.byType(TextField), 'Winnipeg');
+    await tester.tap(chip);
+    await settle(tester);
+    expect(markers(), hasLength(2));
+    expect(queries.last.queryParameters, {'city': 'Winnipeg', 'includeOwn': 'true'});
+    final own = markers().last;
+    expect(own.width, 40);
+    expect(own.height, 40);
+    expect(own.point.latitude, 49.8951);
+    expect(own.point.longitude, -97.1384);
+    expect(
+      find.descendant(
+        of: find.byWidget(own.child),
+        matching: find.byWidgetPredicate((widget) => widget is Icon && widget.color == Colors.green),
+      ),
+      findsOneWidget,
+    );
+    expect(markers().first.point, isNot(own.point));
+    final pin = find.byWidget(own.child);
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: tester.getCenter(pin));
+    await tester.pump();
+    await settle(tester);
+    final scale = find.descendant(of: pin, matching: find.byType(AnimatedScale));
+    final frame = find.descendant(of: pin, matching: find.byType(AnimatedContainer));
+    expect(tester.widget<AnimatedScale>(scale).scale, 1.12);
+    final decoration = tester.widget<AnimatedContainer>(frame).decoration! as BoxDecoration;
+    expect(decoration.color, Colors.transparent);
+    expect(decoration.border, isNull);
+    await mouse.removePointer();
+    await tester.tap(find.byWidget(own.child));
+    await settle(tester);
+    expect(find.text('Your ride request'), findsOneWidget);
+    expect(find.text('Message'), findsNothing);
+    expect(find.text('Ask to Join Ride'), findsNothing);
+    await tester.tap(find.text('Open in Dashboard'));
+    await settle(tester);
+    expect(find.text('request mine'), findsOneWidget);
+  });
+
+  testWidgets('own cluster padding lets nearby requests receive taps', (
+    tester,
+  ) async {
+    await pumpMapPage(
+      tester,
+      respond: (request) async {
+        if (request.url.path.endsWith('/offers')) return http.Response('{}', 200);
+        const ownPoint = '"location":{"latitude":49.8951,"longitude":-97.1384}';
+        final own = request.url.queryParameters['includeOwn'] == 'true'
+            ? ',{"requestId":"mine-1","userId":"${testUser.email}",$ownPoint}'
+                ',{"requestId":"mine-2","userId":"${testUser.email}",$ownPoint}'
+            : '';
+        return http.Response(
+          '{"requests":[{"requestId":"nearby",'
+          '"location":{"latitude":49.84,"longitude":-97.1384}}$own]}',
+          200,
+        );
+      },
+    );
+    await tester.tap(find.text('Show my posts'));
+    await settle(tester);
+
+    final markers = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers;
+    expect(markers, hasLength(2));
+    final nearby = find.byWidget(markers.first.child);
+    final ownCluster = find.byWidget(markers.last.child);
+    final nearbyPoint = tester.getCenter(nearby);
+    expect(tester.getRect(ownCluster).contains(nearbyPoint), isTrue);
+    expect(nearbyPoint.dy, greaterThan(tester.getCenter(ownCluster).dy + 20));
+
+    await tester.tapAt(nearbyPoint);
+    await settle(tester);
+    expect(find.text('Ride request'), findsOneWidget);
+    await tester.tap(find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byIcon(Icons.close),
+    ));
+    await settle(tester);
+
+    final refreshedMarkers =
+        tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers;
+    await tester.tap(find.descendant(
+      of: find.byWidget(refreshedMarkers.last.child),
+      matching: find.text('2'),
+    ));
+    await settle(tester);
+    expect(find.text('Rides in this area'), findsOneWidget);
   });
 
   group('CarpoolMultiSourceMapPage listing selector', () {
