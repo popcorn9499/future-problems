@@ -56,7 +56,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
     if (_rideType == 'arriving' || _rideType == 'roundTrip') {
       if (_arrivalTime == null) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Please select an arrival time.')));
+            .showSnackBar(const SnackBar(content: Text('Choose when you need to arrive at campus.')));
         return;
       }
     }
@@ -64,7 +64,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
     if (_rideType == 'departing' || _rideType == 'roundTrip') {
       if (_departureTime == null) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Please select a departure time.')));
+            .showSnackBar(const SnackBar(content: Text('Choose when you want to leave campus.')));
         return;
       }
     }
@@ -82,7 +82,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Departure time must be after arrival time.',
+              'Your campus departure must be after your campus arrival.',
             ),
           ),
         );

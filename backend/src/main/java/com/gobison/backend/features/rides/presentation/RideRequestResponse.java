@@ -25,9 +25,14 @@ public record RideRequestResponse(
         List<DayOfWeek> daysOfWeek,
         String description,
         String status,
-        GeoLocation location) {
+        GeoLocation location,
+        @JsonInclude(JsonInclude.Include.NON_NULL) RidePosterResponse poster) {
 
     public static RideRequestResponse from(List<RideRequest> savedLegs) {
+        return from(savedLegs, null);
+    }
+
+    static RideRequestResponse from(List<RideRequest> savedLegs, RidePosterResponse poster) {
         var arrival = savedLegs.stream()
                 .filter(leg -> leg.getRideType() == RideType.ARRIVAL)
                 .findFirst().orElse(null);
@@ -53,6 +58,7 @@ public record RideRequestResponse(
                 rideRequest.getDaysOfWeek().stream().sorted().toList(),
                 rideRequest.getDescription(),
                 rideRequest.getStatus(),
-                rideRequest.getLocation());
+                rideRequest.getLocation(),
+                poster);
     }
 }

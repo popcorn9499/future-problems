@@ -4,6 +4,8 @@ import com.gobison.backend.features.rides.application.CreateRideRequestService;
 import com.gobison.backend.features.rides.application.GetRideRequestsService;
 import jakarta.validation.Valid;
 import com.gobison.backend.features.rides.domain.model.RideRequest;
+import com.gobison.backend.features.user.domain.repository.UserRepository;
+import com.gobison.backend.features.user.domain.model.User;
 
 
 import java.util.ArrayList;
@@ -22,12 +24,15 @@ public class RideRequestController {
 
     private final CreateRideRequestService createService;
     private final GetRideRequestsService getService;
+    private final UserRepository users;
 
     public RideRequestController(
             CreateRideRequestService createService,
-            GetRideRequestsService getService) {
+            GetRideRequestsService getService,
+            UserRepository users) {
         this.createService = createService;
         this.getService = getService;
+        this.users = users;
     }
 
     @PostMapping
@@ -47,7 +52,7 @@ public class RideRequestController {
             @RequestParam(required = false) String rideType,
             @RequestParam(required = false) String departureTime,
             @RequestParam(required = false) String arrivalTime,
-            @RequestParam(required = false) String status) {
+            @RequestParam(defaultValue = "false") boolean includeOwn) {
         
         
         List<RideRequest> rawRequests = getService.getRequests(
@@ -57,7 +62,7 @@ public class RideRequestController {
                 rideType,
                 departureTime,
                 arrivalTime,
-                status
+                includeOwn
         );
 
         // Group round-trip legs by roundTripId and keep single legs separate
@@ -72,16 +77,20 @@ public class RideRequestController {
             }
         }
 
+        Map<String, User> owners = rawRequests.isEmpty() ? Map.of()
+                : users.findAllByEmail(rawRequests.stream().map(RideRequest::getUserId).distinct().toList());
         List<RideRequestResponse> responseLegs = new ArrayList<>();
 
         // Map single legs
         for (RideRequest single : singleLegs) {
-            responseLegs.add(RideRequestResponse.from(List.of(single)));
+            responseLegs.add(RideRequestResponse.from(
+                    List.of(single), RidePosterResponse.from(owners.get(single.getUserId()))));
         }
 
         // Map round trips using your existing multi-leg mapper
         for (List<RideRequest> group : roundTripGroups.values()) {
-            responseLegs.add(RideRequestResponse.from(group));
+            responseLegs.add(RideRequestResponse.from(
+                    group, RidePosterResponse.from(owners.get(group.getFirst().getUserId()))));
         }
 
         return RideRequestListResponse.of(responseLegs);

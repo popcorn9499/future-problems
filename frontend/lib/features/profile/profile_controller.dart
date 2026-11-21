@@ -122,7 +122,7 @@ class ProfileController extends ChangeNotifier {
       case 400:
         return 'Some profile details are invalid. Please check your entries.';
       case 401:
-        return 'Unable to save your profile. Please try again.';
+        return 'Your session has expired. Sign in again to save your profile.';
       case 500:
         return 'Something went wrong. Please try again later.';
       default:

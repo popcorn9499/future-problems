@@ -140,7 +140,10 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
             LocalTime arrivalTime,
             String status) {
 
-        StringBuilder jpql = new StringBuilder("SELECT e FROM RideOfferEntity e WHERE e.userEmail != :userEmail");
+        StringBuilder jpql = new StringBuilder("SELECT e FROM RideOfferEntity e")
+                .append(userEmail == null ? " WHERE 1 = 1" : " WHERE e.userEmail != :userEmail");
+        var departureWindow = departureTime == null ? null : RideTimeWindow.around(departureTime);
+        var arrivalWindow = arrivalTime == null ? null : RideTimeWindow.around(arrivalTime);
 
         if (status != null && !status.isBlank()) {
             jpql.append(" AND e.status = :status");
@@ -158,18 +161,20 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
                 jpql.append(" AND e.roundTripId IS NULL");
             }
         }
-        if (departureTime != null) {
-            jpql.append(" AND e.departureTime = :departureTime");
+        if (departureWindow != null) {
+            appendTimeWindow(jpql, "departureTime", departureWindow);
         }
-        if (arrivalTime != null) {
-            jpql.append(" AND e.arrivalTime = :arrivalTime");
+        if (arrivalWindow != null) {
+            appendTimeWindow(jpql, "arrivalTime", arrivalWindow);
         }
         if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
             jpql.append(" AND (SELECT COUNT(d) FROM e.daysOfWeek d WHERE d IN :daysOfWeek) = :dayCount");
         }
 
         var query = entityManager.createQuery(jpql.toString(), RideOfferEntity.class);
-        query.setParameter("userEmail", userEmail);
+        if (userEmail != null) {
+            query.setParameter("userEmail", userEmail);
+        }
 
         if (status != null && !status.isBlank()) {
             query.setParameter("status", status.trim());
@@ -180,11 +185,13 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
         if (rideType != null) {
             query.setParameter("rideType", rideType);
         }
-        if (departureTime != null) {
-            query.setParameter("departureTime", departureTime);
+        if (departureWindow != null) {
+            query.setParameter("departureTimeStart", departureWindow.start());
+            query.setParameter("departureTimeEnd", departureWindow.end());
         }
-        if (arrivalTime != null) {
-            query.setParameter("arrivalTime", arrivalTime);
+        if (arrivalWindow != null) {
+            query.setParameter("arrivalTimeStart", arrivalWindow.start());
+            query.setParameter("arrivalTimeEnd", arrivalWindow.end());
         }
         if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
             query.setParameter("daysOfWeek", daysOfWeek);
@@ -194,5 +201,13 @@ public class RideOfferRepositoryImpl implements RideOfferRepository {
         return query.getResultList().stream()
                 .map(RideOfferEntity::toDomain)
                 .toList();
+    }
+
+    private static void appendTimeWindow(StringBuilder jpql, String field, RideTimeWindow window) {
+        if (window.crossesMidnight()) {
+            jpql.append(" AND (e.%1$s >= :%1$sStart OR e.%1$s <= :%1$sEnd)".formatted(field));
+        } else {
+            jpql.append(" AND e.%1$s BETWEEN :%1$sStart AND :%1$sEnd".formatted(field));
+        }
     }
 }

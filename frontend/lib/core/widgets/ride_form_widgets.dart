@@ -127,15 +127,15 @@ class RideTypeSelector extends StatelessWidget {
               items: const [
                 DropdownMenuItem(
                   value: 'arriving',
-                  child: Text('Arriving at Campus'),
+                  child: Text('To campus'),
                 ),
                 DropdownMenuItem(
                   value: 'departing',
-                  child: Text('Departing from Campus'),
+                  child: Text('From campus'),
                 ),
                 DropdownMenuItem(
                   value: 'roundTrip',
-                  child: Text('Round Trip'),
+                  child: Text('Round trip'),
                 ),
               ],
               onChanged: (value) {
@@ -336,7 +336,7 @@ class RideTimeSelectors extends StatelessWidget {
   Widget build(BuildContext context) {
     if (rideType == 'arriving') {
       return RideTimeSelector(
-        label: 'Desired campus arrival time',
+        label: 'Arrive at campus by',
         isArrival: true,
         selectedTime: arrivalTime,
         onTimeSelected: onArrivalChanged,
@@ -345,7 +345,7 @@ class RideTimeSelectors extends StatelessWidget {
 
     if (rideType == 'departing') {
       return RideTimeSelector(
-        label: 'Desired campus departure time',
+        label: 'Leave campus at',
         isArrival: false,
         selectedTime: departureTime,
         onTimeSelected: onDepartureChanged,
@@ -355,13 +355,13 @@ class RideTimeSelectors extends StatelessWidget {
     if (rideType == 'roundTrip') {
       return RideFormPair(
         first: RideTimeSelector(
-          label: 'Campus arrival time',
+          label: 'Arrive at campus by',
           isArrival: true,
           selectedTime: arrivalTime,
           onTimeSelected: onArrivalChanged,
         ),
         second: RideTimeSelector(
-          label: 'Campus departure time',
+          label: 'Leave campus at',
           isArrival: false,
           selectedTime: departureTime,
           onTimeSelected: onDepartureChanged,

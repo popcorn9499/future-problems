@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.gobison.backend.features.rides.application.RetrieveRideOffersService;
 import com.gobison.backend.features.rides.domain.model.RideOffer;
+import com.gobison.backend.features.user.domain.repository.UserRepository;
+import com.gobison.backend.features.user.domain.model.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,12 +31,15 @@ public class RideOfferController {
 
     private final CreateRideOfferService createService;
     private final RetrieveRideOffersService getService;
+    private final UserRepository users;
 
     public RideOfferController(
             CreateRideOfferService createService,
-            RetrieveRideOffersService getService) {
+            RetrieveRideOffersService getService,
+            UserRepository users) {
         this.createService = createService;
         this.getService = getService;
+        this.users = users;
     }
 
     @PostMapping
@@ -54,7 +59,7 @@ public class RideOfferController {
             @RequestParam(required = false) String rideType,
             @RequestParam(required = false) String departureTime,
             @RequestParam(required = false) String arrivalTime,
-            @RequestParam(required = false) String status) {
+            @RequestParam(defaultValue = "false") boolean includeOwn) {
 
         List<RideOffer> rawOffers = getService.retrieve(
                 authentication.getName(),
@@ -63,7 +68,7 @@ public class RideOfferController {
                 rideType,
                 departureTime,
                 arrivalTime,
-                status
+                includeOwn
         );
 
         // Group round-trip legs by roundTripId and keep single legs separate
@@ -78,16 +83,20 @@ public class RideOfferController {
             }
         }
 
+        Map<String, User> owners = rawOffers.isEmpty() ? Map.of()
+                : users.findAllByEmail(rawOffers.stream().map(RideOffer::getUserId).distinct().toList());
         List<RideOfferResponse> responseLegs = new ArrayList<>();
 
         // Map single legs
         for (RideOffer single : singleLegs) {
-            responseLegs.add(RideOfferResponse.from(List.of(single)));
+            responseLegs.add(RideOfferResponse.from(
+                    List.of(single), RidePosterResponse.from(owners.get(single.getUserId()))));
         }
 
         // Map round trips using your existing multi-leg mapper
         for (List<RideOffer> group : roundTripGroups.values()) {
-            responseLegs.add(RideOfferResponse.from(group));
+            responseLegs.add(RideOfferResponse.from(
+                    group, RidePosterResponse.from(owners.get(group.getFirst().getUserId()))));
         }
 
         return RideOfferListResponse.of(responseLegs);

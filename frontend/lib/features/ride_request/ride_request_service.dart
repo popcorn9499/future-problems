@@ -137,9 +137,10 @@ class RideRequestService {
     String? rideType,
     String? departureTime,
     String? arrivalTime,
-    String? status,
+    bool includeOwn = false,
   }) async {
     final queryParams = <String, String>{};
+    if (includeOwn) queryParams['includeOwn'] = 'true';
 
     if (city != null && city.isNotEmpty) {
       queryParams['city'] = city;
@@ -155,9 +156,6 @@ class RideRequestService {
     }
     if (arrivalTime != null && arrivalTime.isNotEmpty) {
       queryParams['arrivalTime'] = arrivalTime;
-    }
-    if (status != null && status.isNotEmpty) {
-      queryParams['status'] = status;
     }
 
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/rides/requests')

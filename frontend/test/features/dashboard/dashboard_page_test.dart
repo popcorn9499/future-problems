@@ -8,7 +8,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import 'package:gobison/core/models/user.dart';
+import 'package:gobison/core/navigation/dashboard_ride_navigation.dart';
 import 'package:gobison/features/ride_request/ride_request_service.dart';
+import 'package:gobison/features/ride_offer/ride_offer_service.dart';
 import 'package:gobison/features/dashboard/dashboard_service.dart';
 import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 
@@ -133,6 +135,7 @@ Future<void> _pumpPage(
         body: DashboardPage(
           user: _currentUser,
           rideRequestService: RideRequestService(client: client),
+          rideOfferService: RideOfferService(client: client),
           dashboardService: DashboardService(
             client: client,
           ),
@@ -179,6 +182,80 @@ Future<void> _tapKind(WidgetTester tester, String label) async {
 }
 
 void main() {
+  testWidgets('dashboard navigation reveals and centers a filtered offscreen round trip', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1100, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final target = ValueNotifier<DashboardRideTarget?>(null);
+    addTearDown(target.dispose);
+    final rides = [
+      for (var i = 0; i < 25; i++)
+        if (i == 12) ...[
+          {
+            ..._agreement(
+              id: null,
+              listingId: 'target-arrival',
+              roundTripId: 'target-trip',
+              origin: 'Target town',
+              days: ['TUESDAY'],
+              createdByCurrentUser: true,
+              passengers: [],
+            ),
+            'listingType': 'OFFER',
+          },
+          {
+            ..._agreement(
+              id: null,
+              listingId: 'target-departure',
+              roundTripId: 'target-trip',
+              rideType: 'DEPARTURE',
+              arrivalTime: null,
+              departureTime: '16:30:00',
+              days: ['TUESDAY'],
+              createdByCurrentUser: true,
+              passengers: [],
+            ),
+            'listingType': 'OFFER',
+          },
+        ] else
+          _agreement(id: i + 1, origin: 'Town $i', days: ['MONDAY']),
+    ];
+    var loads = 0;
+    final client = MockClient((_) async {
+      loads++;
+      return _ok(rides);
+    });
+    addTearDown(client.close);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: DashboardRideNavigation(
+          target: target,
+          openDashboardRide: (ride) => target.value = ride,
+          child: DashboardPage(
+            user: _currentUser,
+            dashboardService: DashboardService(client: client),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await _tapKind(tester, 'Agreements');
+    expect(find.text('Target town'), findsNothing);
+
+    target.value = const DashboardRideTarget.roundTrip(RideListingKind.offer, 'target-trip');
+    await tester.pumpAndSettle();
+    expect(find.text('Target town').hitTestable(), findsOneWidget);
+    expect(find.text('Edit offer').hitTestable(), findsOneWidget);
+    expect(tester.getCenter(find.text('Target town')).dy, inInclusiveRange(180, 720));
+    expect(loads, 1);
+
+    target.value = const DashboardRideTarget.listing(RideListingKind.request, 'missing');
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(find.text('This ride could not be found in Dashboard.'), findsOneWidget);
+  });
   testWidgets('edits both request legs when the day filter hides the return', (tester) async {
     final loads = <String>[];
     final writes = <Map<String, dynamic>>[];
@@ -267,17 +344,65 @@ void main() {
     await tester.ensureVisible(button);
     await tester.tap(button);
     await tester.pumpAndSettle();
+    expect(find.text('Cancel both legs?'), findsOneWidget);
+    expect(deletes, isEmpty);
     await tester.tap(find.text('Keep ride'));
     await tester.pumpAndSettle();
-    expect(deletes.single.queryParameters, isEmpty);
+    expect(deletes, isEmpty);
     await tester.tap(button);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yes, cancel'));
     await tester.pumpAndSettle();
-    expect(deletes.map((uri) => uri.queryParameters['confirmParticipants']), [null, null, 'true']);
+    expect(deletes.map((uri) => uri.queryParameters['confirmParticipants']), ['true']);
     expect(button, findsNothing);
     expect(find.text('Ride request cancelled.'), findsOneWidget);
   });
+
+  for (final kind in ['offer', 'request']) {
+    testWidgets('confirms a single $kind cancellation before sending it', (tester) async {
+      var cancelled = false;
+      final deletes = <Uri>[];
+      final client = MockClient((request) async {
+        if (request.method == 'GET') {
+          return _ok([
+            {
+              ..._agreement(
+                listingId: 'one-ride',
+                createdByCurrentUser: true,
+                status: cancelled ? 'CANCELLED' : 'OPEN',
+              ),
+              'listingType': kind.toUpperCase(),
+            },
+          ]);
+        }
+        expect(request.method, 'DELETE');
+        deletes.add(request.url);
+        cancelled = true;
+        return http.Response('', 204);
+      });
+      addTearDown(client.close);
+      await _pumpPage(tester, client);
+      await tester.pumpAndSettle();
+      final cancel = find.text('Cancel $kind');
+      await tester.ensureVisible(cancel);
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel $kind?'), findsOneWidget);
+      expect(deletes, isEmpty);
+
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(deletes, isEmpty);
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yes, cancel'));
+      await tester.pumpAndSettle();
+      expect(deletes.single.path, '/api/v1/rides/${kind}s/one-ride');
+      expect(deletes.single.queryParameters, {'confirmParticipants': 'true'});
+      expect(cancel, findsNothing);
+    });
+  }
 
   group('loading, empty and error states', () {
     testWidgets(
@@ -395,7 +520,7 @@ void main() {
           find.text('University of Manitoba'),
           findsOneWidget,
         );
-        expect(find.text('ARRIVAL TIME'), findsOneWidget);
+        expect(find.text('Arrive at campus by'), findsOneWidget);
         expect(find.text('7:45 AM'), findsOneWidget);
       },
     );
@@ -668,8 +793,8 @@ void main() {
           find.text('TWO LEGS · ONE ROUND TRIP'),
           findsOneWidget,
         );
-        expect(find.text('ARRIVAL TIME'), findsOneWidget);
-        expect(find.text('DEPARTURE TIME'), findsOneWidget);
+        expect(find.text('Arrive at campus by'), findsOneWidget);
+        expect(find.text('Leave campus at'), findsOneWidget);
       },
     );
 
@@ -698,10 +823,10 @@ void main() {
         ]);
 
         final arrivalPosition = tester.getTopLeft(
-          find.text('ARRIVAL TIME'),
+          find.text('Arrive at campus by'),
         );
         final departurePosition = tester.getTopLeft(
-          find.text('DEPARTURE TIME'),
+          find.text('Leave campus at'),
         );
 
         expect(

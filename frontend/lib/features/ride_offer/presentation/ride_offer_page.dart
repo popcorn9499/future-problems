@@ -69,7 +69,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
         _arrivalTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select an arrival time.'),
+          content: Text('Choose when you need to arrive at campus.'),
         ),
       );
       return;
@@ -79,7 +79,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
         _departureTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a departure time.'),
+          content: Text('Choose when you want to leave campus.'),
         ),
       );
       return;
@@ -98,7 +98,7 @@ class _RideOfferPageState extends State<RideOfferPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Departure time must be after arrival time.',
+              'Your campus departure must be after your campus arrival.',
             ),
           ),
         );
