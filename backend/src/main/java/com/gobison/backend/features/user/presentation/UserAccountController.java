@@ -1,6 +1,7 @@
 package com.gobison.backend.features.user.presentation;
 
 import com.gobison.backend.features.user.application.UpdateProfileService;
+import com.gobison.backend.features.user.application.DeleteAccountService;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 import com.gobison.backend.features.user.presentation.dto.GetProfileResponse;
 import com.gobison.backend.features.user.presentation.dto.UpdateProfileRequest;
@@ -20,10 +21,15 @@ import org.springframework.web.server.ResponseStatusException;
 public class UserAccountController {
     private final UserRepository users;
     private final UpdateProfileService updateProfileService;
+    private final DeleteAccountService deleteAccountService;
 
-    public UserAccountController(UserRepository users, UpdateProfileService updateProfileService) {
+    public UserAccountController(
+            UserRepository users,
+            UpdateProfileService updateProfileService,
+            DeleteAccountService deleteAccountService) {
         this.users = users;
         this.updateProfileService = updateProfileService;
+        this.deleteAccountService = deleteAccountService;
     }
 
     @PatchMapping("/me/profile")
@@ -70,12 +76,7 @@ public class UserAccountController {
             Authentication authentication,
             HttpServletRequest request,
             HttpServletResponse response) {
-        var user = users.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        if (!user.isDeleted()) {
-            user.setDeleted(true);
-            users.save(user);
-        }
+        deleteAccountService.delete(authentication.getName());
 
         var session = request.getSession(false);
         if (session != null) {

@@ -1,5 +1,7 @@
 package com.gobison.backend.features.user.presentation;
 
+import com.gobison.backend.features.user.application.DeleteAccountService;
+
 import com.gobison.backend.features.user.application.FieldBlankException;
 import com.gobison.backend.features.user.application.UpdateProfileService;
 import com.gobison.backend.features.user.domain.model.User;
@@ -31,6 +33,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = UserAccountController.class, properties = "spring.config.import=")
 @Import({SecurityConfiguration.class, UserProfileExceptionHandler.class})
 class UserAccountControllerTest {
+    @MockitoBean
+    private DeleteAccountService deleteAccountService;
+
 
     private static final String ENDPOINT = "/api/v1/users/me/profile";
     private static final String EMAIL = "ada@myumanitoba.ca";

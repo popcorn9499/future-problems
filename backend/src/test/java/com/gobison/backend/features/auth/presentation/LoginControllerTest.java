@@ -1,6 +1,9 @@
 package com.gobison.backend.features.auth.presentation;
 
 import com.gobison.backend.features.auth.application.EmailVerificationService;
+import com.gobison.backend.features.rides.domain.repository.RideOfferRepository;
+import com.gobison.backend.features.rides.domain.repository.RideRequestRepository;
+import com.gobison.backend.features.user.application.DeleteAccountService;
 import com.gobison.backend.features.user.application.UpdateProfileService;
 import com.gobison.backend.features.user.domain.model.User;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
@@ -29,13 +32,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {LoginController.class, EmailVerificationController.class, CurrentUserController.class,
         UserAccountController.class},
         properties = "spring.config.import=")
-@Import({SecurityConfiguration.class, SessionAuthenticationService.class, MailDeliveryExceptionHandler.class})
+@Import({SecurityConfiguration.class, SessionAuthenticationService.class, MailDeliveryExceptionHandler.class,
+        DeleteAccountService.class})
 class LoginControllerTest {
     @Autowired MockMvc mvc;
     @Autowired PasswordEncoder passwords;
     @MockitoBean UserRepository users;
     @MockitoBean EmailVerificationService verification;
     @MockitoBean UpdateProfileService updateProfileService;
+    @MockitoBean RideOfferRepository offers;
+    @MockitoBean RideRequestRepository requests;
 
     private User account(boolean verified) {
         var user = new User("ada@myumanitoba.ca", passwords.encode("password"), "Ada", "Lovelace", verified);
@@ -117,6 +123,7 @@ class LoginControllerTest {
     @Test
     void deletingAccountMarksItDeletedAndInvalidatesCurrentSession() throws Exception {
         var user = account(true);
+        when(users.lockActiveByEmail(user.getEmail())).thenReturn(Optional.of(user));
         var session = loginSession();
 
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -126,6 +133,8 @@ class LoginControllerTest {
 
         assertTrue(user.isDeleted());
         verify(users).save(argThat(User::isDeleted));
+        verify(offers).cancelOpenForOwner(user.getEmail());
+        verify(requests).cancelOpenForOwner(user.getEmail());
         mvc.perform(get("/api/v1/auth/me").session(session)).andExpect(status().isUnauthorized());
     }
 

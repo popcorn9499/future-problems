@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface RideRequestRepository {
+    void cancelOpenForOwner(String ownerEmail);
 
     enum ManagementConflict {
         CHANGED, CANCELLED, PARTLY_CANCELLED

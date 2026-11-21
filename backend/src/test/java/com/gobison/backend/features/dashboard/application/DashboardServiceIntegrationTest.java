@@ -3,6 +3,7 @@ package com.gobison.backend.features.dashboard.application;
 import com.gobison.backend.features.dashboard.DashboardTestData;
 import com.gobison.backend.features.dashboard.domain.model.AgreementMember;
 import com.gobison.backend.features.dashboard.domain.model.RideAgreementSummary;
+import com.gobison.backend.features.user.application.DeleteAccountService;
 import com.gobison.backend.features.user.domain.repository.UserRepository;
 
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -31,6 +33,9 @@ class DashboardServiceIntegrationTest {
 
     @Autowired
     private DashboardService service;
+
+    @Autowired
+    private DeleteAccountService deleteAccount;
 
     @Autowired
     private UserRepository userRepository;
@@ -55,6 +60,38 @@ class DashboardServiceIntegrationTest {
         String email = data.createUser("Lonely", "User");
 
         assertTrue(service.getAgreementsFor(email).isEmpty());
+    }
+
+    @Test
+    void deletingAccountCancelsBothLegsAndPreservesHistoryAndMembership() {
+        String owner = data.createUser("Olive", "Owner");
+        String passenger = data.createUser("Pat", "Passenger");
+        UUID offerTrip = UUID.randomUUID();
+        UUID requestTrip = UUID.randomUUID();
+        var arrival = LocalTime.of(8, 30);
+        var departure = LocalTime.of(16, 30);
+        UUID offer = data.insertOffer(owner, "Steinbach", "ARRIVAL", arrival, null, "OPEN", offerTrip);
+        data.insertOffer(owner, "Steinbach", "DEPARTURE", null, departure, "OPEN", offerTrip);
+        data.insertRequest(owner, "Steinbach", "ARRIVAL", arrival, null, "OPEN", requestTrip);
+        data.insertRequest(owner, "Steinbach", "DEPARTURE", null, departure, "OPEN", requestTrip);
+        data.insertRequest(owner, "Steinbach", "ARRIVAL", arrival, null, "CLOSED", null);
+        data.simpleOffer(passenger);
+        long agreement = data.insertAgreementForOffer(offer);
+        data.addMember(agreement, owner, "DRIVER");
+        data.addMember(agreement, passenger, "PASSENGER");
+
+        deleteAccount.delete(owner);
+
+        assertTrue(userRepository.findByEmail(owner).orElseThrow().isDeleted());
+        assertEquals(List.of("CANCELLED", "CANCELLED"), jdbcTemplate.queryForList(
+                "SELECT status FROM ride_offers WHERE round_trip_id = ?", String.class, offerTrip));
+        assertEquals(List.of("CANCELLED", "CANCELLED"), jdbcTemplate.queryForList(
+                "SELECT status FROM ride_requests WHERE round_trip_id = ?", String.class, requestTrip));
+        assertEquals("CLOSED", jdbcTemplate.queryForObject(
+                "SELECT status FROM ride_requests WHERE user_email = ? AND round_trip_id IS NULL", String.class, owner));
+        assertEquals("OPEN", jdbcTemplate.queryForObject(
+                "SELECT status FROM ride_offers WHERE user_email = ?", String.class, passenger));
+        assertTrue(service.getAgreementsFor(passenger).stream().anyMatch(item -> offer.equals(item.listingId())));
     }
 
     @Test

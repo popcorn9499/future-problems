@@ -22,6 +22,15 @@ import java.util.UUID;
 @Repository
 public class RideRequestRepositoryImpl implements RideRequestRepository {
 
+    @Override
+    @Transactional
+    public void cancelOpenForOwner(String ownerEmail) {
+        entityManager.createQuery("""
+                UPDATE RideRequestEntity ride SET ride.status = 'CANCELLED'
+                WHERE ride.userEmail = :ownerEmail AND ride.status = 'OPEN'
+                """).setParameter("ownerEmail", ownerEmail).executeUpdate();
+    }
+
     @PersistenceContext
     private EntityManager entityManager;
 

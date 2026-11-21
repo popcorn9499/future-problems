@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface RideOfferRepository {
+    void cancelOpenForOwner(String ownerEmail);
 
     enum CancellationResult {
         CANCELLED, CONFIRMATION_REQUIRED, OFFER_CHANGED

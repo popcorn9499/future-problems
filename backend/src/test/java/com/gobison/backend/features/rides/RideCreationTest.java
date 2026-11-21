@@ -80,8 +80,9 @@ class RideCreationTest {
 
     private void account(boolean verified) {
         when(geocoder.locate(any(), any())).thenReturn(new GeoLocation(-97.138, 49.895));
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.of(new User(email, "secret", "Ada", "Lovelace", verified)));
+        var account = new User(email, "secret", "Ada", "Lovelace", verified);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(account));
+        when(userRepository.lockActiveByEmail(email)).thenReturn(Optional.of(account));
         when(rideRequestRepository.create(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(rideOfferRepository.create(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -142,6 +143,20 @@ class RideCreationTest {
                         .content(body))
                 .andExpect(status().isUnauthorized());
         verifyNoInteractions(rideRequestRepository);
+    }
+
+    @Test
+    void rejectsBothPostingTypesIfAccountWasDeletedBeforeTheWrite() throws Exception {
+        account(true);
+        when(userRepository.lockActiveByEmail(email)).thenReturn(Optional.empty());
+        for (String path : new String[] {"requests", "offers"}) {
+            mvc.perform(post("/api/v1/rides/" + path)
+                            .with(user(email))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body.replace("\"status\":\"CLOSED\"", "\"passengerNum\":3")))
+                    .andExpect(status().isUnauthorized());
+        }
+        verifyNoInteractions(rideRequestRepository, rideOfferRepository);
     }
 
     @Test

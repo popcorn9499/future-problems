@@ -9,6 +9,7 @@ public interface UserRepository {
     record CreateResult(User user, boolean created) {}
 
     Optional<User> findByEmail(String email);
+    Optional<User> lockActiveByEmail(String email);
     Map<String, User> findAllByEmail(Collection<String> emails);
     User save(User user);
     User create(User user);
