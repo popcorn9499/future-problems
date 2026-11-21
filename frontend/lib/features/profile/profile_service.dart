@@ -12,8 +12,24 @@ class ProfileService {
 
   final http.Client _client;
 
-  Future<UserProfile> getCurrentProfile({required String userId}) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me/profile');
+    Future<UserProfile> getCurrentProfile({required String userId}) {
+    return _fetchProfile(
+      Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me/profile'),
+      userId,
+    );
+  }
+
+  /// Another user's public profile. [userId] is their email
+  Future<UserProfile> getProfile({required String userId}) {
+    return _fetchProfile(
+      Uri.parse(
+        '${ApiConfig.baseUrl}/api/v1/users/${Uri.encodeComponent(userId)}/profile',
+      ),
+      userId,
+    );
+  }
+
+  Future<UserProfile> _fetchProfile(Uri uri, String userId) async {
     final response = await _client.get(
       uri,
       headers: const {'Accept': 'application/json'},

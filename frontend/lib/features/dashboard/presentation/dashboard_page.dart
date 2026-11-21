@@ -6,11 +6,15 @@ import '../../../core/models/user.dart';
 import '../../../core/models/user_profile.dart';
 import '../../../core/models/ride_agreement.dart';
 import '../../../core/services/session_service.dart';
+import '../../../core/navigation/tab_refresh.dart';
 import '../../ride_request/presentation/edit_ride_request_dialog.dart';
 import '../../ride_offer/ride_offer_service.dart';
 import '../../ride_request/ride_request_service.dart';
+import '../../profile/presentation/profile_popup.dart';
+import '../../profile/profile_service.dart';
 import '../dashboard_controller.dart';
 import '../dashboard_service.dart';
+
 
 const List<(String, String)> _weekdays = [
   ('MONDAY', 'M'),
@@ -33,12 +37,15 @@ class DashboardPage extends StatefulWidget {
     this.dashboardService,
     this.rideRequestService,
     this.rideOfferService,
+    this.profileService,
+
   });
 
   final User user;
   final DashboardService? dashboardService;
   final RideRequestService? rideRequestService;
   final RideOfferService? rideOfferService;
+  final ProfileService? profileService;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -52,19 +59,28 @@ class _DashboardPageState extends State<DashboardPage> {
   TicketFilter _kind = TicketFilter.all;
   late final _requests = widget.rideRequestService ?? RideRequestService();
   late final _offers = widget.rideOfferService ?? RideOfferService();
+  late final _profiles = widget.profileService ?? ProfileService();
+
   bool _busy = false;
 
-  @override
+    @override
   void initState() {
     super.initState();
 
     _dashboardService = widget.dashboardService ?? DashboardService();
     _dashboardController = DashboardController(_dashboardService);
     _dashboardController.loadAgreements();
+    TabRefresh.dashboard.addListener(_reloadAgreements);
   }
+
+  void _reloadAgreements() => _dashboardController.loadAgreements();
+  
+  void _showProfile(AgreementMember member) =>
+    showProfilePopup(context, member: member, service: _profiles);
 
   @override
   void dispose() {
+    TabRefresh.dashboard.removeListener(_reloadAgreements);
     _dashboardController.dispose();
     super.dispose();
   }
@@ -354,12 +370,28 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.background,
-      child: ListenableBuilder(
-        listenable: _dashboardController,
-        builder: (context, child) => _buildBody(),
+      child: _MemberTapScope(
+        onTap: _showProfile,
+        child: ListenableBuilder(
+          listenable: _dashboardController,
+          builder: (context, child) => _buildBody(),
+        ),
       ),
     );
   }
+}
+
+class _MemberTapScope extends InheritedWidget {
+  const _MemberTapScope({required this.onTap, required super.child});
+
+  final ValueChanged<AgreementMember> onTap;
+
+  static ValueChanged<AgreementMember>? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_MemberTapScope>()?.onTap;
+
+  @override
+  bool updateShouldNotify(_MemberTapScope oldWidget) =>
+      onTap != oldWidget.onTap;
 }
 
 class _RoundTripGroup extends StatelessWidget {
@@ -1081,7 +1113,9 @@ class _MemberChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final onTap = _MemberTapScope.maybeOf(context);
+
+    final chip = Container(
       padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -1156,6 +1190,21 @@ class _MemberChip extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+
+    if (onTap == null) return chip;
+
+    return Semantics(
+      button: true,
+      label: 'View ${member.fullName}\'s profile',
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onTap(member),
+          child: chip,
+        ),
       ),
     );
   }
