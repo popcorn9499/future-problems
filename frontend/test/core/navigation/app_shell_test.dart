@@ -1,12 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
 import 'package:gobison/core/navigation/navigation_item.dart';
+import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/core/widgets/unread_message_badge.dart';
+import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/messages/messaging_controller.dart';
 import 'package:gobison/features/messages/presentation/chat_page.dart';
 import 'package:gobison/features/messages/presentation/inbox_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 import '../../features/messages/messaging_test_helpers.dart';
 
@@ -44,6 +50,55 @@ void main() {
   }
 
   group('AppShell', () {
+    testWidgets('only logs out after confirming and submits once', (tester) async {
+      await SessionService.saveUser(user: user);
+      addTearDown(SessionService.clearSession);
+      final response = Completer<http.Response>();
+      var logoutCalls = 0;
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(createTestWidget());
+          final logout = find.text('Log Out');
+          await tester.tap(logout);
+          await tester.pumpAndSettle();
+          expect(find.text('Log out?'), findsOneWidget);
+          expect(logoutCalls, 0);
+          await tester.tap(find.text('Stay signed in'));
+          await tester.pumpAndSettle();
+          expect(logoutCalls, 0);
+          expect(SessionService.cachedSession?.user, user);
+
+          await tester.tap(logout);
+          await tester.pumpAndSettle();
+          await tester.tapAt(const Offset(5, 5));
+          await tester.pumpAndSettle();
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(logoutCalls, 0);
+
+          await tester.tap(logout);
+          await tester.pumpAndSettle();
+          await tester.tap(find.widgetWithText(FilledButton, 'Log out'));
+          await tester.pumpAndSettle();
+          expect(logoutCalls, 1);
+          await tester.tap(logout);
+          await tester.pumpAndSettle();
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(logoutCalls, 1);
+
+          response.complete(http.Response('', 204));
+          await tester.pumpAndSettle();
+          expect(find.byType(LoginPage), findsOneWidget);
+          expect(SessionService.cachedSession, isNull);
+        },
+        () => MockClient((request) {
+          expect(request.method, 'POST');
+          expect(request.url.path, '/api/v1/auth/logout');
+          logoutCalls++;
+          return response.future;
+        }),
+      );
+    });
+
     testWidgets('totals unread messages and refreshes only in the foreground', (
       tester,
     ) async {

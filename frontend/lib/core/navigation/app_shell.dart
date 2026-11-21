@@ -46,6 +46,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _isSidebarExpanded = true;
+  bool _logoutInProgress = false;
   Timer? _unreadTimer;
   final _dashboardTarget = ValueNotifier<DashboardRideTarget?>(null);
 
@@ -114,7 +115,26 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> handleLogout() async {
+    if (_logoutInProgress) return;
+    _logoutInProgress = true;
     try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Log out?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Stay signed in'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Log out'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true) return;
       await SessionService().logout();
 
       if (!mounted) return;
@@ -125,6 +145,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       );
     } catch (e) {
       debugPrint('Logout error: $e');
+    } finally {
+      _logoutInProgress = false;
     }
   }
 
