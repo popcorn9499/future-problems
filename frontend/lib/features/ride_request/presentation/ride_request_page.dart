@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../core/widgets/invalid_address_dialog.dart';
+import '../../../core/widgets/pickup_map_picker.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ride_form_widgets.dart';
 import '../ride_request_controller.dart';
@@ -24,6 +26,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
 
   final _cityController = TextEditingController();
   final _streetAddressController = TextEditingController();
+  LatLng? _pickupPoint;
   final _descriptionController = TextEditingController();
   final List<String> _selectedDays = [];
   String _rideType = 'arriving';
@@ -108,6 +111,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
       rideType: _rideType,
       city: _cityController.text.trim(),
       streetAddress: _streetAddressController.text.trim(),
+      location: _pickupPoint,
       arrivalTime: formatTime(_arrivalTime),
       departureTime: formatTime(_departureTime),
       daysOfWeek: _selectedDays,
@@ -135,6 +139,7 @@ class _RideRequestPageState extends State<RideRequestPage> {
     setState(() {
       _cityController.clear();
       _streetAddressController.clear();
+      _pickupPoint = null;
       _descriptionController.clear();
 
       _arrivalTime = null;
@@ -201,11 +206,19 @@ class _RideRequestPageState extends State<RideRequestPage> {
                               icon: Icons.location_city_outlined,
                             ),
                             second: RideTextField(
-                              label: 'Street Address',
-                              hint: 'Enter your address',
+                              label: _pickupPoint == null ? 'Street Address' : 'Pickup label',
+                              hint: _pickupPoint == null ? 'Enter your address' : 'Pinned pickup',
+                              includesAsterisk: _pickupPoint == null,
                               controller: _streetAddressController,
                               icon: Icons.location_on_outlined,
                             ),
+                          ),
+                          PickupMapButton(
+                            point: _pickupPoint,
+                            onChanged: (point) => setState(() {
+                              if (point == null) _streetAddressController.clear();
+                              _pickupPoint = point;
+                            }),
                           ),
 
                           const SizedBox(height: 24),

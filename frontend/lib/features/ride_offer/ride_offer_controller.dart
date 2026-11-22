@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:gobison/core/models/ride_offer.dart';
 import 'ride_offer_service.dart';
 
@@ -18,6 +19,7 @@ class RideOfferController extends ChangeNotifier {
     required String rideType,
     required String city,
     required String streetAddress,
+    LatLng? location,
     required String? arrivalTime,
     required String? departureTime,
     required List<String> daysOfWeek,
@@ -44,6 +46,7 @@ class RideOfferController extends ChangeNotifier {
         rideType: rideType,
         city: trimmedCity,
         streetAddress: trimmedStreetAddress,
+        location: location,
         arrivalTime: arrivalTime,
         departureTime: departureTime,
         daysOfWeek: daysOfWeek,

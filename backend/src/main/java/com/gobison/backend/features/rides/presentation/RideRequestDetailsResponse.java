@@ -1,6 +1,7 @@
 package com.gobison.backend.features.rides.presentation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
 import com.gobison.backend.features.rides.domain.model.RideRequest;
 import com.gobison.backend.features.rides.domain.model.RideType;
 
@@ -16,6 +17,7 @@ public record RideRequestDetailsResponse(
         RideType rideType,
         String city,
         String streetAddress,
+        GeoLocation location,
         String arrivalTime,
         String departureTime,
         List<DayOfWeek> daysOfWeek,
@@ -31,6 +33,7 @@ public record RideRequestDetailsResponse(
                 request.getRideType(),
                 request.getCity(),
                 request.getStreetAddress(),
+                request.getLocation(),
                 request.getArrivalTime() == null
                         ? null : request.getArrivalTime().format(timeFormat),
                 request.getDepartureTime() == null

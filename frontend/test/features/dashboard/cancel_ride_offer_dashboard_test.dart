@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/features/dashboard/dashboard_service.dart';
@@ -8,6 +9,7 @@ import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 import 'package:gobison/features/ride_offer/ride_offer_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:latlong2/latlong.dart';
 
 const user = User(id: 'me', firstName: 'Sam', email: 'sam@example.com', verified: true);
 
@@ -68,6 +70,7 @@ void main() {
           return http.Response(jsonEncode({
             'offerId': id, 'roundTripId': tripId, 'rideType': id == 'a' ? 'arriving' : 'departing',
             'status': 'OPEN', 'city': 'Winnipeg', 'streetAddress': '123 Main Street',
+            'location': {'latitude': 49.88, 'longitude': -97.12},
             'arrivalTime': id == 'a' ? '08:30' : null, 'departureTime': id == 'b' ? '17:00' : null,
             'daysOfWeek': days, 'description': 'Test ride', 'passengerNum': 3, 'askingForDrivers': true,
           }), 200);
@@ -89,6 +92,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(gets, unorderedEquals(ids));
       expect(find.text(roundTrip ? 'Edit both legs' : 'Edit ride offer'), findsOneWidget);
+      if (roundTrip) {
+        await tester.tap(find.text('Pick on map'));
+        await tester.pumpAndSettle();
+        final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
+        expect(map.options.initialCenter, const LatLng(49.88, -97.12));
+        await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Use this location'));
+        await tester.pumpAndSettle();
+        expect(find.text('Pickup label'), findsOneWidget);
+      }
       final seats = find.widgetWithText(TextFormField, 'Available seats');
       final drivers = find.widgetWithText(SwitchListTile, 'Looking for a driver');
       expect(tester.widget<TextFormField>(seats).initialValue, '3');
@@ -114,6 +128,10 @@ void main() {
         'city': 'Winnipeg', 'streetAddress': '123 Main Street', 'daysOfWeek': days,
         'arrivalTime': '08:30', 'departureTime': roundTrip ? '17:00' : null,
         'description': 'Test ride', 'passengerNum': 9, 'askingForDrivers': false,
+        if (roundTrip) 'location': {
+          'latitude': closeTo(49.88, 0.001),
+          'longitude': closeTo(-97.12, 0.001),
+        },
       });
       expect(dashboardLoads, 2);
       expect(save, findsNothing);

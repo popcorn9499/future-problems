@@ -105,6 +105,41 @@ class RideCreationTest {
     }
 
     @Test
+    void createsPinnedListingsWithoutGeocoding() throws Exception {
+        account(true);
+        for (String path : new String[] {"requests", "offers"}) {
+            mvc.perform(post("/api/v1/rides/" + path)
+                            .with(user(email))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body.replace("\"streetAddress\":\" 123 Main \"", """
+                                    "location":{"latitude":49.88,"longitude":-97.12},"passengerNum":3
+                                    """)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.streetAddress").value("Pinned pickup"))
+                    .andExpect(jsonPath("$.location.latitude").value(49.88))
+                    .andExpect(jsonPath("$.location.longitude").value(-97.12));
+        }
+        verifyNoInteractions(geocoder);
+    }
+
+    @Test
+    void rejectsIncompleteOrInvalidPinsEvenWithAnAddress() throws Exception {
+        account(true);
+        for (String path : new String[] {"requests", "offers"}) {
+            for (String location : new String[] {"{}", "{\"latitude\":49}", "{\"latitude\":91,\"longitude\":-97}",
+                    "{\"latitude\":49,\"longitude\":181}"}) {
+                mvc.perform(post("/api/v1/rides/" + path)
+                                .with(user(email))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body.replace("\"status\":\"CLOSED\"",
+                                        "\"passengerNum\":3,\"location\":" + location)))
+                        .andExpect(status().isBadRequest());
+            }
+        }
+        verifyNoInteractions(geocoder, rideRequestRepository, rideOfferRepository);
+    }
+
+    @Test
     void createsOfferWithDefaultDriverOption() throws Exception {
         account(true);
         mvc.perform(post("/api/v1/rides/offers")

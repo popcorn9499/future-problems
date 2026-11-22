@@ -194,11 +194,12 @@ public class ManageRideRequestService {
             LocalTime arrivalTime, LocalTime departureTime) {
         RideDays.validate(form.daysOfWeek(), legs.stream().map(RideRequest::getDaysOfWeek).toList());
         var city = form.city().trim();
-        var street = form.streetAddress().trim();
+        var street = form.pickupLabel();
         var description = form.description() == null ? null : form.description().trim();
-        boolean addressChanged = legs.stream().anyMatch(
+        boolean addressChanged = form.location() != null || legs.stream().anyMatch(
                 leg -> !city.equals(leg.getCity()) || !street.equals(leg.getStreetAddress()));
-        var newLocation = addressChanged ? geocoder.locate(street, city) : null;
+        var newLocation = form.location() != null ? form.location().toLocation()
+                : addressChanged ? geocoder.locate(street, city) : null;
 
         var firstLeg = legs.getFirst();
         var ids = legs.stream().map(RideRequest::getRequestId).collect(Collectors.toSet());

@@ -21,7 +21,6 @@ public record CreateRideRequestRequest(
         @Size(max = 255)
         String city,
 
-        @NotBlank
         @Size(max = 255)
         String streetAddress,
 
@@ -31,5 +30,6 @@ public record CreateRideRequestRequest(
         @NotEmpty
         List<@NotNull DayOfWeek> daysOfWeek,
 
-        String description) {
+        String description,
+        RidePickupInput.Point location) implements RidePickupInput {
 }

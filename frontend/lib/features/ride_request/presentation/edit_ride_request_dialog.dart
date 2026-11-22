@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
+import '../../../core/widgets/pickup_map_picker.dart';
 import '../ride_request_controller.dart' show extractErrorCode;
 import '../../ride_offer/ride_offer_service.dart';
 import '../ride_request_service.dart';
@@ -40,6 +42,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   late final first = widget.legs.first;
   late String city = first['city'] as String;
   late String street = first['streetAddress'] as String;
+  LatLng? pickupPoint;
   late String description = first['description'] as String? ?? '';
   late final legacyDays = [
     for (final day in const ['SATURDAY', 'SUNDAY'])
@@ -60,6 +63,15 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
   bool saving = false;
   String? error;
 
+  LatLng? get savedPoint {
+    final location = first['location'];
+    if (location is! Map) return null;
+    final latitude = location['latitude'];
+    final longitude = location['longitude'];
+    if (latitude is! num || longitude is! num) return null;
+    return LatLng(latitude.toDouble(), longitude.toDouble());
+  }
+
   String? _time(String type, String field) {
     for (final leg in widget.legs) {
       if (leg['rideType'] == type) return leg[field] as String? ?? '';
@@ -72,8 +84,11 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     String value,
     ValueChanged<String> change, {
     bool time = false,
+    bool required = true,
+    Key? key,
   }) {
     return TextFormField(
+      key: key,
       initialValue: value,
       decoration: InputDecoration(labelText: label),
       enabled: !saving,
@@ -85,7 +100,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
               ? null
               : 'Use HH:mm, for example 08:30.';
         }
-        if (input.isEmpty) return 'Required';
+        if (required && input.isEmpty) return 'Required';
         return input.length > 255 ? 'Use at most 255 characters.' : null;
       },
     );
@@ -126,6 +141,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
           roundTrip: first['roundTripId'] != null,
           city: city.trim(),
           streetAddress: street.trim(),
+          location: pickupPoint,
           daysOfWeek: selectedDays,
           arrivalTime: arrival?.trim(),
           departureTime: departure?.trim(),
@@ -136,6 +152,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
           offerId: first['offerId'] as String,
           city: city.trim(),
           streetAddress: street.trim(),
+          location: pickupPoint,
           daysOfWeek: selectedDays,
           arrivalTime: arrival?.trim(),
           departureTime: departure?.trim(),
@@ -179,7 +196,23 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _field('City', city, (value) => city = value),
-                _field('Street address', street, (value) => street = value),
+                _field(
+                  pickupPoint == null ? 'Street address' : 'Pickup label',
+                  street,
+                  (value) => street = value,
+                  required: pickupPoint == null,
+                  key: ValueKey(pickupPoint == null),
+                ),
+                PickupMapButton(
+                  point: pickupPoint,
+                  savedPoint: savedPoint,
+                  onChanged: saving
+                      ? null
+                      : (point) => setState(() {
+                          if (point == null) street = '';
+                          pickupPoint = point;
+                        }),
+                ),
                 if (arrival != null)
                   _field(
                     'Arrive at campus by (HH:mm)',

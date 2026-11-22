@@ -23,7 +23,6 @@ public record CreateRideOfferRequest(
         @Size(max = 255)
         String city,
 
-        @NotBlank
         @Size(max = 255)
         String streetAddress,
 
@@ -40,5 +39,6 @@ public record CreateRideOfferRequest(
         @Max(9)
         Integer passengerNum,
 
-        Boolean askingForDrivers) {
+        Boolean askingForDrivers,
+        RidePickupInput.Point location) implements RidePickupInput {
 }

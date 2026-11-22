@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -69,7 +70,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> submitRideWithClient(WidgetTester tester, http.Client client) async {
+  Future<void> submitRideWithClient(
+    WidgetTester tester,
+    http.Client client, {
+    bool pickLocation = false,
+  }) async {
     tester.view.physicalSize = const Size(1400, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -83,7 +88,39 @@ void main() {
         ),
       ),
     );
-    await enterRequiredFields(tester);
+    if (pickLocation) {
+      await tester.enterText(find.byType(TextFormField).first, 'Winnipeg');
+      final pick = find.text('Pick on map');
+      await tester.ensureVisible(pick);
+      await tester.tap(pick);
+      await tester.pumpAndSettle();
+      await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Street Address *'), findsOneWidget);
+
+      await tester.tap(pick);
+      await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Use this location')).onPressed, isNull);
+      await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.tap(find.text('Use this location'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pickup label'), findsOneWidget);
+      await tester.tap(find.text('Use street address'));
+      await tester.pumpAndSettle();
+      expect(find.text('Street Address *'), findsOneWidget);
+
+      await tester.tap(pick);
+      await tester.pumpAndSettle();
+      await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.tap(find.text('Use this location'));
+      await tester.pumpAndSettle();
+    } else {
+      await enterRequiredFields(tester);
+    }
     await tester.ensureVisible(find.text('Select time'));
     await tester.tap(find.text('Select time'));
     await tester.pumpAndSettle();
@@ -98,6 +135,28 @@ void main() {
   }
 
   group('RideRequestPage', () {
+    testWidgets('submits a map pickup with no label', (tester) async {
+      final writes = <Map<String, dynamic>>[];
+      final client = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        writes.add(body);
+        return http.Response(jsonEncode({
+          ...body,
+          'requestId': 'ride123',
+          'userId': testUserId,
+          'streetAddress': 'Pinned pickup',
+        }), 201);
+      });
+
+      await submitRideWithClient(tester, client, pickLocation: true);
+
+      expect(writes.single['streetAddress'], isEmpty);
+      final location = writes.single['location'] as Map<String, dynamic>;
+      expect(location['latitude'], closeTo(49.8951, 0.001));
+      expect(location['longitude'], closeTo(-97.1384, 0.001));
+      expect(find.text('Street Address *'), findsOneWidget);
+    });
+
     testWidgets('displays the ride request page and form fields', (WidgetTester tester) async {
       await tester.pumpWidget(createTestWidget());
 

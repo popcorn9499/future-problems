@@ -169,7 +169,7 @@ class ManageRideRequestServiceTest {
                 "08:30",
                 null,
                 List.copyOf(current.getDaysOfWeek()),
-                current.getDescription());
+                current.getDescription(), null);
 
         service.updateOneWay(OWNER, REQUEST_ID, form);
 
@@ -192,7 +192,7 @@ class ManageRideRequestServiceTest {
                 .thenReturn(Optional.of(RideRequestRepository.ManagementConflict.CANCELLED));
         var form = new UpdateRideRequestRequest(
                 current.getCity(), "456 Main Street", "08:30", null,
-                List.copyOf(current.getDaysOfWeek()), current.getDescription());
+                List.copyOf(current.getDaysOfWeek()), current.getDescription(), null);
 
         var error = assertThrows(ResponseStatusException.class, () -> service.updateOneWay(OWNER, REQUEST_ID, form));
 
@@ -211,7 +211,7 @@ class ManageRideRequestServiceTest {
         when(rideRequestRepository.hasOtherParticipants(REQUEST_ID)).thenReturn(false, true);
         var form = new UpdateRideRequestRequest(
                 current.getCity(), current.getStreetAddress(), "08:30", null,
-                List.copyOf(current.getDaysOfWeek()), current.getDescription());
+                List.copyOf(current.getDaysOfWeek()), current.getDescription(), null);
 
         var error = assertThrows(ResponseStatusException.class, () -> service.updateOneWay(OWNER, REQUEST_ID, form));
 

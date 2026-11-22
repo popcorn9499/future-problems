@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
 import '../../core/network/api_config.dart';
 import '../../core/network/auth_client.dart';
@@ -29,6 +30,7 @@ class RideRequestService {
     required bool roundTrip,
     required String city,
     required String streetAddress,
+    LatLng? location,
     required List<String> daysOfWeek,
     String? arrivalTime,
     String? departureTime,
@@ -44,6 +46,11 @@ class RideRequestService {
       body: jsonEncode({
         'city': city,
         'streetAddress': streetAddress,
+        if (location != null)
+          'location': {
+            'latitude': location.latitude,
+            'longitude': location.longitude,
+          },
         'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),
         'arrivalTime': arrivalTime,
         'departureTime': departureTime,
@@ -60,6 +67,7 @@ class RideRequestService {
     required String rideType,
     required String city,
     required String streetAddress,
+    LatLng? location,
     required String? arrivalTime,
     required String? departureTime,
     required List<String> daysOfWeek,
@@ -76,6 +84,11 @@ class RideRequestService {
         'rideType': rideType,
         'city': city,
         'streetAddress': streetAddress,
+        if (location != null)
+          'location': {
+            'latitude': location.latitude,
+            'longitude': location.longitude,
+          },
         'arrivalTime': arrivalTime,
         'departureTime': departureTime,
         'daysOfWeek': daysOfWeek.map((day) => day.toUpperCase()).toList(),

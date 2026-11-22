@@ -69,7 +69,9 @@ public class CreateRideOfferService {
         }
 
         RideDays.validate(request.daysOfWeek(), List.of());
-        var location = geocoder.locate(request.streetAddress().trim(), request.city().trim());
+        var street = request.pickupLabel();
+        var location = request.location() == null
+                ? geocoder.locate(street, request.city().trim()) : request.location().toLocation();
 
         UUID roundTripId = roundTrip ? UUID.randomUUID() : null;
         List<RideOffer> createdRides = new ArrayList<>();
@@ -82,7 +84,7 @@ public class CreateRideOfferService {
                     UUID.randomUUID(),
                     user.getEmail(),
                     request.city().trim(),
-                    request.streetAddress().trim(),
+                    street,
                     arrivalTime,
                     EnumSet.copyOf(request.daysOfWeek()),
                     description,
@@ -99,7 +101,7 @@ public class CreateRideOfferService {
                     UUID.randomUUID(),
                     user.getEmail(),
                     request.city().trim(),
-                    request.streetAddress().trim(),
+                    street,
                     null,
                     EnumSet.copyOf(request.daysOfWeek()),
                     description,

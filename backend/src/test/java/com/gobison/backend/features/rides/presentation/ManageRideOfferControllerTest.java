@@ -2,6 +2,7 @@ package com.gobison.backend.features.rides.presentation;
 
 import com.gobison.backend.features.rides.application.ManageRideOfferService;
 import com.gobison.backend.features.rides.application.geocoding.Geocoder;
+import com.gobison.backend.features.rides.domain.model.GeoLocation;
 import com.gobison.backend.features.rides.domain.model.RideOffer;
 import com.gobison.backend.features.rides.domain.model.RideType;
 import com.gobison.backend.features.rides.domain.repository.RideOfferRepository;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -134,6 +136,27 @@ class ManageRideOfferControllerTest {
         patchOffer(OWNER, false).andExpect(status().isOk())
                 .andExpect(jsonPath("$.offerId").value(offerId.toString()))
                 .andExpect(jsonPath("$.departureTime").value("18:00"));
+    }
+
+    @Test
+    void ownerMovesBothOfferPinsWithoutChangingAddressText() throws Exception {
+        account(OWNER, true);
+        givenRoundTrip();
+        when(offers.updateIfEditable(eq(OWNER), anyList())).thenAnswer(call -> {
+            List<RideOffer> legs = call.getArgument(1);
+            assertEquals(List.of(new GeoLocation(-97.12, 49.88), new GeoLocation(-97.12, 49.88)),
+                    legs.stream().map(RideOffer::getLocation).toList());
+            return Optional.of(legs);
+        });
+
+        mvc.perform(patch(URL, offerId).with(user(OWNER)).contentType("application/json").content("""
+                {"city":"Winnipeg","streetAddress":"123 Main Street","departureTime":"18:00",
+                 "arrivalTime":"08:30","daysOfWeek":["FRIDAY"],"passengerNum":4,"askingForDrivers":false,
+                 "location":{"latitude":49.88,"longitude":-97.12}}
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.location.latitude").value(49.88));
+        verifyNoInteractions(geocoder);
     }
 
     @Test

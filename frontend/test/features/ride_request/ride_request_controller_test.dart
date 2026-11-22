@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:gobison/core/models/ride_request.dart';
 import 'package:gobison/features/ride_request/ride_request_controller.dart';
@@ -34,6 +35,7 @@ class FakeRideRequestService extends RideRequestService {
     required String rideType,
     required String city,
     required String streetAddress,
+    LatLng? location,
     required String? arrivalTime,
     required String? departureTime,
     required List<String> daysOfWeek,

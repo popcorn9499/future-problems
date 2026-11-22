@@ -157,6 +157,23 @@ class ManageRideRequestControllerTest {
         verify(rideRequestRepository).update(any(RideRequest.class));
     }
 
+    @Test
+    void ownerMovesThePickupPinWithoutChangingAddressText() throws Exception {
+        account(OWNER, true);
+        when(rideRequestRepository.findById(REQUEST_ID)).thenReturn(Optional.of(ownedRequest()));
+        when(rideRequestRepository.update(any(RideRequest.class)))
+                .thenAnswer(call -> Optional.of(call.getArgument(0, RideRequest.class)));
+
+        mvc.perform(patch(URL + REQUEST_ID).with(user(OWNER)).contentType("application/json").content("""
+                {"city":"Winnipeg","streetAddress":"123 Main Street","arrivalTime":"08:30",
+                 "daysOfWeek":["MONDAY"],"location":{"latitude":49.88,"longitude":-97.12}}
+                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.location.latitude").value(49.88))
+                .andExpect(jsonPath("$.location.longitude").value(-97.12));
+        verifyNoInteractions(geocoder);
+    }
+
     @ParameterizedTest
     @CsvSource({"true,422,INVALID_ADDRESS", "false,503,GEOCODING_UNAVAILABLE"})
     void addressLookupFailurePreventsEdit(boolean invalid, int statusCode, String code) throws Exception {

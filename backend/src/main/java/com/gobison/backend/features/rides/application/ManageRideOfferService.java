@@ -63,11 +63,12 @@ public class ManageRideOfferService {
 
         RideDays.validate(form.daysOfWeek(), legs.stream().map(RideOffer::getDaysOfWeek).toList());
         var city = form.city().trim();
-        var street = form.streetAddress().trim();
+        var street = form.pickupLabel();
         var description = form.description() == null ? "" : form.description().trim();
-        boolean moved = legs.stream().anyMatch(leg ->
+        boolean moved = form.location() != null || legs.stream().anyMatch(leg ->
                 !city.equals(leg.getCity()) || !street.equals(leg.getStreetAddress()));
-        var location = moved ? geocoder.locate(street, city) : null;
+        var location = form.location() != null ? form.location().toLocation()
+                : moved ? geocoder.locate(street, city) : null;
         var edited = legs.stream().map(leg -> {
             boolean arriving = leg.getRideType() == RideType.ARRIVAL;
             var offer = new RideOffer(leg.getRideType(), arriving ? null : departure, leg.getRoundTripId(),
