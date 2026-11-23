@@ -13,7 +13,6 @@ import 'package:gobison/features/messages/messaging_controller.dart';
 import 'package:gobison/core/services/session_service.dart';
 
 import 'app_sidebar.dart';
-import 'dashboard_ride_navigation.dart';
 
 class AppShell extends StatefulWidget {
   final Widget dashboardPage;
@@ -48,7 +47,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _isSidebarExpanded = true;
   bool _logoutInProgress = false;
   Timer? _unreadTimer;
-  final _dashboardTarget = ValueNotifier<DashboardRideTarget?>(null);
 
   @override
   void initState() {
@@ -89,7 +87,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _dashboardTarget.dispose();
     _unreadTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -105,13 +102,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _selectedIndex = index;
     });
-    if (index != 0) _dashboardTarget.value = null;
-  }
-
-  void _openDashboardRide(DashboardRideTarget target) {
-    _selectPage(0);
-    _dashboardTarget.value = null;
-    _dashboardTarget.value = target;
   }
 
   Future<void> handleLogout() async {
@@ -251,11 +241,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     ),
                   ),
                   Expanded(
-                    child: DashboardRideNavigation(
-                      target: _dashboardTarget,
-                      openDashboardRide: _openDashboardRide,
-                      child: IndexedStack(index: _selectedIndex, children: pages),
-                    ),
+                    child: IndexedStack(index: _selectedIndex, children: pages),
                   ),
                 ],
               ),

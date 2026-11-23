@@ -8,7 +8,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/models/user.dart';
 import '../../core/navigation/no_animation_page_route.dart';
-import '../../core/navigation/dashboard_ride_navigation.dart';
 import '../../core/services/session_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/avatar_color_option.dart';
@@ -93,7 +92,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   _ListingView _listingView = _ListingView.all;
   bool _onlyOffersLookingForDrivers = false;
-  bool _showMyPosts = false;
   Timer? _cityFilterTimer;
 
   static const List<String> _daysOfWeekOptions = [
@@ -146,8 +144,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedDepartureTime != null ||
       _selectedArrivalTime != null ||
       _listingView != _ListingView.all ||
-      _onlyOffersLookingForDrivers ||
-      _showMyPosts;
+      _onlyOffersLookingForDrivers;
 
   /// Formats selected days in canonical calendar order (e.g., "MONDAY,TUESDAY,THURSDAY")
   String? get _formattedDaysOfWeekParam {
@@ -168,7 +165,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       _selectedArrivalTime = null;
       _listingView = _ListingView.all;
       _onlyOffersLookingForDrivers = false;
-      _showMyPosts = false;
     });
     _loadMapMarkers();
   }
@@ -422,7 +418,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     final List<MapRideItem> items = [];
     final listingView = _listingView;
     final onlyOffersLookingForDrivers = _onlyOffersLookingForDrivers;
-    final includeOwn = _showMyPosts;
 
     // 1. Fetch Live Requests with active filters
     if (listingView != _ListingView.offers) {
@@ -433,7 +428,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           //rideType: _selectedRideType, ============================================================== FIX THIS
           departureTime: _apiFilterTime(_selectedDepartureTime),
           arrivalTime: _apiFilterTime(_selectedArrivalTime),
-          includeOwn: includeOwn,
         );
         final requestsList =
             requestsData['requests'] ??
@@ -441,7 +435,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             (requestsData is List ? requestsData : []);
 
         for (var req in requestsList) {
-          if (!includeOwn && _isOwnPost(req['userId'])) continue;
           if (_selectedRideType != null && //============================================================== FIX THIS
               req['rideType'] != _selectedRideType) {
             continue;
@@ -484,7 +477,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
           //rideType: _selectedRideType,  ============================================================== FIX THIS
           departureTime: _apiFilterTime(_selectedDepartureTime),
           arrivalTime: _apiFilterTime(_selectedArrivalTime),
-          includeOwn: includeOwn,
         );
         final offersList =
             offersData['offers'] ??
@@ -492,7 +484,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             (offersData is List ? offersData : []);
 
         for (var off in offersList) {
-          if (!includeOwn && _isOwnPost(off['userId'])) continue;
           if (onlyOffersLookingForDrivers && off['askingForDrivers'] != true) {
             continue;
           }
@@ -773,16 +764,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
               },
             ),
 
-          FilterChip(
-            label: const Text('Show my posts'),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            selected: _showMyPosts,
-            onSelected: (value) {
-              setState(() => _showMyPosts = value);
-              _loadMapMarkers();
-            },
-          ),
-
           if (_hasActiveFilters)
             TextButton.icon(
               onPressed: _clearAllFilters,
@@ -897,16 +878,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     Map<String, dynamic> details, {
     required bool isOffer,
   }) async {
-    final isOwn = _isOwnPost(details['userId']);
-    final kind = isOffer ? RideListingKind.offer : RideListingKind.request;
-    final tripId = details['roundTripId'];
-    final listingId = details[isOffer ? 'offerId' : 'requestId'];
-    final target = tripId is String && tripId.isNotEmpty
-        ? DashboardRideTarget.roundTrip(kind, tripId)
-        : listingId is String && listingId.isNotEmpty
-        ? DashboardRideTarget.listing(kind, listingId)
-        : null;
-    final navigation = isOwn ? DashboardRideNavigation.maybeOf(context) : null;
     final passengerCount = details['passengerNum'];
     final offerBadges = [
       if (isOffer && passengerCount is int && passengerCount > 0)
@@ -941,7 +912,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     final ownerId = details['userId'];
     final recipientId = ownerId is String ? ownerId.trim() : '';
     final canMessage =
-        !isOwn && recipientId.isNotEmpty &&
+        recipientId.isNotEmpty &&
         recipientId.toLowerCase() != widget.user.id.toLowerCase();
     var isOpeningChat = false;
     String? chatError;
@@ -1027,7 +998,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                             _buildDayBubbles(sheetContext, days),
                             const SizedBox(height: 6),
                           ],
-                          if (!isOwn && offerBadges.isNotEmpty)
+                          if (offerBadges.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Wrap(
@@ -1036,7 +1007,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                                 children: offerBadges,
                               ),
                             ),
-                          if (!isOwn && notes.isNotEmpty) ...[
+                          if (notes.isNotEmpty) ...[
                             const Divider(height: 24),
                             const Text(
                               'Ride notes',
@@ -1045,7 +1016,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                             const SizedBox(height: 4),
                             Text(notes),
                           ],
-                          if (!isOwn && firstName.isNotEmpty) ...[
+                          if (firstName.isNotEmpty) ...[
                             const Divider(height: 24),
                             Row(
                               children: [
@@ -1076,19 +1047,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                       ),
                     ),
                     if (chatError != null) Text(chatError!),
-                    if (isOwn && navigation != null && target != null) ...[
-                      const Divider(height: 24),
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: FilledButton(
-                          onPressed: () {
-                            Navigator.of(sheetContext).pop();
-                            navigation.openDashboardRide(target);
-                          },
-                          child: const Text('Open in Dashboard'),
-                        ),
-                      ),
-                    ],
                     if (canMessage) ...[
                       const Divider(height: 24),
                       OverflowBar(
@@ -1141,15 +1099,13 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     required LatLng point,
     required MaterialColor color,
     required VoidCallback onTap,
-    bool compact = false,
   }) {
-    final size = compact ? 40.0 : 60.0;
     return Marker(
       point: point,
-      width: size,
-      height: size,
+      width: 60,
+      height: 60,
       alignment: Alignment.center,
-      child: _HoverableMapPin(color: color, onTap: onTap, compact: compact),
+      child: _HoverableMapPin(color: color, onTap: onTap),
     );
   }
 
@@ -1305,21 +1261,12 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     return value.toString();
   }
 
-  bool _isOwnPost(Object? owner) =>
-      owner is String &&
-      owner.trim().toLowerCase() == widget.user.email.trim().toLowerCase();
-
-  MaterialColor _colorFor(MapRideItem item) => _isOwnPost(item.details['userId'])
-      ? Colors.green
-      : item.isOffer
-      ? Colors.orange
-      : Colors.blue;
+  MaterialColor _colorFor(MapRideItem item) =>
+      item.isOffer ? Colors.orange : Colors.blue;
 
   void _openDetails(MapRideItem item) {
     _showRideDetailsModal(
-      _isOwnPost(item.details['userId'])
-          ? (item.isOffer ? 'Your ride offer' : 'Your ride request')
-          : (item.isOffer ? 'Ride offer' : 'Ride request'),
+      item.isOffer ? 'Ride offer' : 'Ride request',
       _colorFor(item),
       item.details,
       isOffer: item.isOffer,
@@ -1339,9 +1286,7 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   /// random direction. The offset is seeded by the ride's ID so it stays the
   /// same between reloads (otherwise averaging reloads would reveal the spot).
   LatLng _displayPointFor(MapRideItem item) {
-    if (!kHideExactLocations || _isOwnPost(item.details['userId'])) {
-      return item.point;
-    }
+    if (!kHideExactLocations) return item.point;
 
     final id =
         (item.details['requestId'] ??
@@ -1393,23 +1338,22 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
     final clusters = <_RideCluster>[];
 
     for (final item in _rideItems) {
-      final isOwn = _isOwnPost(item.details['userId']);
       final point = _displayPointFor(item);
       final px = _project(point, _currentZoom);
-      final threshold = kHideExactLocations && !isOwn
+      final threshold = kHideExactLocations
           ? math.max(_clusterRadiusPx, _circleDiameterPx(point) * 0.75)
           : _clusterRadiusPx;
 
       _RideCluster? target;
       for (final c in clusters) {
-        if (c.isOwn == isOwn && c.pixelCenter.distanceTo(px) <= threshold) {
+        if (c.pixelCenter.distanceTo(px) <= threshold) {
           target = c;
           break;
         }
       }
 
       if (target == null) {
-        clusters.add(_RideCluster(item, point, px, isOwn: isOwn));
+        clusters.add(_RideCluster(item, point, px));
       } else {
         target.add(item, point, px);
       }
@@ -1421,15 +1365,11 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
   List<Marker> _buildMarkers() {
     final markers = <Marker>[];
 
-    final clusters = _clusterItems();
-    for (final cluster in [
-      ...clusters.where((cluster) => !cluster.isOwn),
-      ...clusters.where((cluster) => cluster.isOwn),
-    ]) {
+    for (final cluster in _clusterItems()) {
       if (cluster.items.length == 1) {
         final item = cluster.items.first;
         final color = _colorFor(item);
-        if (kHideExactLocations && !cluster.isOwn) {
+        if (kHideExactLocations) {
           final d = _circleDiameterPx(cluster.center);
           markers.add(
             Marker(
@@ -1449,7 +1389,6 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
             _buildPinMarker(
               point: cluster.center,
               color: color,
-              compact: cluster.isOwn,
               onTap: () => _openDetails(item),
             ),
           );
@@ -1463,34 +1402,28 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   Marker _buildClusterMarker(_RideCluster cluster) {
     // Orange = all offers, blue = all requests, purple = a mix
-    final MaterialColor color = cluster.isOwn
-        ? Colors.green
-        : cluster.allOffers
+    final MaterialColor color = cluster.allOffers
         ? Colors.orange
         : cluster.allRequests
         ? Colors.blue
         : Colors.purple;
 
-    final isCircle = kHideExactLocations && !cluster.isOwn;
-    final double bodySize = cluster.isOwn
-        ? 40
-        : isCircle
+    final double bodySize = kHideExactLocations
         ? math.max(_circleDiameterPx(cluster.center), 40)
         : 56;
     const double badgeSpace = _ClusterMarker.badgeHeight + 2;
 
     return Marker(
       point: cluster.center,
-      width: cluster.isOwn ? bodySize : math.max(bodySize, 60),
+      width: math.max(bodySize, 60),
       // Room for the count badge above, mirrored below so the body stays centered
       height: bodySize + badgeSpace * 2,
       alignment: Alignment.center,
       child: _ClusterMarker(
         color: color,
         count: cluster.items.length,
-        isCircle: isCircle,
+        isCircle: kHideExactLocations,
         bodySize: bodySize,
-        compact: cluster.isOwn,
         onTap: () => _showClusterPicker(cluster),
       ),
     );
@@ -1808,13 +1741,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 class _HoverableMapPin extends StatefulWidget {
   final MaterialColor color;
   final VoidCallback onTap;
-  final bool compact;
 
-  const _HoverableMapPin({
-    required this.color,
-    required this.onTap,
-    required this.compact,
-  });
+  const _HoverableMapPin({required this.color, required this.onTap});
 
   @override
   State<_HoverableMapPin> createState() => _HoverableMapPinState();
@@ -1825,7 +1753,6 @@ class _HoverableMapPinState extends State<_HoverableMapPin> {
 
   @override
   Widget build(BuildContext context) {
-    final decoratedHover = _isHovered && !widget.compact;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -1833,7 +1760,7 @@ class _HoverableMapPinState extends State<_HoverableMapPin> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedScale(
-          scale: _isHovered ? (widget.compact ? 1.12 : 1.25) : 1.0,
+          scale: _isHovered ? 1.25 : 1.0,
           alignment: Alignment.center,
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutBack,
@@ -1842,11 +1769,11 @@ class _HoverableMapPinState extends State<_HoverableMapPin> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: decoratedHover ? Colors.white : Colors.transparent,
-              border: decoratedHover
+              color: _isHovered ? Colors.white : Colors.transparent,
+              border: _isHovered
                   ? Border.all(color: widget.color.shade800, width: 2.5)
                   : null,
-              boxShadow: decoratedHover
+              boxShadow: _isHovered
                   ? [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.3),
@@ -1858,9 +1785,9 @@ class _HoverableMapPinState extends State<_HoverableMapPin> {
             ),
             child: Icon(
               Icons.location_pin,
-              color: decoratedHover ? widget.color.shade800 : widget.color,
-              size: widget.compact ? 30 : 38,
-              shadows: decoratedHover
+              color: _isHovered ? widget.color.shade800 : widget.color,
+              size: 38,
+              shadows: _isHovered
                   ? [
                       Shadow(
                         color: widget.color.shade900.withValues(alpha: 0.4),
@@ -1878,14 +1805,11 @@ class _HoverableMapPinState extends State<_HoverableMapPin> {
 
 /// A group of rides that are too close together to show separately
 class _RideCluster {
-  _RideCluster(MapRideItem item, LatLng point, math.Point<double> px, {
-    required this.isOwn,
-  }) {
+  _RideCluster(MapRideItem item, LatLng point, math.Point<double> px) {
     add(item, point, px);
   }
 
   final List<MapRideItem> items = [];
-  final bool isOwn;
   double _latSum = 0, _lngSum = 0, _xSum = 0, _ySum = 0;
 
   void add(MapRideItem item, LatLng point, math.Point<double> px) {
@@ -1963,7 +1887,6 @@ class _ClusterMarker extends StatefulWidget {
     required this.count,
     required this.isCircle,
     required this.bodySize,
-    required this.compact,
     required this.onTap,
   });
 
@@ -1973,7 +1896,6 @@ class _ClusterMarker extends StatefulWidget {
   final int count;
   final bool isCircle;
   final double bodySize;
-  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -2005,7 +1927,6 @@ class _ClusterMarkerState extends State<_ClusterMarker> {
 
   Widget _buildPinBody() {
     // Two overlapping pins so it reads as "several rides"
-    final scale = widget.bodySize / 56;
     return SizedBox(
       width: widget.bodySize,
       height: widget.bodySize,
@@ -2013,16 +1934,16 @@ class _ClusterMarkerState extends State<_ClusterMarker> {
         alignment: Alignment.center,
         children: [
           Transform.translate(
-            offset: const Offset(7, -4) * scale,
+            offset: const Offset(7, -4),
             child: Icon(
               Icons.location_pin,
-              size: 40 * scale,
+              size: 40,
               color: widget.color.shade200,
             ),
           ),
           Icon(
             Icons.location_pin,
-            size: 46 * scale,
+            size: 46,
             color: widget.color.shade800,
             shadows: [
               Shadow(
@@ -2036,22 +1957,14 @@ class _ClusterMarkerState extends State<_ClusterMarker> {
     );
   }
 
-  Widget _hitRegion(Widget child) => widget.compact
-      ? Listener(behavior: HitTestBehavior.opaque, child: child)
-      : child;
-
   @override
   Widget build(BuildContext context) {
-    final behavior = widget.compact
-        ? HitTestBehavior.deferToChild
-        : HitTestBehavior.opaque;
     return MouseRegion(
-      hitTestBehavior: behavior,
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        behavior: behavior,
+        behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: AnimatedScale(
           scale: _isHovered ? 1.12 : 1.0,
@@ -2062,11 +1975,11 @@ class _ClusterMarkerState extends State<_ClusterMarker> {
             children: [
               // Fill the whole marker so the badge sits above the body
               const SizedBox.expand(),
-              _hitRegion(widget.isCircle ? _buildCircleBody() : _buildPinBody()),
+              widget.isCircle ? _buildCircleBody() : _buildPinBody(),
               // Count badge above the body
               Positioned(
                 top: 0,
-                child: _hitRegion(Container(
+                child: Container(
                   height: _ClusterMarker.badgeHeight,
                   constraints: const BoxConstraints(
                     minWidth: _ClusterMarker.badgeHeight,
@@ -2086,7 +1999,7 @@ class _ClusterMarkerState extends State<_ClusterMarker> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                )),
+                ),
               ),
             ],
           ),

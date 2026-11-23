@@ -37,8 +37,7 @@ public class GetRideRequestsService {
             String daysOfWeekParam,
             String rideTypeParam,
             String departureTimeParam,
-            String arrivalTimeParam,
-            boolean includeOwn) {
+            String arrivalTimeParam) {
 
         // 1. Authentication check
         var user = userRepository.findByEmail(email)
@@ -91,7 +90,7 @@ public class GetRideRequestsService {
 
         // 3. Query repository (excluding current user's email)
         return rideRequestRepository.findFiltered(
-                includeOwn ? null : user.getEmail(),
+                user.getEmail(),
                 city,
                 daysOfWeek,
                 rideType,

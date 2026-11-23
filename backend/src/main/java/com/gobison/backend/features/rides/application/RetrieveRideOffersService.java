@@ -37,8 +37,7 @@ public class RetrieveRideOffersService {
             String daysOfWeekStr,
             String rideTypeStr,
             String departureTimeStr,
-            String arrivalTimeStr,
-            boolean includeOwn) {
+            String arrivalTimeStr) {
 
         // 1. Verify user session / existence
         var user = userRepository.findByEmail(email)
@@ -93,7 +92,7 @@ public class RetrieveRideOffersService {
 
         // 3. Fetch from repository
         return rideOfferRepository.findFilteredOffers(
-                includeOwn ? null : user.getEmail(),
+                user.getEmail(),
                 city,
                 daysOfWeek,
                 rideType,

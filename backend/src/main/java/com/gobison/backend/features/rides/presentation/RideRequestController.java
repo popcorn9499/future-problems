@@ -51,8 +51,7 @@ public class RideRequestController {
             @RequestParam(required = false) String daysOfWeek,
             @RequestParam(required = false) String rideType,
             @RequestParam(required = false) String departureTime,
-            @RequestParam(required = false) String arrivalTime,
-            @RequestParam(defaultValue = "false") boolean includeOwn) {
+            @RequestParam(required = false) String arrivalTime) {
         
         
         List<RideRequest> rawRequests = getService.getRequests(
@@ -61,8 +60,7 @@ public class RideRequestController {
                 daysOfWeek,
                 rideType,
                 departureTime,
-                arrivalTime,
-                includeOwn
+                arrivalTime
         );
 
         // Group round-trip legs by roundTripId and keep single legs separate

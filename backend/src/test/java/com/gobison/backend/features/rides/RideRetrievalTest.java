@@ -155,23 +155,6 @@ class RideRetrievalTest {
     }
 
     @Test
-    void includesOwnListingsOnlyWhenRequestedAndKeepsBrowseFilters() throws Exception {
-        account(true);
-
-        mvc.perform(get("/api/v1/rides/offers").with(user(email))
-                        .param("includeOwn", "true").param("city", "Winnipeg"))
-                .andExpect(status().isOk());
-        verify(rideOfferRepository).findFilteredOffers(
-                null, "Winnipeg", List.of(), null, null, null, null, "OPEN");
-
-        mvc.perform(get("/api/v1/rides/requests").with(user(email))
-                        .param("includeOwn", "true").param("city", "Winnipeg"))
-                .andExpect(status().isOk());
-        verify(rideRequestRepository).findFiltered(
-                null, "Winnipeg", List.of(), null, null, null, "OPEN");
-    }
-
-    @Test
     void ignoresLegacyClosedStatusOnBothBrowseEndpoints() throws Exception {
         account(true);
 
