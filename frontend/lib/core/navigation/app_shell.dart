@@ -108,23 +108,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (_logoutInProgress) return;
     _logoutInProgress = true;
     try {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (dialog) => AlertDialog(
-          title: const Text('Log out?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialog, false),
-              child: const Text('Stay signed in'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialog, true),
-              child: const Text('Log out'),
-            ),
-          ],
-        ),
-      );
-      if (!mounted || confirmed != true) return;
       await SessionService().logout();
 
       if (!mounted) return;

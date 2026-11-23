@@ -50,7 +50,7 @@ void main() {
   }
 
   group('AppShell', () {
-    testWidgets('only logs out after confirming and submits once', (tester) async {
+    testWidgets('logs out immediately and submits once', (tester) async {
       await SessionService.saveUser(user: user);
       addTearDown(SessionService.clearSession);
       final response = Completer<http.Response>();
@@ -61,24 +61,7 @@ void main() {
           final logout = find.text('Log Out');
           await tester.tap(logout);
           await tester.pumpAndSettle();
-          expect(find.text('Log out?'), findsOneWidget);
-          expect(logoutCalls, 0);
-          await tester.tap(find.text('Stay signed in'));
-          await tester.pumpAndSettle();
-          expect(logoutCalls, 0);
-          expect(SessionService.cachedSession?.user, user);
-
-          await tester.tap(logout);
-          await tester.pumpAndSettle();
-          await tester.tapAt(const Offset(5, 5));
-          await tester.pumpAndSettle();
           expect(find.byType(AlertDialog), findsNothing);
-          expect(logoutCalls, 0);
-
-          await tester.tap(logout);
-          await tester.pumpAndSettle();
-          await tester.tap(find.widgetWithText(FilledButton, 'Log out'));
-          await tester.pumpAndSettle();
           expect(logoutCalls, 1);
           await tester.tap(logout);
           await tester.pumpAndSettle();
