@@ -183,5 +183,110 @@ void main() {
         );
       });
     });
+
+    // new tests for viewing another user's profile
+    group('getProfile', () {
+      test('sends GET to the encoded public profile endpoint', () async {
+        late http.Request capturedRequest;
+        final client = MockClient((request) async {
+          capturedRequest = request;
+          return http.Response(jsonEncode({'firstName': 'Ada'}), 200);
+        });
+
+        await ProfileService(client: client).getProfile(
+          userId: 'ada@myumanitoba.ca',
+        );
+
+        expect(capturedRequest.method, 'GET');
+        expect(
+          capturedRequest.url,
+          Uri.parse(
+            '${ApiConfig.baseUrl}/api/v1/users/ada%40myumanitoba.ca/profile',
+          ),
+        );
+        expect(capturedRequest.headers['accept'], 'application/json');
+      });
+
+      test('parses every field and keeps the requested user id', () async {
+        final client = MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'userId': 'ada@myumanitoba.ca',
+              'firstName': 'Ada',
+              'lastName': 'Lovelace',
+              'age': 36,
+              'gender': 'She/her',
+              'description': 'Mathematician',
+              'avatarColor': '#123ABC',
+            }),
+            200,
+          ),
+        );
+
+        final profile = await ProfileService(client: client).getProfile(
+          userId: 'ada@myumanitoba.ca',
+        );
+
+        expect(profile.userId, 'ada@myumanitoba.ca');
+        expect(profile.firstName, 'Ada');
+        expect(profile.lastName, 'Lovelace');
+        expect(profile.age, 36);
+        expect(profile.pronouns, 'She/her');
+        expect(profile.description, 'Mathematician');
+        expect(profile.avatarColor, '#123ABC');
+      });
+
+      test('accepts a profile with only a first name', () async {
+        final client = MockClient(
+          (_) async => http.Response(
+            jsonEncode({'firstName': 'Ada', 'lastName': null}),
+            200,
+          ),
+        );
+
+        final profile = await ProfileService(client: client).getProfile(
+          userId: 'ada@myumanitoba.ca',
+        );
+
+        expect(profile.lastName, isNull);
+        expect(profile.age, isNull);
+        expect(profile.pronouns, isNull);
+        expect(profile.description, isNull);
+        expect(profile.avatarColor, '#E9DFD2');
+      });
+
+      test('throws with the status code when the profile is missing', () async {
+        final client = MockClient((_) async => http.Response('', 404));
+
+        expect(
+          () => ProfileService(client: client).getProfile(
+            userId: 'gone@myumanitoba.ca',
+          ),
+          throwsA(
+            isA<Exception>().having(
+              (error) => error.toString(),
+              'message',
+              contains('Profile lookup failed (404)'),
+            ),
+          ),
+        );
+      });
+
+      test('getCurrentProfile still reads the signed-in user profile', () async {
+        late http.Request capturedRequest;
+        final client = MockClient((request) async {
+          capturedRequest = request;
+          return http.Response(jsonEncode({'firstName': 'Ada'}), 200);
+        });
+
+        await ProfileService(client: client).getCurrentProfile(userId: 'me-id');
+
+        expect(
+          capturedRequest.url,
+          Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me/profile'),
+        );
+      });
+    });
+
   });
 }

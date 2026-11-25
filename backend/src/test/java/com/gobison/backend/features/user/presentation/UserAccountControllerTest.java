@@ -19,9 +19,11 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -34,6 +36,9 @@ class UserAccountControllerTest {
 
     private static final String ENDPOINT = "/api/v1/users/me/profile";
     private static final String EMAIL = "ada@myumanitoba.ca";
+
+    private static final String OTHER_EMAIL = "grace@myumanitoba.ca";
+    private static final String OTHER_PROFILE = "/api/v1/users/{userId}/profile";
 
     @Autowired
     private MockMvc mvc;
@@ -164,5 +169,104 @@ class UserAccountControllerTest {
         verify(updateProfileService).updateProfile(
                 eq(existing),
                 any(UpdateProfileRequest.class));
+    }
+
+    // new tests for viewing another user's profile
+    @Test
+    void viewingAnotherUsersProfileRequiresAuthentication() throws Exception {
+        mvc.perform(get(OTHER_PROFILE, OTHER_EMAIL))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(users);
+    }
+
+    @Test
+    void returnsAnotherUsersPublicProfile() throws Exception {
+        User other = new User(OTHER_EMAIL, "password-hash", "Grace", "Hopper", true);
+        other.setAge(40);
+        other.setPronouns("She/her");
+        other.setDescription("Compiler person");
+        other.setAvatarColor("#123ABC");
+        when(users.findByEmail(OTHER_EMAIL)).thenReturn(Optional.of(other));
+
+        mvc.perform(get(OTHER_PROFILE, OTHER_EMAIL).with(user(EMAIL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(OTHER_EMAIL))
+                .andExpect(jsonPath("$.firstName").value("Grace"))
+                .andExpect(jsonPath("$.lastName").value("Hopper"))
+                .andExpect(jsonPath("$.age").value(40))
+                .andExpect(jsonPath("$.gender").value("She/her"))
+                .andExpect(jsonPath("$.description").value("Compiler person"))
+                .andExpect(jsonPath("$.avatarColor").value("#123ABC"))
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.verified").doesNotExist());
+
+        verify(users).findByEmail(OTHER_EMAIL);
+    }
+
+    @Test
+    void returnsNullLastNameForUsersWithoutOne() throws Exception {
+        User other = new User(OTHER_EMAIL, "password-hash", "Grace", "Hopper", true);
+        other.setLastName(null);
+        when(users.findByEmail(OTHER_EMAIL)).thenReturn(Optional.of(other));
+
+        mvc.perform(get(OTHER_PROFILE, OTHER_EMAIL).with(user(EMAIL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Grace"))
+                .andExpect(jsonPath("$.lastName").isEmpty());
+    }
+
+    @Test
+    void looksUpTheEmailCaseInsensitively() throws Exception {
+        User other = new User(OTHER_EMAIL, "password-hash", "Grace", "Hopper", true);
+        when(users.findByEmail(OTHER_EMAIL)).thenReturn(Optional.of(other));
+
+        mvc.perform(get(OTHER_PROFILE, "Grace@MyUManitoba.CA").with(user(EMAIL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Grace"));
+
+        verify(users).findByEmail(OTHER_EMAIL);
+    }
+
+    @Test
+    void returnsNotFoundForUnknownUser() throws Exception {
+        when(users.findByEmail(OTHER_EMAIL)).thenReturn(Optional.empty());
+
+        mvc.perform(get(OTHER_PROFILE, OTHER_EMAIL).with(user(EMAIL)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void returnsNotFoundForDeletedAccounts() throws Exception {
+        User deleted = new User(OTHER_EMAIL, "password-hash", "Grace", "Hopper", true);
+        deleted.setDeleted(true);
+        when(users.findByEmail(OTHER_EMAIL)).thenReturn(Optional.of(deleted));
+
+        mvc.perform(get(OTHER_PROFILE, OTHER_EMAIL).with(user(EMAIL)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.firstName").doesNotExist());
+    }
+
+    @Test
+    void meStillMeansTheLoggedInUser() throws Exception {
+        User own = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
+        when(users.findByEmail(EMAIL)).thenReturn(Optional.of(own));
+
+        mvc.perform(get(ENDPOINT).with(user(EMAIL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(EMAIL));
+
+        verify(users).findByEmail(EMAIL);
+        verify(users, never()).findByEmail("me");
+    }
+
+    @Test
+    void doesNotAllowEditingAnotherUsersProfile() throws Exception {
+        mvc.perform(patch(OTHER_PROFILE, OTHER_EMAIL).with(user(EMAIL))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Hacked\"}"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(updateProfileService);
     }
 }
