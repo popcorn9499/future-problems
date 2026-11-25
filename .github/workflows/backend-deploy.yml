@@ -11,6 +11,7 @@ on:
       - completed
     branches:
       - master
+      - dev
 
 permissions:
   actions: read
@@ -27,12 +28,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
         run: |
           runs="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$HEAD_SHA&per_page=100")"
           ready=true
 
           for workflow in "Backend CI" "Flutter CI" "Flutter Integration Tests" "Lint Markdown"; do
-            run="$(jq -c --arg name "$workflow" '[.workflow_runs[] | select(.name == $name and .head_branch == "master")] | sort_by(.run_number, .run_attempt) | last // {}' <<< "$runs")"
+            run="$(jq -c --arg name "$workflow" --arg branch "$HEAD_BRANCH" '[.workflow_runs[] | select(.name == $name and .head_branch == $branch)] | sort_by(.run_number, .run_attempt) | last // {}' <<< "$runs")"
             status="$(jq -r '.status // "missing"' <<< "$run")"
             conclusion="$(jq -r '.conclusion // "none"' <<< "$run")"
 
@@ -89,15 +91,13 @@ jobs:
       - name: Deploy Backend to Webserver via Rsync
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_DIR: ${{ github.event.workflow_run.head_branch == 'dev' && '/home/deploybot/gobison-backend-test' || '/home/deploybot/gobison-backend' }}
+          SERVICE: ${{ github.event.workflow_run.head_branch == 'dev' && 'gobison-backend-dev.service' || 'gobison-backend.service' }}
         run: |
           echo "$SSH_KEY" > private_key
           chmod 600 private_key
-          
-          # Create remote directory structure
-          ssh -p2525 -i private_key -o StrictHostKeyChecking=no deploybot@popicraft.net "mkdir -p /home/deploybot/gobison-backend"
-          
-          # Sync the jar file
-          rsync -avz -e "ssh -p2525 -i private_key -o StrictHostKeyChecking=no" backend/target/backend-0.0.1-SNAPSHOT.jar deploybot@popicraft.net:/home/deploybot/gobison-backend/backend.jar
-          
-          # Restart the backend service via systemd
-          ssh -p2525 -i private_key -o StrictHostKeyChecking=no deploybot@popicraft.net "sudo -n systemctl restart gobison-backend.service"
+          trap 'rm -f private_key' EXIT
+
+          ssh -p2525 -i private_key -o StrictHostKeyChecking=no deploybot@popicraft.net "mkdir -p '$DEPLOY_DIR'"
+          rsync -avz -e "ssh -p2525 -i private_key -o StrictHostKeyChecking=no" backend/target/backend-0.0.1-SNAPSHOT.jar "deploybot@popicraft.net:$DEPLOY_DIR/backend.jar"
+          ssh -p2525 -i private_key -o StrictHostKeyChecking=no deploybot@popicraft.net "sudo -n systemctl restart '$SERVICE'"
