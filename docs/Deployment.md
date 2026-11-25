@@ -2,7 +2,7 @@
 
 GoBison is hosted at [gobison.popicraft.net](https://gobison.popicraft.net) on a Hetzner VPS.
 
-Test site hosted at [test.gobison.popicraft.net](https://test.gobison.popicraft.net) now live
+Test site hosted at [test.gobison.popicraft.net](https://test.gobison.popicraft.net) now now live
 
 ## Server environment
 
