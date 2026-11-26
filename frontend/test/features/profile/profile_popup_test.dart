@@ -78,7 +78,7 @@ void main() {
 
     expect(requested.path, endsWith('/users/ada%40myumanitoba.ca/profile'));
     expect(find.text('she/her'), findsOneWidget);
-    expect(find.text('36'), findsOneWidget);
+    expect(find.text('Age 36'), findsOneWidget);
     expect(find.text('Likes maths'), findsOneWidget);
   });
 
