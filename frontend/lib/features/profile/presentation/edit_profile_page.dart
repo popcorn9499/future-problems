@@ -11,12 +11,7 @@ import '../profile_controller.dart';
 import '../profile_service.dart';
 
 class EditProfilePage extends StatefulWidget {
-  const EditProfilePage({
-    super.key,
-    required this.user,
-    required this.profile,
-    this.onSave,
-  });
+  const EditProfilePage({super.key, required this.user, required this.profile, this.onSave});
 
   final User user;
   final UserProfile profile;
@@ -39,9 +34,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _emailController;
-  late final TextEditingController _ageController;
+  late final TextEditingController _birthDateController;
   late final TextEditingController _bioController;
   late final TextEditingController _pronounsController;
+  DateTime? _selectedDateOfBirth;
 
   final bool _isSaving = false;
 
@@ -56,16 +52,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _lastNameController = TextEditingController(text: widget.user.lastName);
     _emailController = TextEditingController(text: widget.user.email);
 
-    _ageController = TextEditingController(
-      text: widget.profile.age?.toString() ?? '',
+    _selectedDateOfBirth = widget.profile.dateOfBirth;
+    _birthDateController = TextEditingController(
+      text: _selectedDateOfBirth == null ? '' : _formatDate(_selectedDateOfBirth!),
     );
-    _bioController = TextEditingController(
-      text: widget.profile.description ?? '',
-    );
+    _bioController = TextEditingController(text: widget.profile.description ?? '');
 
-    _pronounsController = TextEditingController(
-      text: widget.profile.pronouns ?? '',
-    );
+    _pronounsController = TextEditingController(text: widget.profile.pronouns ?? '');
 
     _selectedAvatarColor = hexToColor(widget.profile.avatarColor);
 
@@ -76,7 +69,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _selectedAvatarTextColor = matchingOption.isNotEmpty
         ? matchingOption.first.text
         : const Color(0xFF5D4037);
-
   }
 
   Color hexToColor(String hex) {
@@ -102,10 +94,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
-    _ageController.dispose();
+    _birthDateController.dispose();
     _bioController.dispose();
     _pronounsController.dispose();
-    
+
     super.dispose();
   }
 
@@ -120,7 +112,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       currentProfile: widget.profile,
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
-      age: _ageController.text,
+      age: widget.profile.age?.toString() ?? '',
+      dateOfBirth: _selectedDateOfBirth,
+      dateOfBirthProvided: true,
       pronouns: _pronounsController.text,
       description: _bioController.text,
       avatarColor: colorToHex(_selectedAvatarColor),
@@ -131,9 +125,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (_profileController.updatedProfile != null) {
       Navigator.of(context).pop(_profileController.updatedProfile);
     } else if (_profileController.errorMessage != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_profileController.errorMessage!)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_profileController.errorMessage!)));
     }
   }
 
@@ -143,11 +136,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final hasChanges =
         _firstNameController.text != (widget.profile.firstName) ||
         _lastNameController.text != (widget.profile.lastName ?? '') ||
-        _ageController.text != (widget.profile.age?.toString() ?? '') ||
+        _selectedDateOfBirth != widget.profile.dateOfBirth ||
         _pronounsController.text != (widget.profile.pronouns ?? '') ||
         colorToHex(_selectedAvatarColor) != widget.profile.avatarColor ||
         _bioController.text != (widget.profile.description ?? '');
-        
 
     if (hasChanges) {
       final discard = await showDialog<bool>(
@@ -178,17 +170,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     final name =
         widget.user.firstName +
-        (widget.user.lastName?.trim().isNotEmpty == true
-            ? ' ${widget.user.lastName}'
-            : '');
+        (widget.user.lastName?.trim().isNotEmpty == true ? ' ${widget.user.lastName}' : '');
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+        title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.primary,
         elevation: 0,
@@ -217,40 +204,53 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 _editableField(
                                   label: 'First Name',
                                   controller: _firstNameController,
-                                  validator:
-                                      ProfileValidators.validateFirstName,
+                                  validator: ProfileValidators.validateFirstName,
                                 ),
-                                _editableField(
-                                  label: 'Last Name',
-                                  controller: _lastNameController,
-                                ),
+                                _editableField(label: 'Last Name', controller: _lastNameController),
                               ),
                               const SizedBox(height: 48),
 
                               _buildPair(
-                                _editableField(
-                                  label: 'Age',
-                                  controller: _ageController,
-                                  hint: 'Optional',
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  validator: ProfileValidators.validateAge,
-                                ),
-                                  _editableField(
-                                    label: 'Pronouns',
-                                    controller: _pronounsController,
-                                    hint: 'Optional',
-                                    maxLength: 30,
-                                    textCapitalization: TextCapitalization.none,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(
-                                        RegExp(r'[a-zA-Z\s/\\]'),
+                                TextFormField(
+                                  controller: _birthDateController,
+                                  readOnly: true,
+                                  onTap: _pickDateOfBirth,
+                                  decoration:
+                                      _decoration(
+                                        label: 'Date of Birth',
+                                        hint: 'Optional',
+                                        helperText:
+                                            'You must be at least 15. Only your age appears on your profile.',
+                                      ).copyWith(
+                                        suffixIcon: _selectedDateOfBirth == null
+                                            ? IconButton(
+                                                tooltip: 'Choose date of birth',
+                                                icon: const Icon(Icons.calendar_today_outlined),
+                                                onPressed: _pickDateOfBirth,
+                                              )
+                                            : IconButton(
+                                                tooltip: 'Clear date of birth',
+                                                icon: const Icon(Icons.clear),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _selectedDateOfBirth = null;
+                                                    _birthDateController.clear();
+                                                  });
+                                                },
+                                              ),
                                       ),
-                                    ],
-                                    validator: ProfileValidators.validatePronouns,
-                                  ),
+                                ),
+                                _editableField(
+                                  label: 'Pronouns',
+                                  controller: _pronounsController,
+                                  hint: 'Optional',
+                                  maxLength: 30,
+                                  textCapitalization: TextCapitalization.none,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s/\\]')),
+                                  ],
+                                  validator: ProfileValidators.validatePronouns,
+                                ),
                               ),
                               const SizedBox(height: 48),
 
@@ -278,6 +278,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final today = DateTime.now();
+    final latestAllowedDate = _latestAllowedBirthDate(today);
+    final initialDate = _selectedDateOfBirth ?? DateTime(today.year - 18, today.month, today.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isAfter(latestAllowedDate) ? latestAllowedDate : initialDate,
+      firstDate: DateTime(1900),
+      lastDate: latestAllowedDate,
+      helpText: 'You must be at least 15 years old',
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(textScaler: const TextScaler.linear(1.05)),
+          child: Padding(padding: const EdgeInsets.all(8), child: child!),
+        );
+      },
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() {
+      _selectedDateOfBirth = DateTime(picked.year, picked.month, picked.day);
+      _birthDateController.text = _formatDate(_selectedDateOfBirth!);
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$month/$day/${date.year}';
+  }
+
+  DateTime _latestAllowedBirthDate(DateTime today) {
+    final minimumYear = today.year - 15;
+    final finalDayOfMonth = DateTime(minimumYear, today.month + 1, 0).day;
+    return DateTime(
+      minimumYear,
+      today.month,
+      today.day > finalDayOfMonth ? finalDayOfMonth : today.day,
     );
   }
 
@@ -316,11 +358,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildSection({
-    required String title,
-    required String subtitle,
-    required Widget child,
-  }) {
+  Widget _buildSection({required String title, required String subtitle, required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -337,21 +375,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
+                    Text(subtitle, style: TextStyle(fontSize: 15, color: Colors.grey.shade600)),
                   ],
                 ),
               ),
@@ -404,23 +430,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       maxLines: maxLines,
       maxLength: maxLength,
       onChanged: onChanged,
-      textCapitalization: textCapitalization ??
-          (maxLines > 1
-              ? TextCapitalization.sentences
-              : TextCapitalization.words),
-      decoration: _decoration(
-        label: label,
-        hint: hint,
-        helperText: helperText,
-      ),
+      textCapitalization:
+          textCapitalization ??
+          (maxLines > 1 ? TextCapitalization.sentences : TextCapitalization.words),
+      decoration: _decoration(label: label, hint: hint, helperText: helperText),
     );
   }
 
-  InputDecoration _decoration({
-    required String label,
-    String? hint,
-    String? helperText,
-  }) {
+  InputDecoration _decoration({required String label, String? hint, String? helperText}) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
@@ -449,13 +466,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Avatar Color',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        const Text('Avatar Color', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         const Text(
           'Choose a colour for your profile avatar.',
@@ -464,13 +475,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
-          child: Wrap (
-          alignment: WrapAlignment.start,
-          spacing: 12,
-          runSpacing: 12,
-          children: colors.map((option) {
-              final isSelected =
-                  _selectedAvatarColor == option.background;
+          child: Wrap(
+            alignment: WrapAlignment.start,
+            spacing: 12,
+            runSpacing: 12,
+            children: colors.map((option) {
+              final isSelected = _selectedAvatarColor == option.background;
 
               return Tooltip(
                 message: option.name,
@@ -489,18 +499,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       color: option.background,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Colors.transparent,
+                        color: isSelected ? AppColors.primary : Colors.transparent,
                         width: 3,
                       ),
                     ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            color: option.text,
-                          )
-                        : null,
+                    child: isSelected ? Icon(Icons.check, color: option.text) : null,
                   ),
                 ),
               );
@@ -523,17 +526,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 15,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Cancel'),
             ),
@@ -544,29 +539,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ? const SizedBox(
                       height: 16,
                       width: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : null,
-              label: Text(
-                _profileController.isLoading ? 'Saving...' : 'Save Changes',
-              ),
+              label: Text(_profileController.isLoading ? 'Saving...' : 'Save Changes'),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 22,
-                  vertical: 15,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],

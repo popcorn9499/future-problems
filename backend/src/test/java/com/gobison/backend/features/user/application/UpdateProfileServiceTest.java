@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.time.LocalDate;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -94,6 +95,23 @@ class UpdateProfileServiceTest {
                 () -> assertNull(updated.getPronouns()),
                 () -> assertNull(updated.getDescription())
         );
+        verify(userRepository).update(user);
+    }
+
+    @Test
+    void updatesDateOfBirthAndDerivesAge() {
+        User user = new User("ada@myumanitoba.ca", "hash", "Ada", "Lovelace", true);
+        user.setAge(36);
+        LocalDate dateOfBirth = LocalDate.now().minusYears(15);
+        UpdateProfileRequest request = new UpdateProfileRequest();
+        request.setDateOfBirth(dateOfBirth);
+        when(userRepository.update(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        User updated = service.updateProfile(user, request);
+
+        assertEquals(dateOfBirth, updated.getDateOfBirth());
+        assertEquals(15, updated.getAge());
         verify(userRepository).update(user);
     }
 

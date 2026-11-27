@@ -21,6 +21,7 @@ void main() {
       firstName: 'Rebekah',
       lastName: 'Soneye',
       age: 22,
+      dateOfBirth: DateTime(2004, 3, 5),
       pronouns: 'She/her',
       description: 'I enjoy meeting new people.',
     );
@@ -58,7 +59,13 @@ void main() {
     expect(find.text('Public Profile'), findsOneWidget);
     expect(find.text('First Name'), findsOneWidget);
     expect(find.text('Last Name'), findsOneWidget);
-    expect(find.text('Age'), findsOneWidget);
+    expect(find.text('Date of Birth'), findsOneWidget);
+    expect(
+      find.text(
+        'You must be at least 15. Only your age appears on your profile.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('She/her'), findsOneWidget);
     expect(find.text('About Me'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
@@ -72,7 +79,7 @@ void main() {
 
     expect(find.widgetWithText(TextFormField, 'Rebekah'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Soneye'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, '22'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '03/05/2004'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'She/her'), findsOneWidget);
     expect(
       find.widgetWithText(TextFormField, 'I enjoy meeting new people.'),
@@ -101,10 +108,10 @@ void main() {
     );
     expect(pronounsField.controller!.text, isEmpty);
 
-    final ageField = tester.widget<TextFormField>(
-      find.widgetWithText(TextFormField, 'Age'),
+    final birthdayField = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Date of Birth'),
     );
-    expect(ageField.controller!.text, isEmpty);
+    expect(birthdayField.controller!.text, isEmpty);
 
     final bioField = tester.widget<TextFormField>(
       find.widgetWithText(TextFormField, 'About Me'),
@@ -134,55 +141,41 @@ void main() {
     expect(find.text('Please enter your first name'), findsOneWidget);
   });
 
-  testWidgets('shows validation error when age is below 18', (
+  testWidgets('date picker limits selection to birthdays age 15 and older', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(createTestWidget());
+    setUpTestViewport(tester);
+    final profileWithoutBirthday = UserProfile(
+      userId: '123',
+      firstName: 'Rebekah',
+      lastName: 'Soneye',
+      age: null,
+      pronouns: 'She/her',
+      description: 'I enjoy meeting new people.',
+    );
+    await tester.pumpWidget(createTestWidget(profile: profileWithoutBirthday));
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Age'), '17');
-
-    final saveButton = find.text('Save Changes');
-
-    await tester.ensureVisible(saveButton);
+    final pickerButton = find.byTooltip('Choose date of birth');
+    await tester.ensureVisible(pickerButton);
+    await tester.pumpAndSettle();
+    await tester.tap(pickerButton);
     await tester.pumpAndSettle();
 
-    await tester.tap(saveButton);
-    await tester.pumpAndSettle();
+    final calendar = tester.widget<CalendarDatePicker>(
+      find.byType(CalendarDatePicker),
+    );
+    final today = DateTime.now();
+    final minimumYear = today.year - 15;
+    final lastDayOfMonth = DateTime(minimumYear, today.month + 1, 0).day;
+    final expectedLatestBirthday = DateTime(
+      minimumYear,
+      today.month,
+      today.day > lastDayOfMonth ? lastDayOfMonth : today.day,
+    );
 
-    expect(find.text('Enter an age between 18 and 100'), findsOneWidget);
-  });
-
-  testWidgets('shows validation error when age is above 100', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(createTestWidget());
-
-    await tester.enterText(find.widgetWithText(TextFormField, 'Age'), '101');
-
-    final saveButton = find.text('Save Changes');
-
-    await tester.ensureVisible(saveButton);
-    await tester.pumpAndSettle();
-
-    await tester.tap(saveButton);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Enter an age between 18 and 100'), findsOneWidget);
-  });
-  testWidgets('allows age to be empty because it is optional', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(createTestWidget());
-
-    await tester.enterText(find.widgetWithText(TextFormField, 'Age'), '');
-
-    await tester.ensureVisible(find.text('Save Changes'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Save Changes'));
-    await tester.pump();
-
-    expect(find.text('Enter an age between 18 and 100'), findsNothing);
-    expect(find.text('Please enter your first name'), findsNothing);
+    expect(calendar.lastDate, expectedLatestBirthday);
+    final calendarContext = tester.element(find.byType(CalendarDatePicker));
+    expect(MediaQuery.textScalerOf(calendarContext).scale(10), 10.5);
   });
 
   testWidgets('cancel returns to previous page when there are no changes', (
@@ -222,8 +215,7 @@ void main() {
     expect(find.text('Edit Profile'), findsNothing);
   });
 
- 
- testWidgets('cancel prompts before discarding unsaved changes', (
+  testWidgets('cancel prompts before discarding unsaved changes', (
     WidgetTester tester,
   ) async {
     setUpTestViewport(tester);
@@ -250,7 +242,6 @@ void main() {
     expect(find.text('Discard'), findsOneWidget);
   });
 
-
   testWidgets('keep editing closes the discard dialog without leaving page', (
     WidgetTester tester,
   ) async {
@@ -259,7 +250,9 @@ void main() {
     await tester.pumpWidget(createTestWidget());
 
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'First Name'), 'Changed Name',);
+      find.widgetWithText(TextFormField, 'First Name'),
+      'Changed Name',
+    );
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -317,7 +310,7 @@ void main() {
     expect(find.text('Edit Profile'), findsNothing);
   });
 
- testWidgets('displays avatar colour options and allows selection', (
+  testWidgets('displays avatar colour options and allows selection', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(createTestWidget());

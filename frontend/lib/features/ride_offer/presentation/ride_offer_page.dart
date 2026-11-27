@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/invalid_address_dialog.dart';
+import '../../../core/widgets/ride_location_privacy_note.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ride_form_widgets.dart';
 import '../ride_offer_controller.dart';
@@ -364,7 +365,10 @@ class _RideOfferPageState extends State<RideOfferPage> {
                             ),
                           ),
 
-                         const SizedBox(height: 24),
+                          const SizedBox(height: 4),
+                          const RideLocationPrivacyNote(),
+
+                          const SizedBox(height: 24),
 
                           RideTypeSelector(
                             rideType: _rideType,

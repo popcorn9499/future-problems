@@ -44,7 +44,8 @@ public class UserAccountController {
                 user.getAge(),
                 user.getPronouns(),
                 user.getDescription(),
-                user.getAvatarColor()
+                user.getAvatarColor(),
+                user.getDateOfBirth() == null ? null : user.getDateOfBirth().toString()
         );
 
         return ResponseEntity.ok(response);
@@ -61,7 +62,8 @@ public class UserAccountController {
                 user.getAge(),
                 user.getPronouns(),
                 user.getDescription(),
-                user.getAvatarColor()
+                user.getAvatarColor(),
+                user.getDateOfBirth() == null ? null : user.getDateOfBirth().toString()
         );
 
         return ResponseEntity.ok(response);

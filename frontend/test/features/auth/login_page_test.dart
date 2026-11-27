@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
   Widget createTestWidget() {
@@ -49,6 +51,41 @@ void main() {
       await submitForm(tester);
 
       expect(find.text('This field is required'), findsNothing);
+    });
+
+    testWidgets('shows support email for a deactivated account', (
+      WidgetTester tester,
+    ) async {
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(createTestWidget());
+          await fillLoginForm(tester);
+          await submitForm(tester);
+
+          expect(
+            find.text(
+              'This account has been deactivated. Please contact support for assistance.',
+            ),
+            findsOneWidget,
+          );
+          final supportEmail = find.widgetWithText(
+            TextButton,
+            'gobison.uofm@gmail.com',
+          );
+          expect(supportEmail, findsOneWidget);
+          expect(
+            find.descendant(
+              of: supportEmail,
+              matching: find.byIcon(Icons.email_outlined),
+            ),
+            findsNothing,
+          );
+        },
+        () => MockClient((request) async {
+          expect(request.url.path, endsWith('/api/v1/auth/login'));
+          return http.Response('{}', 403);
+        }),
+      );
     });
   });
 }

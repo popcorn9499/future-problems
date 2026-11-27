@@ -63,6 +63,7 @@ public class UserRepositoryImpl implements UserRepository {
         entity.setDeleted(user.isDeleted());
         entity.setPronouns(user.getPronouns());
         entity.setAge(user.getAge());
+        entity.setDateOfBirth(user.getDateOfBirth());
         entity.setDescription(user.getDescription());
         entity.setAvatarColor(user.getAvatarColor());
 
@@ -93,6 +94,7 @@ public class UserRepositoryImpl implements UserRepository {
         entity.setLastName(user.getLastName());
         entity.setPronouns(user.getPronouns());
         entity.setAge(user.getAge());
+        entity.setDateOfBirth(user.getDateOfBirth());
         entity.setDescription(user.getDescription());
         entity.setAvatarColor(user.getAvatarColor());
 
@@ -111,6 +113,7 @@ public class UserRepositoryImpl implements UserRepository {
         user.setDeleted(entity.isDeleted());
         user.setPronouns(entity.getPronouns());
         user.setAge(entity.getAge());
+        user.setDateOfBirth(entity.getDateOfBirth());
         user.setDescription(entity.getDescription());
         user.setAvatarColor(entity.getAvatarColor());
         return user;

@@ -987,7 +987,11 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                       child: ListView(
                         shrinkWrap: true,
                         children: [
-                          _buildRideSchedule(sheetContext, details),
+                          _buildRideSchedule(
+                            sheetContext,
+                            details,
+                            isOffer: isOffer,
+                          ),
                           if (days.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             const Text(
@@ -1063,7 +1067,9 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                           ),
                           FilledButton(
                             onPressed: () {},
-                            child: const Text('Ask to Join Ride'),
+                            child: Text(
+                              isOffer ? 'Ask to Join Ride' : 'Offer to Drive',
+                            ),
                           ),
                         ],
                       ),
@@ -1111,9 +1117,13 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   // ===================== Privacy + grouping helpers =====================
 
-  Widget _buildRideSchedule(BuildContext context, Map<String, dynamic> details) {
+  Widget _buildRideSchedule(
+    BuildContext context,
+    Map<String, dynamic> details, {
+    required bool isOffer,
+  }) {
     final rideType = details['rideType'];
-    final direction = _rideTypeLabel(rideType);
+    final direction = _rideIntentLabel(isOffer, rideType);
     final theme = Theme.of(context);
     final times = [
       if (rideType != 'departing')
@@ -1125,9 +1135,8 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
       fontWeight: FontWeight.w600,
     );
     if (times.isEmpty) {
-      return direction.isEmpty
-          ? const SizedBox.shrink()
-          : Text(direction, style: directionStyle);
+      if (direction.isEmpty) return const SizedBox.shrink();
+      return Text(direction, style: directionStyle);
     }
     final entries = [
       for (final (label, time) in times)
@@ -1263,6 +1272,17 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
 
   MaterialColor _colorFor(MapRideItem item) =>
       item.isOffer ? Colors.orange : Colors.blue;
+
+  String _rideIntentLabel(bool isOffer, dynamic rideType) {
+    final action = isOffer ? 'Offering' : 'Seeking';
+    final ride = switch (rideType) {
+      'arriving' => 'a ride to campus',
+      'departing' => 'a ride from campus',
+      'roundTrip' => 'a round-trip ride',
+      _ => 'a ride',
+    };
+    return '$action $ride';
+  }
 
   void _openDetails(MapRideItem item) {
     _showRideDetailsModal(
@@ -1486,9 +1506,17 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                     children: [
-                      for (final (label, items) in [
-                        ('Ride requests', requests),
-                        ('Ride offers', offers),
+                      for (final (label, subtitle, items) in [
+                        (
+                          'Ride requests',
+                          'Riders in this section are seeking rides.',
+                          requests,
+                        ),
+                        (
+                          'Ride offers',
+                          'Riders in this section are offering rides.',
+                          offers,
+                        ),
                       ])
                         if (items.isNotEmpty) ...[
                           Container(
@@ -1498,9 +1526,24 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                               color: Theme.of(sheetContext).colorScheme.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              '$label (${items.length})',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$label (${items.length})',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  style: Theme.of(sheetContext)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(color: Colors.grey.shade700),
+                                ),
+                              ],
                             ),
                           ),
                           for (final item in items) ...[

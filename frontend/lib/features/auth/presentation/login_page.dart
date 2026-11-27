@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/navigation/no_animation_page_route.dart';
@@ -6,6 +7,7 @@ import 'register_page.dart';
 import 'session_gate.dart';
 import '../auth_validators.dart';
 import '../auth_controller.dart';
+import '../auth_response_handler.dart';
 import '../auth_service.dart';
 import '../../../core/widgets/go_bison_logo.dart';
 
@@ -94,10 +96,7 @@ class _LoginPageState extends State<LoginPage> {
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: AppColors.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 17,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -108,10 +107,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -182,10 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                               widthFactor: 1,
                               child: Text(
                                 '@myumanitoba.ca',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 16,
-                                ),
+                                style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
                               ),
                             ),
                           ),
@@ -202,9 +195,7 @@ class _LoginPageState extends State<LoginPage> {
                           obscureText: _obscurePassword,
                           validator: AuthValidators.validateRequired,
                           suffixIcon: IconButton(
-                            tooltip: _obscurePassword
-                                ? 'Show password'
-                                : 'Hide password',
+                            tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_outlined
@@ -227,27 +218,54 @@ class _LoginPageState extends State<LoginPage> {
                             decoration: BoxDecoration(
                               color: AppColors.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.error.withValues(alpha: 0.4),
-                              ),
+                              border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  color: AppColors.error,
-                                  size: 20,
-                                ),
+                                const Icon(Icons.error_outline, color: AppColors.error, size: 20),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(
-                                    _authController.errorMessage!,
-                                    style: const TextStyle(
-                                      color: AppColors.error,
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                                  child:
+                                      _authController.errorMessage ==
+                                          AuthResponseHandler.deactivatedAccountMessage
+                                      ? Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              AuthResponseHandler.deactivatedAccountMessage,
+                                              style: TextStyle(
+                                                color: AppColors.error,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => launchUrl(
+                                                Uri(
+                                                  scheme: 'mailto',
+                                                  path: AuthResponseHandler.supportEmail,
+                                                ),
+                                              ),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: AppColors.error,
+                                                padding: EdgeInsets.zero,
+                                                minimumSize: Size.zero,
+                                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                              ),
+                                              child: const Text(
+                                                AuthResponseHandler.supportEmail,
+                                                style: TextStyle(fontSize: 13),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          _authController.errorMessage!,
+                                          style: const TextStyle(
+                                            color: AppColors.error,
+                                            fontSize: 13,
+                                          ),
+                                        ),
                                 ),
                               ],
                             ),
@@ -259,9 +277,7 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(
                           height: 54,
                           child: ElevatedButton(
-                            onPressed: _authController.isLoading
-                                ? null
-                                : _login,
+                            onPressed: _authController.isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -271,15 +287,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             child: _authController.isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
+                                ? const CircularProgressIndicator(color: Colors.white)
                                 : const Text(
                                     'Sign In',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                           ),
                         ),
@@ -293,19 +304,14 @@ class _LoginPageState extends State<LoginPage> {
                               child: Text(
                                 'Don\'t have an account?',
                                 textAlign: TextAlign.end,
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                ),
+                                style: TextStyle(color: Colors.black, fontSize: 14),
                               ),
                             ),
                             TextButton(
                               onPressed: () {
                                 Navigator.pushReplacement(
                                   context,
-                                  NoAnimationPageRoute(
-                                    builder: (context) => const RegisterPage(),
-                                  ),
+                                  NoAnimationPageRoute(builder: (context) => const RegisterPage()),
                                 );
                               },
                               style: TextButton.styleFrom(
@@ -316,10 +322,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: const Text(
                                 ' Sign Up',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ),
                           ],

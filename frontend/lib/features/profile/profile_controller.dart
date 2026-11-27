@@ -38,6 +38,8 @@ class ProfileController extends ChangeNotifier {
     required String firstName,
     required String lastName,
     required String age,
+    DateTime? dateOfBirth,
+    bool dateOfBirthProvided = false,
     required String pronouns,
     required String description,
     required String avatarColor,
@@ -51,6 +53,9 @@ class ProfileController extends ChangeNotifier {
 
     try {
       final ageText = age.trim();
+      final normalizedDateOfBirth = dateOfBirth == null
+          ? null
+          : DateTime(dateOfBirth.year, dateOfBirth.month, dateOfBirth.day);
       final trimmedFirstName = firstName.trim();
       final trimmedLastName = lastName.trim();
       final trimmedDescription = description.trim();
@@ -60,7 +65,14 @@ class ProfileController extends ChangeNotifier {
         userId: currentProfile.userId,
         firstName: trimmedFirstName,
         lastName: trimmedLastName.isEmpty ? null : trimmedLastName,
-        age: ageText.isEmpty ? null : int.parse(ageText),
+        age: dateOfBirthProvided
+            ? _ageFor(normalizedDateOfBirth)
+            : ageText.isEmpty
+            ? null
+            : int.parse(ageText),
+        dateOfBirth: dateOfBirthProvided
+            ? normalizedDateOfBirth
+            : currentProfile.dateOfBirth,
         pronouns: trimmedPronouns.isEmpty ? null : trimmedPronouns,
         description: trimmedDescription.isEmpty ? null : trimmedDescription,
         avatarColor: avatarColor,
@@ -76,7 +88,13 @@ class ProfileController extends ChangeNotifier {
         changes['lastName'] = editedProfile.lastName;
       }
 
-      if (editedProfile.age != currentProfile.age) {
+      if (dateOfBirthProvided &&
+          editedProfile.dateOfBirth != currentProfile.dateOfBirth) {
+        changes['dateOfBirth'] = editedProfile.dateOfBirth
+            ?.toIso8601String()
+            .split('T')
+            .first;
+      } else if (!dateOfBirthProvided && editedProfile.age != currentProfile.age) {
         changes['age'] = editedProfile.age;
       }
 
@@ -105,6 +123,7 @@ class ProfileController extends ChangeNotifier {
         firstName: responseProfile.firstName,
         lastName: responseProfile.lastName,
         age: responseProfile.age,
+        dateOfBirth: responseProfile.dateOfBirth ?? editedProfile.dateOfBirth,
         pronouns: responseProfile.pronouns ?? editedProfile.pronouns,
         description: responseProfile.description,
         avatarColor: responseProfile.avatarColor,
@@ -115,6 +134,17 @@ class ProfileController extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  int? _ageFor(DateTime? dateOfBirth) {
+    if (dateOfBirth == null) return null;
+    final today = DateTime.now();
+    var years = today.year - dateOfBirth.year;
+    if (today.month < dateOfBirth.month ||
+        (today.month == dateOfBirth.month && today.day < dateOfBirth.day)) {
+      years--;
+    }
+    return years;
   }
 
   String _handleError(int code) {

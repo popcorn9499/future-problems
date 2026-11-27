@@ -1,5 +1,8 @@
 package com.gobison.backend.features.user.domain.model;
 
+import java.time.LocalDate;
+import java.time.Period;
+
 public class User {
 
     public static final String DEFAULT_AVATAR_COLOR = "#E9DFD2";
@@ -14,6 +17,7 @@ public class User {
 
     private String pronouns;
     private Integer age;
+    private LocalDate dateOfBirth;
     private String description;
     private String avatarColor = DEFAULT_AVATAR_COLOR;
 
@@ -79,7 +83,16 @@ public class User {
 
     public void setAge(Integer age) { this.age = age; }
 
-    public Integer getAge() { return age; }
+    public Integer getAge() {
+        if (dateOfBirth == null) {
+            return age;
+        }
+        return Period.between(dateOfBirth, LocalDate.now()).getYears();
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
 
     public void setDescription(String description) { this.description = description; }
 

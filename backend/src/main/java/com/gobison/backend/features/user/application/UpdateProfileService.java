@@ -25,7 +25,12 @@ public class UpdateProfileService {
         requireNonBlankWhenPresent(
                 request.hasPronouns(), request.getPronouns(), "pronouns");
 
-        if (request.hasAge()) user.setAge(request.getAge());
+        if (request.hasDateOfBirth()) {
+            user.setDateOfBirth(request.getDateOfBirth());
+            user.setAge(null);
+        } else if (request.hasAge()) {
+            user.setAge(request.getAge());
+        }
         if (request.hasAvatarColor()) user.setAvatarColor(request.getAvatarColor());
         if (request.hasDescription()) user.setDescription(request.getDescription());
         if (request.hasFirstName()) user.setFirstName(request.getFirstName());

@@ -47,25 +47,26 @@ Both profile endpoints require an authenticated user. The profile is selected fr
 | GET | `/api/v1/users/me/profile` | — | `200 OK` with the current user's profile |
 | PATCH | `/api/v1/users/me/profile` | JSON body with one or more profile fields | `200 OK` with the updated profile |
 
-**GET profile** returns `userId`, `firstName`, `lastName`, `age`, `gender`, `description`, and `avatarColor`.
+**GET profile** returns `userId`, `firstName`, `lastName`, `age`, `dateOfBirth`, `gender`, `description`, and `avatarColor`. `age` is calculated from `dateOfBirth` when one is set; otherwise, it may contain a legacy age value.
 
-**PATCH profile** updates only the fields supplied in the JSON body. Supported fields are `firstName`, `lastName`, `age`, `pronouns`, `description`, and `avatarColor`. For example:
+**PATCH profile** updates only the fields supplied in the JSON body. Supported fields are `firstName`, `lastName`, `dateOfBirth`, `age` (legacy), `pronouns`, `description`, and `avatarColor`. `dateOfBirth` uses `YYYY-MM-DD`; send `null` to clear it. For example:
 
 ```json
 {
   "firstName": "Logan",
+  "dateOfBirth": "2001-05-12",
   "pronouns": "she/her",
   "avatarColor": "#8F00FF"
 }
 ```
 
-The response contains the same profile fields as GET. The API currently returns the stored `pronouns` value under the response field name `gender`.
+The response contains the same profile fields as GET. The API currently returns the stored `pronouns` value under the response field name `gender`. Date of birth is returned only by the authenticated user's own profile endpoint; clients should display the calculated age rather than the full date.
 
-Omitted fields remain unchanged. Supplied string fields must not be blank, and `age` cannot be explicitly set to `null`.
+Omitted fields remain unchanged. Supplied string fields must not be blank. `dateOfBirth` must indicate an age of at least 15 years. The legacy `age` field cannot be explicitly set to `null`.
 
 | Status | Meaning |
 | --- | --- |
-| `400 Bad Request` | A supplied string field is blank, or `age` is explicitly `null` |
+| `400 Bad Request` | A supplied string field is blank, the date of birth indicates an age under 15, or legacy `age` is explicitly `null` |
 | `401 Unauthorized` | Authentication is missing or the authenticated user cannot be found |
 
 ### Auth

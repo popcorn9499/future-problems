@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "users")
 
@@ -39,6 +41,9 @@ public class UserEntity {
 
     @Column(name = "age", nullable = true)
     private Integer age;
+
+    @Column(name = "date_of_birth", nullable = true)
+    private LocalDate dateOfBirth;
 
     @Column(name = "description", nullable = true)
     private String description;
@@ -118,6 +123,10 @@ public class UserEntity {
     public void setAge(Integer age) { this.age = age; }
 
     public Integer getAge() { return age; }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
 
     public void setDescription(String description) { this.description = description; }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/ride_location_privacy_note.dart';
 import '../ride_request_controller.dart' show extractErrorCode;
 import '../../ride_offer/ride_offer_service.dart';
 import '../ride_request_service.dart';
@@ -107,7 +108,10 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     if (arrival != null &&
         departure != null &&
         departure!.trim().compareTo(arrival!.trim()) <= 0) {
-      setState(() => error = 'Your campus departure must be after your campus arrival.');
+      setState(
+        () =>
+            error = 'Your campus departure must be after your campus arrival.',
+      );
       return;
     }
 
@@ -180,6 +184,8 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
               children: [
                 _field('City', city, (value) => city = value),
                 _field('Street address', street, (value) => street = value),
+                const SizedBox(height: 4),
+                const RideLocationPrivacyNote(),
                 if (arrival != null)
                   _field(
                     'Arrive at campus by (HH:mm)',

@@ -164,6 +164,91 @@ void main() {
       expect(receivedChanges, {'firstName': 'Rebecca'});
     });
 
+    test(
+      'saveProfile sends and stores a date of birth as an ISO date',
+      () async {
+        final dateOfBirth = DateTime(2000, 6, 15);
+        final updatedProfile = UserProfile(
+          userId: '123',
+          firstName: 'Rebekah',
+          lastName: 'Soneye',
+          dateOfBirth: dateOfBirth,
+          pronouns: 'She/her',
+          description: 'Hello world',
+          avatarColor: '#F8BBD0',
+        );
+        Map<String, dynamic>? receivedChanges;
+
+        profileService.onUpdateProfile = ({required changes}) async {
+          receivedChanges = changes;
+          return updatedProfile;
+        };
+
+        await controller.saveProfile(
+          currentProfile: currentProfile,
+          firstName: 'Rebekah',
+          lastName: 'Soneye',
+          age: '22',
+          dateOfBirth: dateOfBirth,
+          dateOfBirthProvided: true,
+          pronouns: 'She/her',
+          description: 'Hello world',
+          avatarColor: '#F8BBD0',
+        );
+
+        expect(receivedChanges, {
+          'dateOfBirth': '2000-06-15',
+          'avatarColor': '#F8BBD0',
+        });
+        expect(controller.updatedProfile?.dateOfBirth, dateOfBirth);
+        expect(controller.updatedProfile?.displayAge, isNotNull);
+        expect(controller.errorMessage, isNull);
+      },
+    );
+
+    test(
+      'saveProfile sends null when clearing a saved date of birth',
+      () async {
+        final profileWithBirthday = UserProfile(
+          userId: '123',
+          firstName: 'Rebekah',
+          lastName: 'Soneye',
+          age: 26,
+          dateOfBirth: DateTime(2000, 6, 15),
+          pronouns: 'She/her',
+          description: 'Hello world',
+          avatarColor: '#E9DFD2',
+        );
+
+        profileService.onUpdateProfile = ({required changes}) async {
+          expect(changes, {'dateOfBirth': null});
+          return const UserProfile(
+            userId: '123',
+            firstName: 'Rebekah',
+            lastName: 'Soneye',
+            pronouns: 'She/her',
+            description: 'Hello world',
+            avatarColor: '#E9DFD2',
+          );
+        };
+
+        await controller.saveProfile(
+          currentProfile: profileWithBirthday,
+          firstName: 'Rebekah',
+          lastName: 'Soneye',
+          age: '26',
+          dateOfBirth: null,
+          dateOfBirthProvided: true,
+          pronouns: 'She/her',
+          description: 'Hello world',
+          avatarColor: '#E9DFD2',
+        );
+
+        expect(controller.updatedProfile?.dateOfBirth, isNull);
+        expect(controller.errorMessage, isNull);
+      },
+    );
+
     test('saveProfile trims input before sending changes', () async {
       profileService.onUpdateProfile = ({required changes}) async {
         expect(changes, {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/invalid_address_dialog.dart';
+import '../../../core/widgets/ride_location_privacy_note.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/ride_form_widgets.dart';
 import '../ride_request_controller.dart';
@@ -207,6 +208,9 @@ class _RideRequestPageState extends State<RideRequestPage> {
                               icon: Icons.location_on_outlined,
                             ),
                           ),
+
+                          const SizedBox(height: 4),
+                          const RideLocationPrivacyNote(),
 
                           const SizedBox(height: 24),
 
