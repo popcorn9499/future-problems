@@ -11,6 +11,7 @@ import 'package:gobison/core/navigation/no_animation_page_route.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/messages/messaging_controller.dart';
 import 'package:gobison/core/services/session_service.dart';
+import 'tab_refresh.dart';
 
 import 'app_sidebar.dart';
 
@@ -99,6 +100,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _selectPage(int index) {
+    // Switching to a tab: let it reload data that might be stale
+    // (e.g. a ride was just created and then user switched back to dashboard, it should be updated).
+    if (index != _selectedIndex) {
+      TabRefresh.request(index);
+    }
     setState(() {
       _selectedIndex = index;
     });

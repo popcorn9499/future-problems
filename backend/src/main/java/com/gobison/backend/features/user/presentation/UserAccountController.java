@@ -8,6 +8,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+
+import java.util.Locale;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -62,6 +65,23 @@ public class UserAccountController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<GetProfileResponse> getPublicProfile(@PathVariable String userId) {
+        var user = users.findByEmail(userId.trim().toLowerCase(Locale.ROOT))
+                .filter(found -> !found.isDeleted())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        return ResponseEntity.ok(new GetProfileResponse(
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getAge(),
+                user.getPronouns(),
+                user.getDescription(),
+                user.getAvatarColor()
+        ));
     }
 
     @DeleteMapping("/me")

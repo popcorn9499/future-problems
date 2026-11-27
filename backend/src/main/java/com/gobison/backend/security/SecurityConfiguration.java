@@ -94,6 +94,8 @@ public class SecurityConfiguration {
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/profile")
                                                 .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/users/*/profile")
+                                                .authenticated()
                                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/users/me")
                                                 .authenticated()
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/dashboard/agreements")

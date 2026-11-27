@@ -21,7 +21,7 @@ class UserProfile {
     return UserProfile(
       userId: json['userId'] as String,
       firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
+      lastName: json['lastName'] as String?,
       age: json['age'] as int?,
       pronouns: json['pronouns'] as String?,
       description: json['description'] as String?,
