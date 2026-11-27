@@ -12,6 +12,8 @@ import '../../core/services/session_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/avatar_color_option.dart';
 import '../../core/widgets/user_avatar.dart';
+import '../../core/models/ride_agreement.dart';
+import '../profile/presentation/profile_popup.dart';
 import '../auth/presentation/login_page.dart';
 import '../messages/messaging_controller.dart';
 import '../messages/messaging_service.dart';
@@ -19,6 +21,7 @@ import '../messages/models/conversation.dart';
 import '../messages/presentation/chat_page.dart';
 import '../ride_offer/ride_offer_service.dart';
 import '../ride_request/ride_request_service.dart';
+import '../profile/profile_service.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,8 +36,9 @@ typedef _MapLoadError = ({String source, String detail, bool sessionExpired});
 enum _ListingView { all, requests, offers }
 
 class CarpoolMultiSourceMapPage extends StatefulWidget {
-  const CarpoolMultiSourceMapPage({super.key, required this.user});
+  const CarpoolMultiSourceMapPage({super.key, required this.user, this.profileService,});
   final User user;
+  final ProfileService? profileService;
 
   @override
   State<CarpoolMultiSourceMapPage> createState() =>
@@ -1033,9 +1037,29 @@ class _CarpoolMultiSourceMapPageState extends State<CarpoolMultiSourceMapPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       const Text('Posted by'),
-                                      Text(
-                                        '$firstName $lastName'.trim(),
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      InkWell(
+                                        onTap: recipientId.isEmpty
+                                            ? null
+                                            : () {
+                                                showProfilePopup(
+                                                  sheetContext,
+                                                  member: AgreementMember(
+                                                    id: recipientId,
+                                                    firstName: firstName,
+                                                    lastName: lastName,
+                                                  ),
+                                                  currentUserId: widget.user.id,
+                                                  service: widget.profileService,
+                                                );
+                                              },
+                                        child: Text(
+                                          '$firstName $lastName'.trim(),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primary,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),

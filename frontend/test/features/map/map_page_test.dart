@@ -10,6 +10,7 @@ import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/core/theme/app_colors.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/map/map_page.dart';
+import 'package:gobison/features/profile/profile_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -22,7 +23,7 @@ void main() {
     verified: true,
   );
 
-  Widget createTestWidget({double? sheetWidth}) {
+  Widget createTestWidget({double? sheetWidth , ProfileService? profileService}) {
     return MaterialApp(
       theme: sheetWidth == null
           ? null
@@ -31,7 +32,7 @@ void main() {
                 constraints: BoxConstraints(maxWidth: sheetWidth),
               ),
             ),
-      home: const CarpoolMultiSourceMapPage(user: testUser),
+      home: CarpoolMultiSourceMapPage(user: testUser, profileService: profileService),
     );
   }
 
@@ -54,11 +55,12 @@ void main() {
   Future<void> pumpMapPage(
     WidgetTester tester, {
     Future<http.Response> Function(http.Request)? respond,
+    ProfileService? profileService,
   }) async {
     useLargeScreen(tester);
     await http.runWithClient(
       () async {
-        await tester.pumpWidget(createTestWidget());
+        await tester.pumpWidget(createTestWidget(profileService: profileService));
         await settle(tester);
       },
       () => MockClient((request) async {
@@ -436,6 +438,104 @@ void main() {
       expect(tester.getCenter(message).dy, lessThan(tester.getCenter(join).dy));
     });
   }
+
+
+group('CarpoolMultiSourceMapPage profile popup', () {
+  const rideResponse =
+      '{"offers":[{"rideType":"departing",'
+      '"userId":"another-user",'
+      '"poster":{"firstName":"Jordan","lastName":"Lee"},'
+      '"departureTime":"16:30",'
+      '"location":{"latitude":49.8951,"longitude":-97.1384}}]}';
+
+  ProfileService createTestProfileService() {
+    return ProfileService(
+      client: MockClient((request) async {
+        expect(
+          request.url.path,
+          '/api/v1/users/another-user/profile',
+        );
+
+        return http.Response(
+          '{"firstName":"Jordan",'
+          '"lastName":"Lee",'
+          '"age":24,'
+          '"pronouns":"he/him",'
+          '"description":"I enjoy meeting new people."}',
+          200,
+        );
+      }),
+    );
+  }
+
+  Future<void> openRideDetails(WidgetTester tester) async {
+    final marker = tester
+        .widget<MarkerLayer>(find.byType(MarkerLayer))
+        .markers
+        .single;
+
+    await tester.tap(find.byWidget(marker.child));
+    await settle(tester);
+  }
+
+  testWidgets('tapping the poster name opens their profile', (tester,) async {
+    await pumpMapPage(
+      tester,
+      profileService: createTestProfileService(),
+      respond: (request) async {
+        return request.url.path.endsWith('/offers')
+            ? http.Response(rideResponse, 200)
+            : http.Response('{}', 200);
+      },
+    );
+
+    await openRideDetails(tester);
+
+    // The poster's name is visible in the ride details.
+    expect(find.text('Jordan Lee'), findsOneWidget);
+
+    // Open their profile.
+    await tester.tap(find.text('Jordan Lee'));
+    await settle(tester);
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('ABOUT ME'), findsOneWidget);
+    expect(
+      find.text('I enjoy meeting new people.'),
+      findsOneWidget,
+    );
+    expect(find.text('he/him'), findsOneWidget);
+  });
+
+    testWidgets('closing the profile returns to ride details', (tester,) async {
+      await pumpMapPage(
+        tester,
+        profileService: createTestProfileService(),
+        respond: (request) async {
+          return request.url.path.endsWith('/offers')
+              ? http.Response(rideResponse, 200)
+              : http.Response('{}', 200);
+        },
+      );
+
+      await openRideDetails(tester);
+
+      await tester.tap(find.text('Jordan Lee'));
+      await settle(tester);
+
+      expect(find.byType(Dialog), findsOneWidget);
+
+      // Close the profile popup.
+      await tester.tap(find.widgetWithText(TextButton, 'Close'));
+      await settle(tester);
+
+      // The profile popup is gone, but the ride details remain.
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.text('Ride offer'), findsOneWidget);
+      expect(find.text('Posted by'), findsOneWidget);
+      expect(find.text('Jordan Lee'), findsOneWidget);
+    });
+  });
 
   for (final capacity in [1, null]) {
     testWidgets('shows driver preference with capacity $capacity', (tester) async {
