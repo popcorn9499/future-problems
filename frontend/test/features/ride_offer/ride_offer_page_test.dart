@@ -111,7 +111,7 @@ void main() {
       expect(find.text('Street Address *'), findsOneWidget);
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
 
@@ -397,14 +397,14 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('Ride Type *'), findsOneWidget);
-      expect(find.text('Arriving at Campus'), findsOneWidget);
+      expect(find.text('To campus'), findsOneWidget);
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
       expect(find.text('Select time'), findsOneWidget);
       expect(
-        find.text('Desired campus departure time *'),
+        find.text('Leave campus at *'),
         findsNothing,
       );
     });
@@ -420,16 +420,16 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Desired campus departure time *'),
+        find.text('Leave campus at *'),
         findsOneWidget,
       );
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsNothing,
       );
     });
@@ -445,11 +445,11 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Campus arrival time *'), findsOneWidget);
-      expect(find.text('Campus departure time *'), findsOneWidget);
+      expect(find.text('Arrive at campus by *'), findsOneWidget);
+      expect(find.text('Leave campus at *'), findsOneWidget);
 
       expect(find.text('Select time'), findsNWidgets(2));
     });
@@ -500,7 +500,7 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
       final timeSelector = find.text('Select time');
@@ -534,7 +534,7 @@ void main() {
       await submitForm(tester);
 
       expect(
-        find.text('Please select an arrival time.'),
+        find.text('Choose when you need to arrive at campus.'),
         findsOneWidget,
       );
     });
@@ -550,7 +550,7 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
       await enterRequiredFields(tester);
@@ -565,7 +565,7 @@ void main() {
       await submitForm(tester);
 
       expect(
-        find.text('Please select a departure time.'),
+        find.text('Choose when you want to leave campus.'),
         findsOneWidget,
       );
     });
@@ -581,7 +581,7 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
       await enterRequiredFields(tester);
@@ -596,7 +596,7 @@ void main() {
       await submitForm(tester);
 
       expect(
-        find.text('Please select an arrival time.'),
+        find.text('Choose when you need to arrive at campus.'),
         findsOneWidget,
       );
     });
@@ -612,7 +612,7 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
       await enterRequiredFields(tester);
@@ -637,7 +637,7 @@ void main() {
       await submitForm(tester);
 
       expect(
-        find.text('Please select a departure time.'),
+        find.text('Choose when you want to leave campus.'),
         findsOneWidget,
       );
     });
@@ -650,7 +650,7 @@ void main() {
         await tester.ensureVisible(dropdown);
         await tester.tap(dropdown);
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Round Trip').last);
+        await tester.tap(find.text('Round trip').last);
         await tester.pumpAndSettle();
         await enterRequiredFields(tester);
         await selectPassengerCount(tester, 2);
@@ -705,7 +705,7 @@ void main() {
         await tester.pumpAndSettle();
         await submitForm(tester);
         expect(
-          find.text('Departure time must be after arrival time.'),
+          find.text('Your campus departure must be after your campus arrival.'),
           findsOneWidget,
         );
       },
@@ -722,30 +722,30 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(dropdown);
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(dropdown);
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Arriving at Campus').last);
+      await tester.tap(find.text('To campus').last);
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
 
       expect(
-        find.text('Campus departure time *'),
+        find.text('Leave campus at *'),
         findsNothing,
       );
     });
@@ -767,7 +767,7 @@ void main() {
       await submitForm(tester);
 
       expect(
-        find.text('Please select an arrival time.'),
+        find.text('Choose when you need to arrive at campus.'),
         findsOneWidget,
       );
     });
@@ -1051,15 +1051,15 @@ void main() {
       await tester.pumpWidget(createTestWidget());
 
       expect(find.text('Ride Type *'), findsOneWidget);
-      expect(find.text('Arriving at Campus'), findsOneWidget);
+      expect(find.text('To campus'), findsOneWidget);
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
 
       expect(
-        find.text('Desired campus departure time *'),
+        find.text('Leave campus at *'),
         findsNothing,
       );
     });
@@ -1075,9 +1075,9 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      expect(find.text('Arriving at Campus'), findsWidgets);
-      expect(find.text('Departing from Campus'), findsOneWidget);
-      expect(find.text('Round Trip'), findsOneWidget);
+      expect(find.text('To campus'), findsWidgets);
+      expect(find.text('From campus'), findsOneWidget);
+      expect(find.text('Round trip'), findsOneWidget);
     });
 
     testWidgets('allows selecting departing from campus', (
@@ -1091,18 +1091,18 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Departing from Campus'), findsOneWidget);
+      expect(find.text('From campus'), findsOneWidget);
 
       expect(
-        find.text('Desired campus departure time *'),
+        find.text('Leave campus at *'),
         findsOneWidget,
       );
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsNothing,
       );
     });
@@ -1118,12 +1118,12 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Round Trip'), findsOneWidget);
-      expect(find.text('Campus arrival time *'), findsOneWidget);
-      expect(find.text('Campus departure time *'), findsOneWidget);
+      expect(find.text('Round trip'), findsOneWidget);
+      expect(find.text('Arrive at campus by *'), findsOneWidget);
+      expect(find.text('Leave campus at *'), findsOneWidget);
     });
 
     testWidgets('switching from round trip to arriving hides departure time', (
@@ -1138,26 +1138,26 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Campus arrival time *'), findsOneWidget);
-      expect(find.text('Campus departure time *'), findsOneWidget);
+      expect(find.text('Arrive at campus by *'), findsOneWidget);
+      expect(find.text('Leave campus at *'), findsOneWidget);
 
       // Switch to arriving.
       await tester.ensureVisible(dropdown);
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Arriving at Campus').last);
+      await tester.tap(find.text('To campus').last);
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
 
-      expect(find.text('Campus departure time *'), findsNothing);
+      expect(find.text('Leave campus at *'), findsNothing);
     });
 
     testWidgets('switching from round trip to departing hides arrival time', (
@@ -1172,7 +1172,7 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Round Trip').last);
+      await tester.tap(find.text('Round trip').last);
       await tester.pumpAndSettle();
 
       // Switch to departing.
@@ -1180,15 +1180,15 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
       expect(
-        find.text('Desired campus departure time *'),
+        find.text('Leave campus at *'),
         findsOneWidget,
       );
 
-      expect(find.text('Campus arrival time *'), findsNothing);
+      expect(find.text('Arrive at campus by *'), findsNothing);
     });
 
     testWidgets('reset restores the default arriving ride type', (
@@ -1203,10 +1203,10 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Departing from Campus'), findsOneWidget);
+      expect(find.text('From campus'), findsOneWidget);
 
       // Reset the form.
       final resetButton = find.text('Reset');
@@ -1215,15 +1215,15 @@ void main() {
       await tester.tap(resetButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('Arriving at Campus'), findsOneWidget);
+      expect(find.text('To campus'), findsOneWidget);
 
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
 
       expect(
-        find.text('Desired campus departure time *'),
+        find.text('Leave campus at *'),
         findsNothing,
       );
     });
@@ -1240,7 +1240,7 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Departing from Campus').last);
+      await tester.tap(find.text('From campus').last);
       await tester.pumpAndSettle();
 
       // Switch to arriving.
@@ -1248,12 +1248,12 @@ void main() {
       await tester.tap(dropdown);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Arriving at Campus').last);
+      await tester.tap(find.text('To campus').last);
       await tester.pumpAndSettle();
 
       expect(find.text('Select time'), findsOneWidget);
       expect(
-        find.text('Desired campus arrival time *'),
+        find.text('Arrive at campus by *'),
         findsOneWidget,
       );
     });

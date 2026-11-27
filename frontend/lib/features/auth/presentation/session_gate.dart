@@ -9,6 +9,7 @@ import '../../profile/presentation/display_profile_page.dart';
 import '../../profile/presentation/edit_profile_page.dart';
 import '../../profile/profile_service.dart';
 import '../../messages/presentation/inbox_page.dart';
+import '../../messages/messaging_controller.dart';
 import '../../../core/navigation/app_shell.dart';
 
 import '../../ride_request/presentation/ride_request_page.dart';
@@ -27,11 +28,18 @@ class SessionGate extends StatefulWidget {
 
 class _SessionGateState extends State<SessionGate> {
   late Future<SessionData?> _sessionFuture;
+  MessagingController? _messagingController;
 
   @override
   void initState() {
     super.initState();
     _sessionFuture = _loadSession();
+  }
+
+  @override
+  void dispose() {
+    _messagingController?.dispose();
+    super.dispose();
   }
 
   Future<SessionData?> _loadSession() async {
@@ -98,11 +106,14 @@ class _SessionGateState extends State<SessionGate> {
             userProfile: session.profile,
           );
         }
+        final messaging = _messagingController ??= MessagingController();
         return AppShell(
+          messagingController: messaging,
           dashboardPage: DashboardPage(user: session.user),
           rideOfferPage: RideOfferPage(userId: session.user.id),
           inboxPage: InboxPage(
             currentUserId: session.user.id,
+            controller: messaging,
             showAppBar: false,
           ),
           user: session.user,

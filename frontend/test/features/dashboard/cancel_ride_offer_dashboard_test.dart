@@ -148,13 +148,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Keep ride'));
     await tester.pumpAndSettle();
-    expect(confirms, [null]);
+    expect(confirms, isEmpty);
     expect(cancelled, isFalse);
     await tester.tap(cancel);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yes, cancel'));
     await tester.pumpAndSettle();
-    expect(confirms, [null, null, 'true']);
+    expect(confirms, ['true']);
     expect(loads, 2);
     expect(find.text('Cancelled'), findsOneWidget);
     expect(cancel, findsNothing);

@@ -37,8 +37,7 @@ public class RetrieveRideOffersService {
             String daysOfWeekStr,
             String rideTypeStr,
             String departureTimeStr,
-            String arrivalTimeStr,
-            String statusStr) {
+            String arrivalTimeStr) {
 
         // 1. Verify user session / existence
         var user = userRepository.findByEmail(email)
@@ -91,9 +90,6 @@ public class RetrieveRideOffersService {
             }
         }
 
-        // Default status to "OPEN" if not provided
-        String status = (statusStr == null || statusStr.isBlank()) ? "OPEN" : statusStr.trim();
-
         // 3. Fetch from repository
         return rideOfferRepository.findFilteredOffers(
                 user.getEmail(),
@@ -103,7 +99,7 @@ public class RetrieveRideOffersService {
                 isRoundTrip,
                 departureTime,
                 arrivalTime,
-                status
+                "OPEN"
         );
     }
 }

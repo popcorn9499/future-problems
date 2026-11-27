@@ -107,7 +107,7 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     if (arrival != null &&
         departure != null &&
         departure!.trim().compareTo(arrival!.trim()) <= 0) {
-      setState(() => error = 'Departure must be later than arrival.');
+      setState(() => error = 'Your campus departure must be after your campus arrival.');
       return;
     }
 
@@ -182,14 +182,14 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                 _field('Street address', street, (value) => street = value),
                 if (arrival != null)
                   _field(
-                    'Arrival (HH:mm)',
+                    'Arrive at campus by (HH:mm)',
                     arrival!,
                     (value) => arrival = value,
                     time: true,
                   ),
                 if (departure != null)
                   _field(
-                    'Departure (HH:mm)',
+                    'Leave campus at (HH:mm)',
                     departure!,
                     (value) => departure = value,
                     time: true,

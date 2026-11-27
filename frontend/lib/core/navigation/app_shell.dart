@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/user_avatar.dart';
@@ -7,6 +9,7 @@ import '../../../core/theme/avatar_color_option.dart';
 
 import 'package:gobison/core/navigation/no_animation_page_route.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
+import 'package:gobison/features/messages/messaging_controller.dart';
 import 'package:gobison/core/services/session_service.dart';
 
 import 'app_sidebar.dart';
@@ -14,6 +17,7 @@ import 'app_sidebar.dart';
 class AppShell extends StatefulWidget {
   final Widget dashboardPage;
   final Widget inboxPage;
+  final MessagingController? messagingController;
   final Widget rideRequestPage;
   final Widget rideOfferPage;
   final Widget mapPage;
@@ -25,6 +29,7 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.dashboardPage,
     required this.inboxPage,
+    this.messagingController,
     required this.rideRequestPage,
     required this.rideOfferPage,
     required this.mapPage,
@@ -37,9 +42,55 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _isSidebarExpanded = true;
+  bool _logoutInProgress = false;
+  Timer? _unreadTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _startUnreadRefresh();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.messagingController != widget.messagingController) {
+      _startUnreadRefresh();
+    }
+  }
+
+  void _startUnreadRefresh() {
+    _unreadTimer?.cancel();
+    final controller = widget.messagingController;
+    if (controller == null) return;
+    unawaited(controller.loadInbox());
+    _unreadTimer = Timer.periodic(
+      const Duration(seconds: 15),
+      (_) => _refreshUnread(),
+    );
+  }
+
+  void _refreshUnread() {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
+    unawaited(widget.messagingController?.loadInbox(silent: true));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshUnread();
+  }
+
+  @override
+  void dispose() {
+    _unreadTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   void _toggleSidebar() {
     setState(() {
@@ -54,6 +105,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> handleLogout() async {
+    if (_logoutInProgress) return;
+    _logoutInProgress = true;
     try {
       await SessionService().logout();
 
@@ -65,6 +118,8 @@ class _AppShellState extends State<AppShell> {
       );
     } catch (e) {
       debugPrint('Logout error: $e');
+    } finally {
+      _logoutInProgress = false;
     }
   }
 
@@ -94,19 +149,23 @@ class _AppShellState extends State<AppShell> {
       _selectedIndex == 1 ? widget.inboxPage : const SizedBox.shrink(),
       widget.rideRequestPage,
       widget.rideOfferPage,
-      widget.mapPage,
+      TickerMode(enabled: _selectedIndex == 4, child: widget.mapPage),
     ];
 
     return Scaffold(
       body: SafeArea(
         child: Row(
           children: [
-            AppSidebar(
-              isExpanded: _isSidebarExpanded,
-              selectedIndex: _selectedIndex,
-              onToggle: _toggleSidebar,
-              onDestinationSelected: _selectPage,
-              onLogout: handleLogout,
+            ListenableBuilder(
+              listenable: Listenable.merge([widget.messagingController]),
+              builder: (context, _) => AppSidebar(
+                isExpanded: _isSidebarExpanded,
+                selectedIndex: _selectedIndex,
+                unreadMessages: widget.messagingController?.unreadCount ?? 0,
+                onToggle: _toggleSidebar,
+                onDestinationSelected: _selectPage,
+                onLogout: handleLogout,
+              ),
             ),
             Expanded(
               child: Column(

@@ -40,7 +40,7 @@ class AuthResponseHandler {
       case 400:
         return 'Verification code is missing or malformed.';
       case 401:
-        return 'User is not authenticated or the authentication token is invalid.';
+        return 'Your session has expired. Sign in again to verify your email.';
       case 409:
         return 'The user\'s university email has already been verified.';
       case 422:

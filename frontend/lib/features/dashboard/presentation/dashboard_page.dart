@@ -96,12 +96,12 @@ class _DashboardPageState extends State<DashboardPage> {
     }).toList();
   }
 
-  Future<bool> _cancelOnServer(RideAgreement ride, {bool confirmed = false}) async {
+  Future<bool> _cancelOnServer(RideAgreement ride) async {
     if (ride.listingType == 'OFFER') {
-      final result = await _offers.cancelRideOffer(ride.listingId, confirmParticipants: confirmed);
+      final result = await _offers.cancelRideOffer(ride.listingId, confirmParticipants: true);
       return result == RideOfferCancellationResult.cancelled;
     }
-    final result = await _requests.cancelRideRequest(ride.listingId, confirmParticipants: confirmed);
+    final result = await _requests.cancelRideRequest(ride.listingId, confirmParticipants: true);
     return result == RideRequestCancellationResult.cancelled;
   }
 
@@ -110,25 +110,29 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() => _busy = true);
     final kind = ride.listingType == 'OFFER' ? 'offer' : 'request';
     try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: Text(
+            ride.roundTripId == null ? 'Cancel $kind?' : 'Cancel both legs?',
+          ),
+          content: const Text('Anyone who joined will lose this ride arrangement.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: const Text('Keep ride'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: const Text('Yes, cancel'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true) return;
       final cancelled = await _cancelOnServer(ride);
       if (!mounted) return;
-      if (!cancelled) {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialog) => AlertDialog(
-            title: Text(ride.roundTripId == null ? 'Cancel $kind?' : 'Cancel both legs?'),
-            content: const Text('Other people have joined this ride. Cancel it for everyone?'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Keep ride')),
-              TextButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Yes, cancel')),
-            ],
-          ),
-        );
-        if (!mounted || confirmed != true) return;
-        final accepted = await _cancelOnServer(ride, confirmed: true);
-        if (!mounted) return;
-        if (!accepted) throw StateError('Cancellation was not confirmed');
-      }
+      if (!cancelled) throw StateError('Cancellation was not confirmed');
       await _dashboardController.loadAgreements();
       if (!mounted) return;
       final suffix = _dashboardController.errorMessage == null ? '' : ' Pull to refresh your dashboard.';
@@ -774,8 +778,8 @@ class _RideTime extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = agreement.rideType == 'ARRIVAL'
-        ? 'ARRIVAL TIME'
-        : 'DEPARTURE TIME';
+        ? 'Arrive at campus by'
+        : 'Leave campus at';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,

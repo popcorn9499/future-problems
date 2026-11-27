@@ -124,7 +124,6 @@ class RideOfferService {
     String? rideType,
     String? departureTime,
     String? arrivalTime,
-    String? status,
   }) async {
     // Build a map of query parameters, omitting null or empty values
     final queryParams = <String, String>{};
@@ -143,9 +142,6 @@ class RideOfferService {
     }
     if (arrivalTime != null && arrivalTime.isNotEmpty) {
       queryParams['arrivalTime'] = arrivalTime;
-    }
-    if (status != null && status.isNotEmpty) {
-      queryParams['status'] = status;
     }
 
     // Construct the URI and attach query parameters only if the map is not empty

@@ -203,6 +203,20 @@ void main() {
       expect(controller.isLoading, isFalse);
     });
 
+    test('verifyEmail asks the user to sign in when the session expires', () async {
+      authService.onVerifyEmail = () async {
+        throw Exception('Account verification failed (401): Unauthorized');
+      };
+
+      await controller.emailVerification(code: '123456');
+
+      expect(
+        controller.errorMessage,
+        'Your session has expired. Sign in again to verify your email.',
+      );
+      expect(controller.isLoading, isFalse);
+    });
+
     test('sets loading while email verification is in progress', () async {
       final completer = Completer<Map<String, dynamic>>();
 
