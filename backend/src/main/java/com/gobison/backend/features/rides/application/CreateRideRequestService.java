@@ -33,7 +33,6 @@ public class CreateRideRequestService {
 
     public List<RideRequest> create(String email, CreateRideRequestRequest request) {
         var user = userRepository.findByEmail(email)
-                .filter(owner -> !owner.isDeleted())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
         if (!user.isVerified()) {
