@@ -13,33 +13,23 @@ class PickupMapButton extends StatelessWidget {
 
   final LatLng? point;
   final LatLng? savedPoint;
-  final ValueChanged<LatLng?>? onChanged;
+  final ValueChanged<LatLng>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     final change = onChanged;
-    return Wrap(
-      spacing: 8,
-      children: [
-        OutlinedButton.icon(
-          icon: const Icon(Icons.map_outlined),
-          label: Text(point == null ? 'Pick on map' : 'Move pickup pin'),
-          onPressed: change == null
-              ? null
-              : () async {
-                  final result = await showDialog<LatLng>(
-                    context: context,
-                    builder: (_) => PickupMapDialog(initialPoint: point ?? savedPoint),
-                  );
-                  if (context.mounted && result != null) change(result);
-                },
-        ),
-        if (point != null)
-          TextButton(
-            onPressed: change == null ? null : () => change(null),
-            child: const Text('Use street address'),
-          ),
-      ],
+    return IconButton(
+      icon: const Icon(Icons.map_outlined),
+      tooltip: point == null ? 'Pick on map' : 'Move pickup pin',
+      onPressed: change == null
+          ? null
+          : () async {
+              final result = await showDialog<LatLng>(
+                context: context,
+                builder: (_) => PickupMapDialog(initialPoint: point ?? savedPoint),
+              );
+              if (context.mounted && result != null) change(result);
+            },
     );
   }
 }
@@ -62,8 +52,8 @@ class _PickupMapDialogState extends State<PickupMapDialog> {
     return AlertDialog(
       title: const Text('Pick a pickup location'),
       content: SizedBox(
-        width: 560,
-        height: MediaQuery.sizeOf(context).height * 0.5,
+        width: 680,
+        height: MediaQuery.sizeOf(context).height * 0.6,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

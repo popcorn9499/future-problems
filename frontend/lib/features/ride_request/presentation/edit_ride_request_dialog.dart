@@ -86,11 +86,12 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
     bool time = false,
     bool required = true,
     Key? key,
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       key: key,
       initialValue: value,
-      decoration: InputDecoration(labelText: label),
+      decoration: InputDecoration(labelText: label, suffixIcon: suffixIcon),
       enabled: !saving,
       onChanged: change,
       validator: (text) {
@@ -202,17 +203,27 @@ class _EditRideRequestDialogState extends State<EditRideRequestDialog> {
                   (value) => street = value,
                   required: pickupPoint == null,
                   key: ValueKey(pickupPoint == null),
+                  suffixIcon: PickupMapButton(
+                    point: pickupPoint,
+                    savedPoint: savedPoint,
+                    onChanged: saving
+                        ? null
+                        : (point) => setState(() => pickupPoint = point),
+                  ),
                 ),
-                PickupMapButton(
-                  point: pickupPoint,
-                  savedPoint: savedPoint,
-                  onChanged: saving
-                      ? null
-                      : (point) => setState(() {
-                          if (point == null) street = '';
-                          pickupPoint = point;
-                        }),
-                ),
+                if (pickupPoint != null)
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(
+                      onPressed: saving
+                          ? null
+                          : () => setState(() {
+                              street = '';
+                              pickupPoint = null;
+                            }),
+                      child: const Text('Use street address'),
+                    ),
+                  ),
                 if (arrival != null)
                   _field(
                     'Arrive at campus by (HH:mm)',

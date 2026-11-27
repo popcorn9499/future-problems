@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gobison/core/widgets/pickup_map_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -90,10 +91,14 @@ void main() {
     );
     if (pickLocation) {
       await tester.enterText(find.byType(TextFormField).first, 'Winnipeg');
-      final pick = find.text('Pick on map');
+      final pick = find.descendant(
+        of: find.byType(TextFormField).at(1),
+        matching: find.byTooltip('Pick on map'),
+      );
       await tester.ensureVisible(pick);
       await tester.tap(pick);
       await tester.pumpAndSettle();
+      expect(tester.getSize(find.byType(FlutterMap)).width, 680);
       await tester.tapAt(tester.getCenter(find.byType(FlutterMap)));
       await tester.pump(const Duration(milliseconds: 350));
       await tester.tap(find.text('Cancel'));
@@ -135,6 +140,22 @@ void main() {
   }
 
   group('RideRequestPage', () {
+    testWidgets('pickup map actions fit on a narrow screen', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const MaterialApp(home: PickupMapDialog()));
+      await tester.pumpAndSettle();
+
+      final map = find.byType(FlutterMap);
+      expect(tester.getSize(map).width, lessThan(360));
+      await tester.tapAt(tester.getCenter(map));
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.text('Cancel').hitTestable(), findsOneWidget);
+      expect(find.text('Use this location').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('submits a map pickup with no label', (tester) async {
       final writes = <Map<String, dynamic>>[];
       final client = MockClient((request) async {

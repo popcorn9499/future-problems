@@ -211,15 +211,27 @@ class _RideRequestPageState extends State<RideRequestPage> {
                               includesAsterisk: _pickupPoint == null,
                               controller: _streetAddressController,
                               icon: Icons.location_on_outlined,
+                              suffixIcon: PickupMapButton(
+                                point: _pickupPoint,
+                                onChanged: _rideRequestController.isLoading
+                                    ? null
+                                    : (point) => setState(() => _pickupPoint = point),
+                              ),
                             ),
                           ),
-                          PickupMapButton(
-                            point: _pickupPoint,
-                            onChanged: (point) => setState(() {
-                              if (point == null) _streetAddressController.clear();
-                              _pickupPoint = point;
-                            }),
-                          ),
+                          if (_pickupPoint != null)
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: TextButton(
+                                onPressed: _rideRequestController.isLoading
+                                    ? null
+                                    : () => setState(() {
+                                        _streetAddressController.clear();
+                                        _pickupPoint = null;
+                                      }),
+                                child: const Text('Use street address'),
+                              ),
+                            ),
 
                           const SizedBox(height: 24),
 

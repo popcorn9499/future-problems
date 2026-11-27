@@ -10,6 +10,7 @@ class RideTextField extends StatelessWidget {
     required this.icon,
     this.includesAsterisk = true,
     this.maxLines = 1,
+    this.suffixIcon,
   });
 
   final String label;
@@ -18,6 +19,7 @@ class RideTextField extends StatelessWidget {
   final IconData icon;
   final bool includesAsterisk;
   final int maxLines;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +50,7 @@ class RideTextField extends StatelessWidget {
           decoration: InputDecoration(
             errorMaxLines: 2,
             hintText: hint,
+            suffixIcon: suffixIcon,
             prefixIcon: Icon(
               icon,
               color: AppColors.primary,

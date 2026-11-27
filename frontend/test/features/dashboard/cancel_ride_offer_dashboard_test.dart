@@ -93,7 +93,7 @@ void main() {
       expect(gets, unorderedEquals(ids));
       expect(find.text(roundTrip ? 'Edit both legs' : 'Edit ride offer'), findsOneWidget);
       if (roundTrip) {
-        await tester.tap(find.text('Pick on map'));
+        await tester.tap(find.byTooltip('Pick on map'));
         await tester.pumpAndSettle();
         final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
         expect(map.options.initialCenter, const LatLng(49.88, -97.12));
