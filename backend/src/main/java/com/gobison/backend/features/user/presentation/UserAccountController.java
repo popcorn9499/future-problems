@@ -82,7 +82,8 @@ public class UserAccountController {
                 user.getAge(),
                 user.getPronouns(),
                 user.getDescription(),
-                user.getAvatarColor()
+                user.getAvatarColor(),
+                null
         ));
     }
 
