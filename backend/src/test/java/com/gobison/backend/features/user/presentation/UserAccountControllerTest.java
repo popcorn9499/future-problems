@@ -81,6 +81,19 @@ class UserAccountControllerTest {
     }
 
     @Test
+    void calculatesAgeFromDateOfBirthWhenProfileIsLoaded() throws Exception {
+        LocalDate dateOfBirth = LocalDate.now().minusYears(24);
+        User user = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
+        user.setDateOfBirth(dateOfBirth);
+        when(users.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+        mvc.perform(get(ENDPOINT).with(user(EMAIL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dateOfBirth").value(dateOfBirth.toString()))
+                .andExpect(jsonPath("$.age").value(24));
+    }
+
+    @Test
     void rejectsAuthenticatedPrincipalWithoutAnAccount() throws Exception {
         when(users.findByEmail(EMAIL)).thenReturn(Optional.empty());
 

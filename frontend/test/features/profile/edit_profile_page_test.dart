@@ -60,12 +60,7 @@ void main() {
     expect(find.text('First Name'), findsOneWidget);
     expect(find.text('Last Name'), findsOneWidget);
     expect(find.text('Date of Birth'), findsOneWidget);
-    expect(
-      find.text(
-        'You must be at least 15. Only your age appears on your profile.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining('You must be at least 15'), findsNothing);
     expect(find.text('She/her'), findsOneWidget);
     expect(find.text('About Me'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
@@ -176,6 +171,16 @@ void main() {
     expect(calendar.lastDate, expectedLatestBirthday);
     final calendarContext = tester.element(find.byType(CalendarDatePicker));
     expect(MediaQuery.textScalerOf(calendarContext).scale(10), 10.5);
+    expect(
+      find.ancestor(
+        of: find.byType(DatePickerDialog),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Padding && widget.padding == const EdgeInsets.all(16),
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('cancel returns to previous page when there are no changes', (

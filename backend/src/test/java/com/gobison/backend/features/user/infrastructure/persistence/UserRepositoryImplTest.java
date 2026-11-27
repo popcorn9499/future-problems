@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDate;
+import java.time.Period;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,6 +22,9 @@ class UserRepositoryImplTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserJpaRepository userJpaRepository;
 
     private final List<String> testEmails = new ArrayList<>();
 
@@ -236,6 +241,34 @@ class UserRepositoryImplTest {
                 () -> assertEquals(25, updated.getAge()),
                 () -> assertEquals("A short profile", updated.getDescription()),
                 () -> assertEquals("#123ABC", updated.getAvatarColor())
+        );
+    }
+
+    @Test
+    void persistsBirthdayAndCalculatesAgeWhenProfileIsReloaded() {
+        User original = createTestUser("Birthday", "Student", true);
+        userRepository.save(original);
+
+        LocalDate dateOfBirth = LocalDate.now().minusYears(22);
+        User profileUpdate = new User(
+                original.getEmail(),
+                original.getPassword(),
+                original.getFirstName(),
+                original.getLastName(),
+                true
+        );
+        profileUpdate.setDateOfBirth(dateOfBirth);
+        profileUpdate.setAge(null);
+
+        userRepository.update(profileUpdate);
+
+        UserEntity persisted = userJpaRepository.findById(original.getEmail()).orElseThrow();
+        User restored = userRepository.findByEmail(original.getEmail()).orElseThrow();
+        int expectedAge = Period.between(dateOfBirth, LocalDate.now()).getYears();
+        assertAll(
+                () -> assertEquals(dateOfBirth, persisted.getDateOfBirth()),
+                () -> assertNull(persisted.getAge()),
+                () -> assertEquals(expectedAge, restored.getAge())
         );
     }
 
