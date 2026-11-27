@@ -76,7 +76,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void _reloadAgreements() => _dashboardController.loadAgreements();
   
   void _showProfile(AgreementMember member) =>
-    showProfilePopup(context, member: member, service: _profiles);
+    showProfilePopup(context, member: member, currentUserId: widget.user.id, service: _profiles);
 
   @override
   void dispose() {

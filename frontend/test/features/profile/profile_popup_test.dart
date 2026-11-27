@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,8 @@ import 'package:http/testing.dart';
 import 'package:gobison/core/models/ride_agreement.dart';
 import 'package:gobison/features/profile/presentation/profile_popup.dart';
 import 'package:gobison/features/profile/profile_service.dart';
+import 'package:gobison/features/messages/messaging_service.dart';
+import 'package:gobison/features/messages/presentation/chat_page.dart';
 
 void main() {
   const member = AgreementMember(
@@ -17,35 +20,44 @@ void main() {
   );
 
   Future<void> openPopup(
-    WidgetTester tester,
-    http.Client client, {
-    Size size = const Size(1000, 800),
-  }) async {
-    tester.view.physicalSize = size;
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
+  WidgetTester tester,
+  http.Client client, {
+  Size size = const Size(1000, 800),
+  String currentUserId = 'current-user@myumanitoba.ca',
+  http.Client? messagingClient,
+}) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: ElevatedButton(
-                onPressed: () => showProfilePopup(
-                  context,
-                  member: member,
-                  service: ProfileService(client: client),
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => showProfilePopup(
+                context,
+                member: member,
+                currentUserId: currentUserId,
+                service: ProfileService(client: client),
+                messagingService: MessagingService(
+                  client: messagingClient ?? MockClient((_) async {
+                    return http.Response('', 500);
+                  }),
                 ),
-                child: const Text('open'),
               ),
+              child: const Text('open'),
             ),
           ),
         ),
       ),
-    );
-    await tester.tap(find.text('open'));
-    await tester.pump();
-  }
+    ),
+  );
+
+  await tester.tap(find.text('open'));
+  await tester.pump();
+}
 
   testWidgets('shows the name and a spinner while loading', (tester) async {
     final completer = Completer<http.Response>();
@@ -165,4 +177,199 @@ void main() {
     expect(find.byType(BottomSheet), findsOneWidget);
     expect(find.byType(Dialog), findsNothing);
   });
+
+  testWidgets('shows a message button when viewing another user', (
+  tester,
+) async {
+    await openPopup(
+      tester,
+      MockClient(
+        (_) async => http.Response('{"firstName":"Ada"}', 200),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Message'), findsOneWidget);
+  });
+
+  testWidgets('Message opens a chat with the selected user', (
+  tester,
+) async {
+  final requests = <http.Request>[];
+
+  final messagingClient = MockClient((request) async {
+    requests.add(request);
+
+    if (request.method == 'POST' &&
+        request.url.path.endsWith('/api/v1/conversation')) {
+      return http.Response(
+        '{"conversationId":"conversation-123"}',
+        201,
+      );
+    }
+
+    if (request.method == 'GET' &&
+        request.url.path.endsWith('/api/v1/conversations')) {
+      return http.Response(
+        jsonEncode({
+          'conversations': [
+            {
+              'conversationId': 'conversation-123',
+              'participant': {
+                'userId': 'ada@myumanitoba.ca',
+                'firstName': 'Ada',
+                'lastName': 'Lovelace',
+              },
+              'lastMessage': '',
+              'lastMessageAt': null,
+              'unreadCount': 0,
+            },
+          ],
+        }),
+        200,
+      );
+    }
+
+    if (request.url.path.endsWith('/messages')) {
+      return http.Response('{"messages":[]}', 200);
+    }
+
+    if (request.method == 'PATCH') {
+      return http.Response('{}', 200);
+    }
+
+    return http.Response('Not found', 404);
+  });
+
+  await openPopup(
+    tester,
+    MockClient(
+      (_) async => http.Response('{"firstName":"Ada"}', 200),
+    ),
+    messagingClient: messagingClient,
+  );
+
+  await tester.pumpAndSettle();
+
+  await tester.tap(find.text('Message'));
+  await tester.pumpAndSettle();
+
+  // Verify the conversation creation request.
+  final createRequest = requests.firstWhere(
+    (request) =>
+        request.method == 'POST' &&
+        request.url.path.endsWith('/api/v1/conversation'),
+  );
+
+  expect(
+    jsonDecode(createRequest.body)['participantId'],
+    'ada@myumanitoba.ca',
+  );
+
+  // Verify the conversation was retrieved from the inbox.
+  expect(
+    requests.any(
+      (request) =>
+          request.url.path.endsWith('/api/v1/conversations'),
+    ),
+    isTrue,
+  );
+
+  // verify navigation to the correct chat
+  expect(find.byType(ChatPage), findsOneWidget);
+  expect(find.text('Ada Lovelace'), findsOneWidget);
+  });
+
+  testWidgets('does not show Message when viewing your own profile', (
+  tester,
+) async {
+  await openPopup(
+    tester,
+    MockClient(
+      (_) async => http.Response('{"firstName":"Ada"}', 200),
+    ),
+    currentUserId: 'ada@myumanitoba.ca',
+  );
+
+  await tester.pumpAndSettle();
+
+  expect(find.text('Message'), findsNothing);
+});
+
+testWidgets('shows an error when messaging fails and allows retry', (
+  tester,
+) async {
+  var calls = 0;
+
+  final messagingClient = MockClient((request) async {
+    if (request.method == 'POST') {
+      calls++;
+
+      if (calls == 1) {
+        return http.Response('Server error', 500);
+      }
+
+      return http.Response(
+        '{"conversationId":"conversation-123"}',
+        201,
+      );
+    }
+
+    if (request.url.path.endsWith('/api/v1/conversations')) {
+      return http.Response(
+        jsonEncode({
+          'conversations': [
+            {
+              'conversationId': 'conversation-123',
+              'participant': {
+                'userId': 'ada@myumanitoba.ca',
+                'firstName': 'Ada',
+                'lastName': 'Lovelace',
+              },
+              'lastMessage': '',
+              'lastMessageAt': null,
+              'unreadCount': 0,
+            },
+          ],
+        }),
+        200,
+      );
+    }
+
+    if (request.url.path.endsWith('/messages')) {
+      return http.Response('{"messages":[]}', 200);
+    }
+
+    if (request.method == 'PATCH') {
+      return http.Response('{}', 200);
+    }
+
+    return http.Response('Not found', 404);
+  });
+
+  await openPopup(
+    tester,
+    MockClient(
+      (_) async => http.Response('{"firstName":"Ada"}', 200),
+    ),
+    messagingClient: messagingClient,
+  );
+
+  await tester.pumpAndSettle();
+
+  await tester.tap(find.text('Message'));
+  await tester.pumpAndSettle();
+
+  expect(
+    find.text('Could not open the chat. Try again.'),
+    findsOneWidget,
+  );
+
+  // Retry opening the conversation.
+  await tester.tap(find.text('Message'));
+  await tester.pumpAndSettle();
+
+  expect(calls, 2);
+  expect(find.byType(ChatPage), findsOneWidget);
+});
 }

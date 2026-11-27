@@ -7,15 +7,23 @@ import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/widgets/user_avatar.dart';
 import '../profile_controller.dart' show extractErrorCode;
 import '../profile_service.dart';
+import '../../messages/messaging_controller.dart';
+import '../../messages/messaging_service.dart';
+import '../../messages/models/conversation.dart';
+import '../../messages/presentation/chat_page.dart';
 
 Future<void> showProfilePopup(
   BuildContext context, {
   required AgreementMember member,
+  required String currentUserId,
   ProfileService? service,
+  MessagingService? messagingService,
 }) {
   final popup = _ProfilePopup(
     member: member,
+    currentUserId: currentUserId,
     service: service ?? ProfileService(),
+    messagingService: messagingService ?? MessagingService(),
   );
 
   if (MediaQuery.sizeOf(context).width < 600) {
@@ -43,10 +51,17 @@ Future<void> showProfilePopup(
 }
 
 class _ProfilePopup extends StatefulWidget {
-  const _ProfilePopup({required this.member, required this.service});
+  const _ProfilePopup({
+    required this.member,
+    required this.currentUserId,
+    required this.service,
+    required this.messagingService,
+  });
 
   final AgreementMember member;
+  final String currentUserId;
   final ProfileService service;
+  final MessagingService messagingService;
 
   @override
   State<_ProfilePopup> createState() => _ProfilePopupState();
@@ -58,6 +73,55 @@ class _ProfilePopupState extends State<_ProfilePopup> {
   static const _ringWidth = 3.0;
 
   late Future<UserProfile> _profile;
+  bool _isOpeningChat = false;
+  String? _chatError;
+
+  bool get _canMessage =>
+      widget.member.id.trim().isNotEmpty &&
+      widget.member.id.trim().toLowerCase() !=
+          widget.currentUserId.trim().toLowerCase();
+
+  Future<void> _openChat() async {
+    if (_isOpeningChat || !_canMessage) return;
+
+    setState(() {
+      _isOpeningChat = true;
+      _chatError = null;
+    });
+
+    final navigator = Navigator.of(context);
+    try {
+      final conversation = await widget.messagingService.startConversation(
+        widget.member.id,
+      );
+      if (!mounted) return;
+
+      // Close the profile dialog/bottom sheet before opening the chat.
+      navigator.pop();
+      final controller = MessagingController(
+        messagingService: widget.messagingService,
+      );
+      try {
+        await navigator.push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => ChatPage(
+              conversation: conversation,
+              currentUserId: widget.currentUserId,
+              controller: controller,
+            ),
+          ),
+        );
+      } finally {
+        controller.dispose();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isOpeningChat = false;
+        _chatError = 'Could not open the chat. Try again.';
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -158,6 +222,33 @@ class _ProfilePopupState extends State<_ProfilePopup> {
                         _ErrorBlock(error: snapshot.error!, onRetry: _retry)
                       else
                         _Details(profile: profile!),
+                      if (_canMessage) ...[
+                        const SizedBox(height: 12),
+                        if (_chatError != null) ...[
+                          Text(
+                            _chatError!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppColors.error),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        FilledButton.icon(
+                          onPressed: _isOpeningChat ? null : _openChat,
+                          icon: _isOpeningChat
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.chat_bubble_outline),
+                          label: Text(
+                            _isOpeningChat ? 'Opening chat…' : 'Message',
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
