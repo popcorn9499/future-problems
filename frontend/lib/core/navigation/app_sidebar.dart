@@ -7,6 +7,7 @@ import 'navigation_item.dart';
 class AppSidebar extends StatelessWidget {
   final bool isExpanded;
   final int selectedIndex;
+  final int unreadMessages;
   final VoidCallback onToggle;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onLogout;
@@ -15,6 +16,7 @@ class AppSidebar extends StatelessWidget {
     super.key,
     required this.isExpanded,
     required this.selectedIndex,
+    this.unreadMessages = 0,
     required this.onToggle,
     required this.onDestinationSelected,
     required this.onLogout,
@@ -77,6 +79,7 @@ class AppSidebar extends StatelessWidget {
           NavigationItem(
             label: 'Messages',
             icon: Icons.chat_bubble_outline_rounded,
+            unreadCount: unreadMessages,
             isSelected: selectedIndex == 1,
             isExpanded: isExpanded,
             onTap: () => onDestinationSelected(1),

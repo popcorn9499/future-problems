@@ -9,6 +9,7 @@ import 'package:http/testing.dart';
 
 import 'package:gobison/core/models/user.dart';
 import 'package:gobison/features/ride_request/ride_request_service.dart';
+import 'package:gobison/features/ride_offer/ride_offer_service.dart';
 import 'package:gobison/features/dashboard/dashboard_service.dart';
 import 'package:gobison/features/dashboard/presentation/dashboard_page.dart';
 
@@ -133,6 +134,7 @@ Future<void> _pumpPage(
         body: DashboardPage(
           user: _currentUser,
           rideRequestService: RideRequestService(client: client),
+          rideOfferService: RideOfferService(client: client),
           dashboardService: DashboardService(
             client: client,
           ),
@@ -267,17 +269,65 @@ void main() {
     await tester.ensureVisible(button);
     await tester.tap(button);
     await tester.pumpAndSettle();
+    expect(find.text('Cancel both legs?'), findsOneWidget);
+    expect(deletes, isEmpty);
     await tester.tap(find.text('Keep ride'));
     await tester.pumpAndSettle();
-    expect(deletes.single.queryParameters, isEmpty);
+    expect(deletes, isEmpty);
     await tester.tap(button);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yes, cancel'));
     await tester.pumpAndSettle();
-    expect(deletes.map((uri) => uri.queryParameters['confirmParticipants']), [null, null, 'true']);
+    expect(deletes.map((uri) => uri.queryParameters['confirmParticipants']), ['true']);
     expect(button, findsNothing);
     expect(find.text('Ride request cancelled.'), findsOneWidget);
   });
+
+  for (final kind in ['offer', 'request']) {
+    testWidgets('confirms a single $kind cancellation before sending it', (tester) async {
+      var cancelled = false;
+      final deletes = <Uri>[];
+      final client = MockClient((request) async {
+        if (request.method == 'GET') {
+          return _ok([
+            {
+              ..._agreement(
+                listingId: 'one-ride',
+                createdByCurrentUser: true,
+                status: cancelled ? 'CANCELLED' : 'OPEN',
+              ),
+              'listingType': kind.toUpperCase(),
+            },
+          ]);
+        }
+        expect(request.method, 'DELETE');
+        deletes.add(request.url);
+        cancelled = true;
+        return http.Response('', 204);
+      });
+      addTearDown(client.close);
+      await _pumpPage(tester, client);
+      await tester.pumpAndSettle();
+      final cancel = find.text('Cancel $kind');
+      await tester.ensureVisible(cancel);
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      expect(find.text('Cancel $kind?'), findsOneWidget);
+      expect(deletes, isEmpty);
+
+      await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(deletes, isEmpty);
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yes, cancel'));
+      await tester.pumpAndSettle();
+      expect(deletes.single.path, '/api/v1/rides/${kind}s/one-ride');
+      expect(deletes.single.queryParameters, {'confirmParticipants': 'true'});
+      expect(cancel, findsNothing);
+    });
+  }
 
   group('loading, empty and error states', () {
     testWidgets(
@@ -395,7 +445,7 @@ void main() {
           find.text('University of Manitoba'),
           findsOneWidget,
         );
-        expect(find.text('ARRIVAL TIME'), findsOneWidget);
+        expect(find.text('Arrive at campus by'), findsOneWidget);
         expect(find.text('7:45 AM'), findsOneWidget);
       },
     );
@@ -668,8 +718,8 @@ void main() {
           find.text('TWO LEGS · ONE ROUND TRIP'),
           findsOneWidget,
         );
-        expect(find.text('ARRIVAL TIME'), findsOneWidget);
-        expect(find.text('DEPARTURE TIME'), findsOneWidget);
+        expect(find.text('Arrive at campus by'), findsOneWidget);
+        expect(find.text('Leave campus at'), findsOneWidget);
       },
     );
 
@@ -698,10 +748,10 @@ void main() {
         ]);
 
         final arrivalPosition = tester.getTopLeft(
-          find.text('ARRIVAL TIME'),
+          find.text('Arrive at campus by'),
         );
         final departurePosition = tester.getTopLeft(
-          find.text('DEPARTURE TIME'),
+          find.text('Leave campus at'),
         );
 
         expect(

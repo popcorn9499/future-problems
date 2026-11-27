@@ -2,6 +2,8 @@
 
 GoBison is hosted at [gobison.popicraft.net](https://gobison.popicraft.net) on a Hetzner VPS.
 
+Test site hosted at [test.gobison.popicraft.net](https://test.gobison.popicraft.net) now now live
+
 ## Server environment
 
 | Component | Version / purpose |
@@ -45,12 +47,14 @@ The frontend uses `http://localhost:8080` as its default API URL. Override it wi
 
 GitHub Actions runs backend verification and Flutter analysis/tests on pushes and pull requests. CI uses Java 21, PostgreSQL 17, and Flutter 3.47.7 stable.
 
-The deployment workflows run on pushes to `master`. Configure the `DEPLOY_SSH_KEY` GitHub Actions secret with the private key for `deploybot` on `popicraft.net` (SSH port 2525). The deploy account must be able to write to the deployment directories and restart the `gobison-backend` systemd service.
+The deployment workflows run after successful CI on `master` and `dev`. Configure the `DEPLOY_SSH_KEY` GitHub Actions secret with the private key for `deploybot` on `popicraft.net` (SSH port 2525). The deploy account must be able to write to both deployment directories and restart both backend systemd services.
 
-| Workflow | Deployment action |
-| --- | --- |
-| Backend | Builds and verifies the app, uploads the JAR to `/home/deploybot/gobison-backend/backend.jar`, then restarts the service. |
-| Frontend | Builds the web release with `API_BASE_URL=https://gobison.popicraft.net` and syncs it to `/var/www/gobison/`. |
+| Workflow | `master` deployment | `dev` deployment |
+| --- | --- | --- |
+| Backend | Uploads the JAR to `/home/deploybot/gobison-backend/backend.jar`; restarts `gobison-backend.service` (port 3000). | Uploads the JAR to `/home/deploybot/gobison-backend-dev/backend.jar`; restarts `gobison-backend-dev.service` (configure it to listen on port 3001). |
+| Frontend | Builds with `API_BASE_URL=https://gobison.popicraft.net`; syncs to `/var/www/gobison/`. | Builds with `API_BASE_URL=https://test.gobison.popicraft.net`; syncs to `/var/www/test.gobison/`. |
+
+Provision the dev systemd service and web-server virtual host separately: `test.gobison.popicraft.net` must serve `/var/www/test.gobison/` and proxy API requests to the dev backend on port 3001. The workflows deploy files and restart services; they do not configure the server or DNS.
 
 The backend service reads database and mail settings from `local.properties` in its working directory. Keep the production file at `/home/deploybot/gobison-backend/local.properties`; deployment replaces only the JAR. The database credentials used in CI are for its temporary test database, not production.
 

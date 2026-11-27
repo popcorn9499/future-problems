@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/avatar_color_option.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/user_avatar.dart';
+import '../../../core/widgets/unread_message_badge.dart';
 import '../messaging_controller.dart';
 import '../models/conversation.dart';
 import 'chat_page.dart';
@@ -32,7 +33,9 @@ class _InboxPageState extends State<InboxPage> {
     super.initState();
     _ownsController = widget.controller == null;
     _controller = widget.controller ?? MessagingController();
-    _controller.loadInbox();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.loadInbox();
+    });
   }
 
   @override
@@ -181,21 +184,7 @@ class _InboxTile extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           if (conversation.unreadCount > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                '${conversation.unreadCount}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            UnreadMessageBadge(count: conversation.unreadCount),
         ],
       ),
     );

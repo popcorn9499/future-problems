@@ -9,7 +9,10 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 //implements the domain interface by calling the JPA repository and converting between User and UserEntity
 @Repository
@@ -39,6 +42,12 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByEmail(String email) {
         return jpaRepository.findByEmail(email)
                 .map(this::toDomain);
+    }
+
+    @Override
+    public Map<String, User> findAllByEmail(Collection<String> emails) {
+        return jpaRepository.findAllById(emails).stream()
+                .collect(Collectors.toMap(UserEntity::getEmail, this::toDomain));
     }
 
     @Override
