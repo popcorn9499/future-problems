@@ -9,7 +9,6 @@ import '../profile_controller.dart' show extractErrorCode;
 import '../profile_service.dart';
 import '../../messages/messaging_controller.dart';
 import '../../messages/messaging_service.dart';
-import '../../messages/models/conversation.dart';
 import '../../messages/presentation/chat_page.dart';
 
 Future<void> showProfilePopup(

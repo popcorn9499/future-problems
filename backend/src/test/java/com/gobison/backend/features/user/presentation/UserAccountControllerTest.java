@@ -247,7 +247,7 @@ class UserAccountControllerTest {
     }
 
     @Test
-    void meStillMeansTheLoggedInUser() throws Exception {
+    void ownProfilePathNotTreatedAsAnotherUsersId() throws Exception {
         User own = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
         when(users.findByEmail(EMAIL)).thenReturn(Optional.of(own));
 
