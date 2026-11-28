@@ -203,8 +203,12 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
                         const SizedBox(height: 32),
                         if (_hasText(_profile.description))
                           _section(context, 'About Me', _profile.description!),
-                        if (_profile.age != null)
-                          _section(context, 'Age', _profile.age.toString()),
+                        if (_profile.displayAge != null)
+                          _section(
+                            context,
+                            'Age',
+                            _profile.displayAge.toString(),
+                          ),
                         if (_hasText(_profile.pronouns))
                           _section(context, 'Pronouns', _profile.pronouns!),
                       ],
@@ -270,12 +274,17 @@ class _DisplayProfilePageState extends State<DisplayProfilePage> {
   bool _hasText(String? value) => value != null && value.trim().isNotEmpty;
 
   Widget _section(BuildContext context, String title, String value) {
-    return Card(
-      color: Colors.white,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: ListTile(title: Text(title), subtitle: Text(value)),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 680),
+        child: Card(
+          color: Colors.white,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: ListTile(title: Text(title), subtitle: Text(value)),
+          ),
+        ),
       ),
     );
   }

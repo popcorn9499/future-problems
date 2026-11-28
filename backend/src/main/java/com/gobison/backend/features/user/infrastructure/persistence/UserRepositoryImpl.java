@@ -62,7 +62,8 @@ public class UserRepositoryImpl implements UserRepository {
         entity.setVerificationCode(user.getVerificationCode());
         entity.setDeleted(user.isDeleted());
         entity.setPronouns(user.getPronouns());
-        entity.setAge(user.getAge());
+        entity.setAge(ageToPersist(user));
+        entity.setDateOfBirth(user.getDateOfBirth());
         entity.setDescription(user.getDescription());
         entity.setAvatarColor(user.getAvatarColor());
 
@@ -92,11 +93,18 @@ public class UserRepositoryImpl implements UserRepository {
         entity.setFirstName(user.getFirstName());
         entity.setLastName(user.getLastName());
         entity.setPronouns(user.getPronouns());
-        entity.setAge(user.getAge());
+        entity.setAge(ageToPersist(user));
+        entity.setDateOfBirth(user.getDateOfBirth());
         entity.setDescription(user.getDescription());
         entity.setAvatarColor(user.getAvatarColor());
 
         return toDomain(jpaRepository.save(entity));
+    }
+
+    private Integer ageToPersist(User user) {
+        // A birthday is the source of truth; calculate age when reading the profile.
+        // Keep legacy age values only for records that do not have a birthday.
+        return user.getDateOfBirth() == null ? user.getAge() : null;
     }
 
     private User toDomain(UserEntity entity) {
@@ -111,6 +119,7 @@ public class UserRepositoryImpl implements UserRepository {
         user.setDeleted(entity.isDeleted());
         user.setPronouns(entity.getPronouns());
         user.setAge(entity.getAge());
+        user.setDateOfBirth(entity.getDateOfBirth());
         user.setDescription(entity.getDescription());
         user.setAvatarColor(entity.getAvatarColor());
         return user;

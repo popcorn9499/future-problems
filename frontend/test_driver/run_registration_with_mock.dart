@@ -60,6 +60,20 @@ Future<void> main(List<String> args) async {
       } else {
         response.write(jsonEncode(user(sessions[sessionId]!)));
       }
+    } else if (request.method == 'GET' &&
+        request.uri.path == '/api/v1/users/me/profile') {
+      if (sessionId == null) {
+        response.statusCode = HttpStatus.unauthorized;
+        response.write(jsonEncode({'message': 'Invalid authentication'}));
+      } else {
+        response.write(
+          jsonEncode({
+            'firstName': 'Test',
+            'lastName': 'User',
+            'avatarColor': '#E9DFD2',
+          }),
+        );
+      }
     } else if (request.method == 'POST' &&
         request.uri.path == '/api/v1/auth/login') {
       try {

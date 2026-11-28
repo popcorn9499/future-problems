@@ -1,18 +1,24 @@
 package com.gobison.backend.features.user.presentation.dto;
 
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.AssertTrue;
+
+import java.time.LocalDate;
 
 public class UpdateProfileRequest {
 
     private String firstName;
     private String lastName;
     private Integer age;
+    private LocalDate dateOfBirth;
     private String pronouns;
     private String description;
     private String avatarColor;
     private boolean firstNameProvided;
     private boolean lastNameProvided;
     private boolean ageProvided;
+    private boolean dateOfBirthProvided;
     private boolean pronounsProvided;
     private boolean descriptionProvided;
     private boolean avatarColorProvided;
@@ -57,6 +63,27 @@ public class UpdateProfileRequest {
 
     public boolean hasAge() {
         return ageProvided;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    @JsonSetter("dateOfBirth")
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+        this.dateOfBirthProvided = true;
+    }
+
+    public boolean hasDateOfBirth() {
+        return dateOfBirthProvided;
+    }
+
+    @AssertTrue(message = "The user must be at least 15 years old")
+    @JsonIgnore
+    public boolean isAtLeast15YearsOld() {
+        return dateOfBirth == null ||
+                !dateOfBirth.isAfter(LocalDate.now().minusYears(15));
     }
 
     public String getPronouns() {

@@ -8,6 +8,7 @@ import 'package:gobison/core/services/session_service.dart';
 import 'package:gobison/features/auth/auth_service.dart';
 import 'package:gobison/features/auth/presentation/login_page.dart';
 import 'package:gobison/features/auth/presentation/session_gate.dart';
+import 'package:gobison/features/profile/profile_service.dart';
 import 'package:gobison/features/auth/presentation/verification_page.dart';
 import 'package:gobison/core/navigation/app_shell.dart';
 import 'package:http/http.dart' as http;
@@ -21,8 +22,29 @@ void main() {
     authService: AuthService(client: MockClient((_) async => response)),
   );
 
+  ProfileService profileService({String? dateOfBirth, int? age}) =>
+      ProfileService(
+        client: MockClient((request) async {
+          expect(request.url.path, endsWith('/api/v1/users/me/profile'));
+          return http.Response(
+            jsonEncode({
+              'firstName': 'Ada',
+              'lastName': 'Lovelace',
+              'age': age,
+              'dateOfBirth': dateOfBirth,
+              'avatarColor': '#BBDEFB',
+            }),
+            200,
+          );
+        }),
+      );
+
   testWidgets('missing session opens login', (tester) async {
-    await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: service(http.Response('', 401)))));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SessionGate(sessionService: service(http.Response('', 401))),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
   });
@@ -30,61 +52,138 @@ void main() {
   testWidgets('401 clears a previously cached session', (tester) async {
     await SessionService.saveSession(
       accessToken: 'old-token',
-      user: const User(id: 'old', firstName: 'Old', email: 'old@example.com', verified: true),
+      user: const User(
+        id: 'old',
+        firstName: 'Old',
+        email: 'old@example.com',
+        verified: true,
+      ),
       profile: const UserProfile(userId: 'old', firstName: 'Old', age: 25),
     );
     expect(SessionService.cachedSession, isNotNull);
-    await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: service(http.Response('', 401)))));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SessionGate(sessionService: service(http.Response('', 401))),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.byType(LoginPage), findsOneWidget);
     expect(SessionService.cachedSession, isNull);
     expect(SessionService.accessToken, isNull);
     // A different user must not inherit the previous user's cached profile.
-    final restored = await service(http.Response(jsonEncode({
-      'userId': 'new', 'firstName': 'New', 'email': 'new@example.com', 'verified': true,
-    }), 200)).loadCurrentSession();
+    final restored = await service(
+      http.Response(
+        jsonEncode({
+          'userId': 'new',
+          'firstName': 'New',
+          'email': 'new@example.com',
+          'verified': true,
+        }),
+        200,
+      ),
+    ).loadCurrentSession();
     expect(restored!.profile.userId, 'new');
     expect(restored.profile.age, isNull);
   });
 
   for (final verified in [false, true]) {
-    testWidgets('empty memory restores directly through gate with verified=$verified', (tester) async {
-      expect(SessionService.cachedSession, isNull);
-      final sessionService = service(http.Response(jsonEncode({
-        'userId': 'ada@myumanitoba.ca', 'firstName': 'Ada', 'lastName': 'Lovelace',
-        'email': 'ada@myumanitoba.ca', 'verified': verified,
-      }), 200));
-      await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: sessionService)));
-      await tester.pumpAndSettle();
-      expect(find.byType(verified ? AppShell : VerificationPage), findsOneWidget);
-      expect(SessionService.cachedSession!.user.email, 'ada@myumanitoba.ca');
-    });
+    testWidgets(
+      'empty memory restores directly through gate with verified=$verified',
+      (tester) async {
+        expect(SessionService.cachedSession, isNull);
+        final sessionService = service(
+          http.Response(
+            jsonEncode({
+              'userId': 'ada@myumanitoba.ca',
+              'firstName': 'Ada',
+              'lastName': 'Lovelace',
+              'email': 'ada@myumanitoba.ca',
+              'verified': verified,
+            }),
+            200,
+          ),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: SessionGate(
+              sessionService: sessionService,
+              profileService: profileService(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(verified ? AppShell : VerificationPage),
+          findsOneWidget,
+        );
+        expect(SessionService.cachedSession!.user.email, 'ada@myumanitoba.ca');
+      },
+    );
 
-    testWidgets('restored session routes correctly with verified=$verified', (tester) async {
-      final sessionService = service(http.Response(jsonEncode({
-        'userId': 'ada@myumanitoba.ca', 'firstName': 'Ada', 'lastName': 'Lovelace',
-        'email': 'ada@myumanitoba.ca', 'verified': verified,
-      }), 200));
+    testWidgets('restored session routes correctly with verified=$verified', (
+      tester,
+    ) async {
+      final sessionService = service(
+        http.Response(
+          jsonEncode({
+            'userId': 'ada@myumanitoba.ca',
+            'firstName': 'Ada',
+            'lastName': 'Lovelace',
+            'email': 'ada@myumanitoba.ca',
+            'verified': verified,
+          }),
+          200,
+        ),
+      );
       final session = await sessionService.loadCurrentSession();
       expect(session!.profile.firstName, 'Ada');
       expect(session.profile.age, isNull);
       expect(session.profile.pronouns, isNull);
       expect(session.profile.description, isNull);
-      await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: sessionService)));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SessionGate(
+            sessionService: sessionService,
+            profileService: profileService(),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
-      expect(find.byType(verified ? AppShell : VerificationPage), findsOneWidget);    });
+      expect(
+        find.byType(verified ? AppShell : VerificationPage),
+        findsOneWidget,
+      );
+    });
   }
 
   testWidgets('server failure offers retry instead of login', (tester) async {
     var requests = 0;
-    final sessionService = SessionService(authService: AuthService(client: MockClient((_) async {
-      requests++;
-      if (requests == 1) return http.Response('', 500);
-      return http.Response(jsonEncode({
-        'userId': 'ada', 'firstName': 'Ada', 'lastName': 'Lovelace', 'email': 'ada@example.com', 'verified': true,
-      }), 200);
-    })));
-    await tester.pumpWidget(MaterialApp(home: SessionGate(sessionService: sessionService)));
+    final sessionService = SessionService(
+      authService: AuthService(
+        client: MockClient((_) async {
+          requests++;
+          if (requests == 1) return http.Response('', 500);
+          return http.Response(
+            jsonEncode({
+              'userId': 'ada',
+              'firstName': 'Ada',
+              'lastName': 'Lovelace',
+              'email': 'ada@example.com',
+              'verified': true,
+            }),
+            200,
+          );
+        }),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SessionGate(
+          sessionService: sessionService,
+          profileService: profileService(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Unable to load your account.'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
@@ -96,5 +195,36 @@ void main() {
     expect(find.byType(AppShell), findsOneWidget);
     expect(find.text('Unable to load your account.'), findsNothing);
     expect(find.byKey(const Key('session-retry-button')), findsNothing);
+  });
+
+  testWidgets('restores saved age and birthday after a fresh session load', (
+    tester,
+  ) async {
+    final sessionService = service(
+      http.Response(
+        jsonEncode({
+          'userId': 'ada@myumanitoba.ca',
+          'firstName': 'Ada',
+          'lastName': 'Lovelace',
+          'email': 'ada@myumanitoba.ca',
+          'verified': true,
+        }),
+        200,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SessionGate(
+          sessionService: sessionService,
+          profileService: profileService(dateOfBirth: '2000-06-15', age: 26),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final restoredProfile = SessionService.cachedSession!.profile;
+    expect(restoredProfile.dateOfBirth, DateTime(2000, 6, 15));
+    expect(restoredProfile.displayAge, 26);
   });
 }

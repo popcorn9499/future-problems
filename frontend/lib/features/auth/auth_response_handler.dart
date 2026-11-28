@@ -1,4 +1,8 @@
 class AuthResponseHandler {
+  static const supportEmail = 'gobison.uofm@gmail.com';
+  static const deactivatedAccountMessage =
+      'This account has been deactivated. Please contact support for assistance.';
+
   static String handleLoginError(int statusCode) {
     switch (statusCode) {
       case 503:
@@ -8,7 +12,7 @@ class AuthResponseHandler {
       case 401:
         return 'Invalid email or password.';
       case 403:
-        return 'This account has been deleted. Contact support to reactivate account.';
+        return deactivatedAccountMessage;
       case 429:
         return 'Too many login attempts. Please try again later.';
       case 500:

@@ -42,6 +42,9 @@ class ProfileService {
         firstName: json['firstName'] as String,
         lastName: json['lastName'] as String?,
         age: json['age'] as int?,
+        dateOfBirth: json['dateOfBirth'] is String
+            ? DateTime.tryParse(json['dateOfBirth'] as String)
+            : null,
         pronouns: json['pronouns'] as String? ?? json['gender'] as String?,
         description: json['description'] as String?,
         avatarColor: json['avatarColor'] as String? ?? '#E9DFD2',

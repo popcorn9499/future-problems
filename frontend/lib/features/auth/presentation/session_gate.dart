@@ -18,9 +18,10 @@ import '../../ride_offer/presentation/ride_offer_page.dart';
 import '../../../core/services/session_service.dart';
 
 class SessionGate extends StatefulWidget {
-  const SessionGate({super.key, this.sessionService});
+  const SessionGate({super.key, this.sessionService, this.profileService});
 
   final SessionService? sessionService;
+  final ProfileService? profileService;
 
   @override
   State<SessionGate> createState() => _SessionGateState();
@@ -47,16 +48,10 @@ class _SessionGateState extends State<SessionGate> {
         .loadCurrentSession();
     if (session == null) return null;
 
-    try {
-      final profile = await ProfileService().getCurrentProfile(
-        userId: session.user.id,
-      );
-      SessionService.updateCachedProfile(profile);
-      return SessionService.cachedSession ?? session;
-    } catch (_) {
-      // Keep the session usable if profile details cannot be fetched.
-      return session;
-    }
+    final profile = await (widget.profileService ?? ProfileService())
+        .getCurrentProfile(userId: session.user.id);
+    SessionService.updateCachedProfile(profile);
+    return SessionService.cachedSession ?? session;
   }
 
   @override

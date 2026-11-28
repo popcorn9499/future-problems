@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -80,6 +81,19 @@ class UserAccountControllerTest {
     }
 
     @Test
+    void calculatesAgeFromDateOfBirthWhenProfileIsLoaded() throws Exception {
+        LocalDate dateOfBirth = LocalDate.now().minusYears(24);
+        User user = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
+        user.setDateOfBirth(dateOfBirth);
+        when(users.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+        mvc.perform(get(ENDPOINT).with(user(EMAIL)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dateOfBirth").value(dateOfBirth.toString()))
+                .andExpect(jsonPath("$.age").value(24));
+    }
+
+    @Test
     void rejectsAuthenticatedPrincipalWithoutAnAccount() throws Exception {
         when(users.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
@@ -136,6 +150,42 @@ class UserAccountControllerTest {
                                 && request.hasAvatarColor()
                                 && "#123ABC".equals(request.getAvatarColor())
                                 && !request.hasAge()));
+    }
+
+    @Test
+    void acceptsDateOfBirthForSomeoneWhoIsExactlyFifteen() throws Exception {
+        LocalDate dateOfBirth = LocalDate.now().minusYears(15);
+        User existing = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
+        when(users.findByEmail(EMAIL)).thenReturn(Optional.of(existing));
+
+        User updated = new User(EMAIL, "password-hash", "Ada", "Lovelace", true);
+        updated.setDateOfBirth(dateOfBirth);
+        when(updateProfileService.updateProfile(eq(existing), any(UpdateProfileRequest.class)))
+                .thenReturn(updated);
+
+        mvc.perform(patch(ENDPOINT).with(user(EMAIL))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dateOfBirth\":\"" + dateOfBirth + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dateOfBirth").value(dateOfBirth.toString()))
+                .andExpect(jsonPath("$.age").value(15));
+
+        verify(updateProfileService).updateProfile(
+                eq(existing),
+                argThat(request -> request.hasDateOfBirth()
+                        && dateOfBirth.equals(request.getDateOfBirth())));
+    }
+
+    @Test
+    void rejectsDateOfBirthForSomeoneYoungerThanFifteen() throws Exception {
+        LocalDate dateOfBirth = LocalDate.now().minusYears(15).plusDays(1);
+
+        mvc.perform(patch(ENDPOINT).with(user(EMAIL))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dateOfBirth\":\"" + dateOfBirth + "\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(users, updateProfileService);
     }
 
     @Test

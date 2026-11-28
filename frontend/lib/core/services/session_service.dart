@@ -126,6 +126,7 @@ class SessionService {
       firstName: profile.firstName,
       lastName: profile.lastName,
       age: profile.age,
+      dateOfBirth: profile.dateOfBirth,
       pronouns: profile.pronouns,
       description: profile.description,
       avatarColor: profile.avatarColor,

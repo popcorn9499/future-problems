@@ -106,7 +106,9 @@ void main() {
           'Arrive at campus by',
           'Leave campus at',
         ])
-          find.ancestor(of: find.text(label), matching: find.byType(InkWell)).first,
+          find
+              .ancestor(of: find.text(label), matching: find.byType(InkWell))
+              .first,
       ];
 
       expect(find.byType(AppBar), findsNothing);
@@ -120,9 +122,7 @@ void main() {
         final border = InputDecorator.containerOf(tester.element(field));
         expect(border?.size.height, 44);
       }
-      for (final button in [
-        find.widgetWithText(TextButton, 'All rides'),
-      ]) {
+      for (final button in [find.widgetWithText(TextButton, 'All rides')]) {
         final surface = find.descendant(
           of: button,
           matching: find.byType(Material),
@@ -191,7 +191,10 @@ void main() {
         expect(selected, findsOneWidget);
         expect(queries.last[parameter], '08:30');
 
-        final chip = find.ancestor(of: selected, matching: find.byType(InkWell));
+        final chip = find.ancestor(
+          of: selected,
+          matching: find.byType(InkWell),
+        );
         await tester.tap(
           find.descendant(of: chip.first, matching: find.byIcon(Icons.close)),
         );
@@ -260,7 +263,9 @@ void main() {
       expect(find.text('—'), findsNothing);
     });
 
-    testWidgets('shows campus directions and Round trip', (WidgetTester tester) async {
+    testWidgets('shows campus directions and Round trip', (
+      WidgetTester tester,
+    ) async {
       await pumpMapPage(tester);
 
       await openRideTypeDropdown(tester);
@@ -296,7 +301,6 @@ void main() {
     });
   });
 
-
   for (final source in ['requests', 'offers']) {
     testWidgets('hides status and inapplicable times in $source details', (
       tester,
@@ -330,7 +334,11 @@ void main() {
       expect(
         find.descendant(
           of: sheet,
-          matching: find.text(isArrival ? 'To campus' : 'From campus'),
+          matching: find.text(
+            isArrival
+                ? 'Seeking a ride to campus'
+                : 'Offering a ride from campus',
+          ),
         ),
         findsOneWidget,
       );
@@ -345,15 +353,19 @@ void main() {
       expect(arrivalLabel, isArrival ? findsOneWidget : findsNothing);
       expect(departureLabel, isArrival ? findsNothing : findsOneWidget);
       expect(find.text('Posted by'), findsNothing);
-      expect(find.descendant(of: sheet, matching: find.text('Status:')), findsNothing);
-      expect(find.descendant(of: sheet, matching: find.text('OPEN')), findsNothing);
+      expect(
+        find.descendant(of: sheet, matching: find.text('Status:')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: sheet, matching: find.text('OPEN')),
+        findsNothing,
+      );
     });
   }
 
   for (final (kind, source) in [('request', 'requests'), ('offer', 'offers')]) {
-    testWidgets('shows the compact $kind schedule and actions', (
-      tester,
-    ) async {
+    testWidgets('shows the compact $kind schedule and actions', (tester) async {
       await pumpMapPage(
         tester,
         respond: (request) async => request.url.path.endsWith('/$source')
@@ -368,7 +380,10 @@ void main() {
               )
             : http.Response('{}', 200),
       );
-      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      final marker = tester
+          .widget<MarkerLayer>(find.byType(MarkerLayer))
+          .markers
+          .single;
       await tester.tap(find.byWidget(marker.child));
       await settle(tester);
 
@@ -379,11 +394,22 @@ void main() {
       expect(departure, findsOneWidget);
       expect(find.text('Ride type:'), findsNothing);
       expect(
-        tester.getBottomLeft(find.text('Round trip')).dy,
+        tester
+            .getBottomLeft(
+              find.text(
+                kind == 'request'
+                    ? 'Seeking a round-trip ride'
+                    : 'Offering a round-trip ride',
+              ),
+            )
+            .dy,
         lessThan(tester.getTopLeft(arrival).dy),
       );
       expect(tester.getTopLeft(arrival).dy, tester.getTopLeft(departure).dy);
-      expect(tester.getTopLeft(arrival).dx, lessThan(tester.getTopLeft(departure).dx));
+      expect(
+        tester.getTopLeft(arrival).dx,
+        lessThan(tester.getTopLeft(departure).dx),
+      );
       expect(find.text('Days'), findsOneWidget);
       expect(find.text('Sa'), findsOneWidget);
       expect(find.text('Su'), findsNothing);
@@ -392,12 +418,14 @@ void main() {
         final bubble = find.ancestor(
           of: find.text(label),
           matching: find.byWidgetPredicate(
-            (widget) => widget is Container &&
+            (widget) =>
+                widget is Container &&
                 widget.decoration is BoxDecoration &&
                 (widget.decoration as BoxDecoration).shape == BoxShape.circle,
           ),
         );
-        return tester.widget<Container>(bubble.first).decoration! as BoxDecoration;
+        return tester.widget<Container>(bubble.first).decoration!
+            as BoxDecoration;
       }
 
       expect(bubbleDecoration('M').color, AppColors.primary);
@@ -406,7 +434,10 @@ void main() {
       expect(find.text('Up to 3 passengers'), offerFieldMatcher);
       final sheet = find.byType(BottomSheet);
       expect(
-        find.descendant(of: sheet, matching: find.text('Looking for other drivers')),
+        find.descendant(
+          of: sheet,
+          matching: find.text('Looking for other drivers'),
+        ),
         findsNothing,
       );
       expect(find.text('Ride notes'), findsOneWidget);
@@ -414,10 +445,16 @@ void main() {
       expect(find.text('Posted by'), findsOneWidget);
       expect(find.text('Jordan Lee'), findsOneWidget);
       final avatar = find.widgetWithText(CircleAvatar, 'JL');
-      expect(tester.widget<CircleAvatar>(avatar).backgroundColor, const Color(0xFFD1C4E9));
+      expect(
+        tester.widget<CircleAvatar>(avatar).backgroundColor,
+        const Color(0xFFD1C4E9),
+      );
 
       final message = find.widgetWithText(OutlinedButton, 'Message');
-      final join = find.widgetWithText(FilledButton, 'Ask to Join Ride');
+      final actionLabel = kind == 'request'
+          ? 'Offer to Drive'
+          : 'Ask to Join Ride';
+      final join = find.widgetWithText(FilledButton, actionLabel);
       expect(tester.widget<OutlinedButton>(message).onPressed, isNotNull);
       expect(tester.widget<FilledButton>(join).onPressed, isNotNull);
       expect(tester.getCenter(message).dy, tester.getCenter(join).dy);
@@ -430,7 +467,10 @@ void main() {
       await tester.pumpWidget(createTestWidget(sheetWidth: 240));
       await settle(tester);
       expect(tester.takeException(), isNull);
-      expect(tester.getTopLeft(arrival).dy, lessThan(tester.getTopLeft(departure).dy));
+      expect(
+        tester.getTopLeft(arrival).dy,
+        lessThan(tester.getTopLeft(departure).dy),
+      );
       expect(message.hitTestable(), findsOneWidget);
       expect(join.hitTestable(), findsOneWidget);
       expect(tester.getCenter(message).dy, lessThan(tester.getCenter(join).dy));
@@ -438,7 +478,9 @@ void main() {
   }
 
   for (final capacity in [1, null]) {
-    testWidgets('shows driver preference with capacity $capacity', (tester) async {
+    testWidgets('shows driver preference with capacity $capacity', (
+      tester,
+    ) async {
       await pumpMapPage(
         tester,
         respond: (request) async => request.url.path.endsWith('/offers')
@@ -450,24 +492,44 @@ void main() {
               )
             : http.Response('{}', 200),
       );
-      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      final marker = tester
+          .widget<MarkerLayer>(find.byType(MarkerLayer))
+          .markers
+          .single;
       await tester.tap(find.byWidget(marker.child));
       await settle(tester);
       await tester.pumpWidget(createTestWidget(sheetWidth: 240));
       await settle(tester);
 
       final sheet = find.byType(BottomSheet);
-      expect(find.descendant(of: sheet, matching: find.text('From campus')), findsOneWidget);
+      expect(
+        find.descendant(
+          of: sheet,
+          matching: find.text('Offering a ride from campus'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Leave campus at:'), findsNothing);
-      expect(find.widgetWithText(Chip, 'Looking for other drivers'), findsOneWidget);
+      expect(
+        find.widgetWithText(Chip, 'Looking for other drivers'),
+        findsOneWidget,
+      );
       expect(
         find.widgetWithText(Chip, 'Up to 1 passenger'),
         capacity == null ? findsNothing : findsOneWidget,
       );
       if (capacity != null) {
         expect(
-          tester.getTopLeft(find.widgetWithText(Chip, 'Looking for other drivers')).dy,
-          greaterThan(tester.getTopLeft(find.widgetWithText(Chip, 'Up to 1 passenger')).dy),
+          tester
+              .getTopLeft(
+                find.widgetWithText(Chip, 'Looking for other drivers'),
+              )
+              .dy,
+          greaterThan(
+            tester
+                .getTopLeft(find.widgetWithText(Chip, 'Up to 1 passenger'))
+                .dy,
+          ),
         );
       }
       expect(tester.takeException(), isNull);
@@ -476,7 +538,8 @@ void main() {
 
   for (final mixed in [true, false]) {
     testWidgets('groups nearby rides when mixed is $mixed', (tester) async {
-      const requestRide = '{"rideType":"arriving","city":"Winnipeg",'
+      const requestRide =
+          '{"rideType":"arriving","city":"Winnipeg",'
           '"arrivalTime":"07:15","daysOfWeek":["MONDAY","WEDNESDAY"],'
           '"location":{"latitude":49.8951,"longitude":-97.1384}}';
       await pumpMapPage(
@@ -493,16 +556,34 @@ void main() {
           return http.Response(mixed ? '{"offers":[$requestRide]}' : '{}', 200);
         },
       );
-      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      final marker = tester
+          .widget<MarkerLayer>(find.byType(MarkerLayer))
+          .markers
+          .single;
       await tester.tap(find.byWidget(marker.child));
       await settle(tester);
 
       expect(find.text('Rides in this area'), findsOneWidget);
-      expect(find.text(mixed ? '1 offer · 1 request' : '0 offers · 2 requests'),
-          findsOneWidget);
-      expect(find.text(mixed ? 'Ride requests (1)' : 'Ride requests (2)'),
-          findsOneWidget);
-      expect(find.text('Ride offers (1)'), mixed ? findsOneWidget : findsNothing);
+      expect(
+        find.text(mixed ? '1 offer · 1 request' : '0 offers · 2 requests'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(mixed ? 'Ride requests (1)' : 'Ride requests (2)'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Riders in this section are seeking rides.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Ride offers (1)'),
+        mixed ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.text('Riders in this section are offering rides.'),
+        mixed ? findsOneWidget : findsNothing,
+      );
       expect(find.text('Ride offers (0)'), findsNothing);
       expect(find.text('To campus'), findsNWidgets(2));
       expect(find.text('Arrive by 7:15 AM'), findsNWidgets(2));
@@ -514,22 +595,40 @@ void main() {
         of: row,
         matching: find.text('To campus'),
       );
-      final time = find.descendant(of: row, matching: find.text('Arrive by 7:15 AM'));
+      final time = find.descendant(
+        of: row,
+        matching: find.text('Arrive by 7:15 AM'),
+      );
       final chevron = find.descendant(
         of: row,
         matching: find.byIcon(Icons.chevron_right),
       );
-      expect(find.descendant(of: bubbles, matching: find.text('M')), findsOneWidget);
-      expect(tester.getCenter(bubbles).dy, closeTo(tester.getCenter(row).dy, 0.1));
-      expect(tester.getTopLeft(bubbles).dx, greaterThan(tester.getTopRight(city).dx));
-      expect(tester.getTopLeft(time).dx, greaterThan(tester.getTopRight(bubbles).dx));
+      expect(
+        find.descendant(of: bubbles, matching: find.text('M')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getCenter(bubbles).dy,
+        closeTo(tester.getCenter(row).dy, 0.1),
+      );
+      expect(
+        tester.getTopLeft(bubbles).dx,
+        greaterThan(tester.getTopRight(city).dx),
+      );
+      expect(
+        tester.getTopLeft(time).dx,
+        greaterThan(tester.getTopRight(bubbles).dx),
+      );
       expect(tester.getTopRight(time).dx, tester.getTopLeft(chevron).dx - 12);
       expect(tester.getTopRight(chevron).dx, tester.getTopRight(row).dx - 12);
 
       await tester.pumpWidget(createTestWidget(sheetWidth: 320));
       await settle(tester);
       expect(tester.takeException(), isNull);
-      expect(tester.getTopLeft(bubbles).dy, greaterThan(tester.getBottomLeft(direction).dy));
+      expect(
+        tester.getTopLeft(bubbles).dy,
+        greaterThan(tester.getBottomLeft(direction).dy),
+      );
       expect(tester.getTopRight(time).dx, tester.getTopLeft(chevron).dx - 12);
       expect(tester.getTopRight(chevron).dx, tester.getTopRight(row).dx - 12);
 
@@ -555,7 +654,10 @@ void main() {
             )
           : http.Response('{}', 200),
     );
-    final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+    final marker = tester
+        .widget<MarkerLayer>(find.byType(MarkerLayer))
+        .markers
+        .single;
     await tester.tap(find.byWidget(marker.child));
     await settle(tester);
 
@@ -563,8 +665,14 @@ void main() {
     final departure = find.text('Leave at 4:30 PM');
     expect(arrival, findsOneWidget);
     expect(departure, findsOneWidget);
-    expect(tester.getCenter(arrival).dy, lessThan(tester.getCenter(departure).dy));
-    expect(tester.getTopRight(arrival).dx, closeTo(tester.getTopRight(departure).dx, 0.1));
+    expect(
+      tester.getCenter(arrival).dy,
+      lessThan(tester.getCenter(departure).dy),
+    );
+    expect(
+      tester.getTopRight(arrival).dx,
+      closeTo(tester.getTopRight(departure).dx, 0.1),
+    );
     expect(find.text('Leave at 5:00 PM'), findsOneWidget);
     expect(find.textContaining('Arrive by'), findsOneWidget);
     expect(find.textContaining('Leave at'), findsNWidgets(2));
@@ -675,25 +783,32 @@ void main() {
       await tester.tap(find.text('Clear Filters'));
       await settle(tester);
       expect(sources(), ['requests', 'offers']);
-      expect(calls.every((uri) => !uri.queryParameters.containsKey('city')), isTrue);
+      expect(
+        calls.every((uri) => !uri.queryParameters.containsKey('city')),
+        isTrue,
+      );
       expect(find.text('Clear Filters'), findsNothing);
     });
 
-    testWidgets('wraps the driver switch below the selector on narrow screens', (
-      tester,
-    ) async {
-      await pumpMapPage(tester);
-      tester.view.physicalSize = const Size(440, 1100);
-      await settle(tester);
+    testWidgets(
+      'wraps the driver switch below the selector on narrow screens',
+      (tester) async {
+        await pumpMapPage(tester);
+        tester.view.physicalSize = const Size(440, 1100);
+        await settle(tester);
 
-      final all = find.text('All rides');
-      final offers = find.text('Offers');
-      final drivers = find.text('Looking for other drivers');
-      expect(all.hitTestable(), findsOneWidget);
-      expect(offers.hitTestable(), findsOneWidget);
-      expect(tester.getCenter(drivers).dy, greaterThan(tester.getCenter(all).dy));
-      expect(tester.takeException(), isNull);
-    });
+        final all = find.text('All rides');
+        final offers = find.text('Offers');
+        final drivers = find.text('Looking for other drivers');
+        expect(all.hitTestable(), findsOneWidget);
+        expect(offers.hitTestable(), findsOneWidget);
+        expect(
+          tester.getCenter(drivers).dy,
+          greaterThan(tester.getCenter(all).dy),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   group('CarpoolMultiSourceMapPage map', () {
@@ -711,7 +826,10 @@ void main() {
     await pumpMapPage(
       tester,
       respond: (request) async => request.url.path.endsWith('/requests')
-          ? http.Response('{"requests":[{"city":"Request city",$location}]}', 200)
+          ? http.Response(
+              '{"requests":[{"city":"Request city",$location}]}',
+              200,
+            )
           : http.Response(
               '{"offers":['
               '{"city":"Rideshare city","askingForDrivers":true,$location},'
@@ -722,16 +840,21 @@ void main() {
 
     final filter = find.byType(Switch);
     Future<void> openCluster() async {
-      final marker = tester.widget<MarkerLayer>(find.byType(MarkerLayer)).markers.single;
+      final marker = tester
+          .widget<MarkerLayer>(find.byType(MarkerLayer))
+          .markers
+          .single;
       await tester.tap(find.byWidget(marker.child));
       await settle(tester);
     }
 
     Future<void> closeCluster() async {
-      await tester.tap(find.descendant(
-        of: find.byType(BottomSheet),
-        matching: find.byIcon(Icons.close),
-      ));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byIcon(Icons.close),
+        ),
+      );
       await settle(tester);
     }
 
@@ -775,85 +898,87 @@ void main() {
   });
 
   group('CarpoolMultiSourceMapPage error dialog', () {
-    testWidgets('a filter change shows sign-in on the first unauthorized response', (
-      tester,
-    ) async {
-      useLargeScreen(tester);
-      addTearDown(SessionService.clearSession);
-      await SessionService.saveUser(user: testUser);
-      final requestedSources = <String>[];
-      var expired = false;
-      final pendingOffers = Completer<http.Response>();
-      await http.runWithClient(
-        () async {
-          await tester.pumpWidget(
-            MaterialApp(
-              home: const Scaffold(body: Text('Protected home')),
-              initialRoute: '/map',
-              routes: {
-                '/map': (_) => AppShell(
-                  dashboardPage: const SizedBox.shrink(),
-                  inboxPage: const SizedBox.shrink(),
-                  rideRequestPage: const SizedBox.shrink(),
-                  rideOfferPage: const SizedBox.shrink(),
-                  mapPage: const CarpoolMultiSourceMapPage(user: testUser),
-                  user: testUser,
-                  onProfileTap: () {},
-                ),
-              },
-            ),
-          );
-          await settle(tester);
-          await tester.tap(find.byIcon(Icons.map_outlined));
-          await settle(tester);
-          expect(find.byType(AlertDialog), findsNothing);
+    testWidgets(
+      'a filter change shows sign-in on the first unauthorized response',
+      (tester) async {
+        useLargeScreen(tester);
+        addTearDown(SessionService.clearSession);
+        await SessionService.saveUser(user: testUser);
+        final requestedSources = <String>[];
+        var expired = false;
+        final pendingOffers = Completer<http.Response>();
+        await http.runWithClient(
+          () async {
+            await tester.pumpWidget(
+              MaterialApp(
+                home: const Scaffold(body: Text('Protected home')),
+                initialRoute: '/map',
+                routes: {
+                  '/map': (_) => AppShell(
+                    dashboardPage: const SizedBox.shrink(),
+                    inboxPage: const SizedBox.shrink(),
+                    rideRequestPage: const SizedBox.shrink(),
+                    rideOfferPage: const SizedBox.shrink(),
+                    mapPage: const CarpoolMultiSourceMapPage(user: testUser),
+                    user: testUser,
+                    onProfileTap: () {},
+                  ),
+                },
+              ),
+            );
+            await settle(tester);
+            await tester.tap(find.byIcon(Icons.map_outlined));
+            await settle(tester);
+            expect(find.byType(AlertDialog), findsNothing);
 
-          expired = true;
-          await tester.enterText(find.byType(TextField), 'Winnipeg');
-          await settle(tester);
-        },
-        () => MockClient((request) async {
-          final path = request.url.path;
-          if (!path.startsWith('/api/v1/rides/')) return http.Response('', 404);
-          requestedSources.add(path);
-          if (!expired) return http.Response('{}', 200);
-          if (path.endsWith('/offers')) return pendingOffers.future;
-          return http.Response('{"message":"Unauthorized"}', 401);
-        }),
-      );
+            expired = true;
+            await tester.enterText(find.byType(TextField), 'Winnipeg');
+            await settle(tester);
+          },
+          () => MockClient((request) async {
+            final path = request.url.path;
+            if (!path.startsWith('/api/v1/rides/'))
+              return http.Response('', 404);
+            requestedSources.add(path);
+            if (!expired) return http.Response('{}', 200);
+            if (path.endsWith('/offers')) return pendingOffers.future;
+            return http.Response('{"message":"Unauthorized"}', 401);
+          }),
+        );
 
-      const message = 'Sign in again to continue using GoBison.';
-      expect(requestedSources, [
-        '/api/v1/rides/requests',
-        '/api/v1/rides/offers',
-        '/api/v1/rides/requests',
-      ]);
-      expect(find.text(message), findsOneWidget);
-      expect(find.text('Your session has ended'), findsOneWidget);
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.textContaining('HTTP 401'), findsNothing);
-      expect(find.text('Retry'), findsNothing);
-      expect(find.text('Dismiss'), findsNothing);
+        const message = 'Sign in again to continue using GoBison.';
+        expect(requestedSources, [
+          '/api/v1/rides/requests',
+          '/api/v1/rides/offers',
+          '/api/v1/rides/requests',
+        ]);
+        expect(find.text(message), findsOneWidget);
+        expect(find.text('Your session has ended'), findsOneWidget);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.textContaining('HTTP 401'), findsNothing);
+        expect(find.text('Retry'), findsNothing);
+        expect(find.text('Dismiss'), findsNothing);
 
-      await tester.binding.handlePopRoute();
-      await tester.tapAt(const Offset(20, 20));
-      await tester.pump(const Duration(minutes: 1));
-      expect(find.text(message), findsOneWidget);
+        await tester.binding.handlePopRoute();
+        await tester.tapAt(const Offset(20, 20));
+        await tester.pump(const Duration(minutes: 1));
+        expect(find.text(message), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
-      await settle(tester);
-      expect(find.byType(LoginPage), findsOneWidget);
-      expect(SessionService.cachedSession, isNull);
-      expect(tester.state<NavigatorState>(find.byType(Navigator)).canPop(), isFalse);
-    });
+        await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+        await settle(tester);
+        expect(find.byType(LoginPage), findsOneWidget);
+        expect(SessionService.cachedSession, isNull);
+        expect(
+          tester.state<NavigatorState>(find.byType(Navigator)).canPop(),
+          isFalse,
+        );
+      },
+    );
 
     testWidgets('centers a compact dialog and combines duplicate messages', (
       WidgetTester tester,
     ) async {
-      await pumpMapPage(
-        tester,
-        respond: (_) async => http.Response('', 400),
-      );
+      await pumpMapPage(tester, respond: (_) async => http.Response('', 400));
 
       final dialog = find.byType(AlertDialog);
       expect(dialog, findsOneWidget);
@@ -877,27 +1002,34 @@ void main() {
       (429, 'Please try again.'),
       (null, 'Check your connection and try again.'),
     ]) {
-      testWidgets('shows a friendly map error for ${status ?? 'network loss'}', (
-        tester,
-      ) async {
-        await pumpMapPage(
-          tester,
-          respond: (request) async {
-            if (request.url.path.endsWith('/requests')) {
-              return http.Response('{}', 200);
-            }
-            if (status == null) throw http.ClientException('Network details');
-            return http.Response('{"message":"Internal details 401"}', status);
-          },
-        );
+      testWidgets(
+        'shows a friendly map error for ${status ?? 'network loss'}',
+        (tester) async {
+          await pumpMapPage(
+            tester,
+            respond: (request) async {
+              if (request.url.path.endsWith('/requests')) {
+                return http.Response('{}', 200);
+              }
+              if (status == null) throw http.ClientException('Network details');
+              return http.Response(
+                '{"message":"Internal details 401"}',
+                status,
+              );
+            },
+          );
 
-        expect(find.text('Ride offers couldn’t load. $message'), findsOneWidget);
-        expect(find.textContaining('Internal details'), findsNothing);
-        expect(find.textContaining('Network details'), findsNothing);
-        expect(find.textContaining('HTTP'), findsNothing);
-        expect(find.text('Retry'), findsOneWidget);
-        expect(find.widgetWithText(TextButton, 'Dismiss'), findsOneWidget);
-      });
+          expect(
+            find.text('Ride offers couldn’t load. $message'),
+            findsOneWidget,
+          );
+          expect(find.textContaining('Internal details'), findsNothing);
+          expect(find.textContaining('Network details'), findsNothing);
+          expect(find.textContaining('HTTP'), findsNothing);
+          expect(find.text('Retry'), findsOneWidget);
+          expect(find.widgetWithText(TextButton, 'Dismiss'), findsOneWidget);
+        },
+      );
     }
 
     testWidgets('hides the no-results message while an error is shown', (
@@ -908,7 +1040,9 @@ void main() {
       expect(find.text('No rides match the selected filters.'), findsNothing);
     });
 
-    testWidgets('dismiss button closes the dialog', (WidgetTester tester) async {
+    testWidgets('dismiss button closes the dialog', (
+      WidgetTester tester,
+    ) async {
       await pumpMapPage(tester, respond: (_) async => http.Response('', 500));
 
       await tester.tap(find.widgetWithText(TextButton, 'Dismiss'));
@@ -924,9 +1058,8 @@ void main() {
       var requests = 0;
       await pumpMapPage(
         tester,
-        respond: (_) async => ++requests <= 2
-            ? http.Response('', 500)
-            : http.Response('{}', 200),
+        respond: (_) async =>
+            ++requests <= 2 ? http.Response('', 500) : http.Response('{}', 200),
       );
 
       await tester.tap(find.widgetWithText(FilledButton, 'Retry'));
@@ -941,30 +1074,27 @@ void main() {
       tester,
     ) async {
       useLargeScreen(tester);
-      await http.runWithClient(
-        () async {
-          await tester.pumpWidget(
-            MaterialApp(
-              home: AppShell(
-                dashboardPage: const Text('Dashboard content'),
-                inboxPage: const SizedBox.shrink(),
-                rideRequestPage: const SizedBox.shrink(),
-                rideOfferPage: const SizedBox.shrink(),
-                mapPage: const CarpoolMultiSourceMapPage(user: testUser),
-                user: testUser,
-                onProfileTap: () {},
-              ),
+      await http.runWithClient(() async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AppShell(
+              dashboardPage: const Text('Dashboard content'),
+              inboxPage: const SizedBox.shrink(),
+              rideRequestPage: const SizedBox.shrink(),
+              rideOfferPage: const SizedBox.shrink(),
+              mapPage: const CarpoolMultiSourceMapPage(user: testUser),
+              user: testUser,
+              onProfileTap: () {},
             ),
-          );
-          await settle(tester);
-          expect(find.text('Dashboard content'), findsOneWidget);
-          expect(find.byType(AlertDialog), findsNothing);
+          ),
+        );
+        await settle(tester);
+        expect(find.text('Dashboard content'), findsOneWidget);
+        expect(find.byType(AlertDialog), findsNothing);
 
-          await tester.tap(find.byIcon(Icons.map_outlined));
-          await settle(tester);
-        },
-        () => MockClient((_) async => http.Response('', 500)),
-      );
+        await tester.tap(find.byIcon(Icons.map_outlined));
+        await settle(tester);
+      }, () => MockClient((_) async => http.Response('', 500)));
 
       expect(find.text('Couldn’t load rides'), findsOneWidget);
     });
